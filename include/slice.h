@@ -1,3 +1,19 @@
+/*******************************************************************************
+* Copyright (C) 2019 - 2023, winsoft666, <winsoft666@outlook.com>.
+*
+* THIS CODE AND INFORMATION IS PROVIDED "AS IS" WITHOUT WARRANTY OF ANY KIND,
+* EITHER EXPRESSED OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE IMPLIED
+* WARRANTIES OF MERCHANTABILITY AND/OR FITNESS FOR A PARTICULAR PURPOSE.
+*
+* Expect bugs
+*
+* Please use and enjoy. Please let me know of any bugs/improvements
+* that you have found/implemented and I will fix/incorporate them into this
+* file.
+*******************************************************************************/
+
+#ifndef EFD_SLICE_H__
+#define EFD_SLICE_H__
 #pragma once
 
 #include <string>
@@ -14,9 +30,7 @@ namespace easy_file_download {
         Slice(size_t index, std::shared_ptr<SliceManage> slice_manager);
         virtual ~Slice();
 
-        bool Init(const std::string &target_file_path,
-                  const std::string &slice_file_path,
-                  const std::string &url,
+        bool Init(const std::string &slice_file_path,
                   long begin,
                   long end,
                   long capacity);
@@ -33,7 +47,7 @@ namespace easy_file_download {
 
         bool RemoveFile();
 
-    protected:
+      protected:
         std::string GenerateSliceFilePath(size_t index, const std::string &target_file_path) const;
 
       protected:
@@ -43,12 +57,12 @@ namespace easy_file_download {
         long capacity_;
         long origin_capacity_;
         std::string file_path_;
-        std::string url_;
         FILE *file_;
         CURL *curl_;
         std::shared_ptr<SliceManage> slice_manager_;
       private:
-        friend int DownloadProgressCallback(void *p, curl_off_t dltotal, curl_off_t dlnow, curl_off_t ultotal, curl_off_t ulnow);
         friend size_t DownloadWriteCallback(char *buffer, size_t size, size_t nitems, void *outstream);
     };
 }
+
+#endif

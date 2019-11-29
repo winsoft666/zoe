@@ -1,3 +1,18 @@
+/*******************************************************************************
+* Copyright (C) 2019 - 2023, winsoft666, <winsoft666@outlook.com>.
+*
+* THIS CODE AND INFORMATION IS PROVIDED "AS IS" WITHOUT WARRANTY OF ANY KIND,
+* EITHER EXPRESSED OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE IMPLIED
+* WARRANTIES OF MERCHANTABILITY AND/OR FITNESS FOR A PARTICULAR PURPOSE.
+*
+* Expect bugs
+*
+* Please use and enjoy. Please let me know of any bugs/improvements
+* that you have found/implemented and I will fix/incorporate them into this
+* file.
+*******************************************************************************/
+#ifndef EFD_EASY_FILE_DOWNLOAD_H_
+#define EFD_EASY_FILE_DOWNLOAD_H_
 #pragma once
 #include <string>
 #include "pplx/pplxtasks.h"
@@ -29,7 +44,7 @@ namespace easy_file_download {
         InternalNetworkError,
         CombineSliceFailed,
         CleanupTmpFileFailed,
-        Downloading,
+        AlreadyDownloading,
         Broken,
         BrokenAndUpdateIndexFailed,
         Success
@@ -37,7 +52,7 @@ namespace easy_file_download {
     EFD_API const char* GetResultString(int enumVal);
 
     typedef std::function< void(long total, long downloaded)> ProgressFunctor;
-    typedef std::function<void(Result result)> FinishedFunctor;
+    typedef std::function<void(long byte_per_sec)> RealtimeSpeedFunctor;
 
     class EFD_API EasyFileDownload {
       public:
@@ -47,16 +62,20 @@ namespace easy_file_download {
         static void GlobalInit();
         static void GlobalUnInit();
 
+        void SetEnableSaveSliceFileToTempDir(bool enabled);
         void SetThreadNum(size_t thread_num);
         void SetUrl(const std::string &url);
         void SetTargetFilePath(const std::string &file_path);
-        void SetProgressFunctor(ProgressFunctor progress);
+        void SetProgressFunctor(ProgressFunctor progress_functor);
+        void SetRealtimeSpeedFunctor(RealtimeSpeedFunctor realtime_speed_functor);
 
         pplx::task<Result> Start(
+            bool enable_save_slice_to_tmp,
             size_t thread_num,
             const std::string url,
             const std::string &target_file_path,
-            ProgressFunctor progress);
+            ProgressFunctor progress_functor,
+            RealtimeSpeedFunctor realtime_speed_functor);
 
         pplx::task<Result> Start();
 
@@ -67,3 +86,5 @@ namespace easy_file_download {
         EasyFileDownloadImpl *impl_;
     };
 }
+
+#endif

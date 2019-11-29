@@ -1,6 +1,21 @@
+/*******************************************************************************
+* Copyright (C) 2019 - 2023, winsoft666, <winsoft666@outlook.com>.
+*
+* THIS CODE AND INFORMATION IS PROVIDED "AS IS" WITHOUT WARRANTY OF ANY KIND,
+* EITHER EXPRESSED OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE IMPLIED
+* WARRANTIES OF MERCHANTABILITY AND/OR FITNESS FOR A PARTICULAR PURPOSE.
+*
+* Expect bugs
+*
+* Please use and enjoy. Please let me know of any bugs/improvements
+* that you have found/implemented and I will fix/incorporate them into this
+* file.
+*******************************************************************************/
+
 #include <iostream>
 #include "easy_file_download.h"
 #include "../md5.h"
+#include <mutex>
 #if (defined WIN32 || defined _WIN32)
     #include <windows.h>
 #else
@@ -12,8 +27,9 @@
 
 using namespace easy_file_download;
 EasyFileDownload efd;
+std::mutex console_mutex;
 
-void PrintConsoleProcess(double percentage);
+void PrintConsole(double percentage, long speed);
 
 #if (defined WIN32 || defined _WIN32)
 BOOL WINAPI ControlSignalHandler(DWORD fdwCtrlType) {
@@ -40,7 +56,10 @@ void ControlSignalHandler(int s) {
 
 
 
-
+//
+// Usage:
+// easy_download_tool thread_num url target_file_path [md5]
+//
 int main(int argc, char **argv) {
     if (argc < 4) {
         std::cout << "Argument Number Error\n";
@@ -68,11 +87,14 @@ int main(int argc, char **argv) {
 
     EasyFileDownload::GlobalInit();
 
-    efd.Start(thread_num,
+    efd.Start(true,
+              thread_num,
               url,
               target_file_path,
     [](long total, long downloaded) {
-        PrintConsoleProcess((double)downloaded / (double)total);
+        PrintConsole((double)downloaded / (double)total, -1);
+    }, [](long byte_per_secs) {
+        PrintConsole(-1, byte_per_secs / 1000);
     }).then([ = ](pplx::task<Result> result) {
         std::cout << std::endl << GetResultString(result.get()) << std::endl;
         if (result.get() == Result::Success) {
@@ -91,21 +113,32 @@ int main(int argc, char **argv) {
 }
 
 
-void PrintConsoleProcess(double percentage) {
+void PrintConsole(double percentage, long speed) {
+    std::lock_guard<std::mutex> lg(console_mutex);
+
+    static double last_percentage = 0;
+    static long last_speed = 0;
+
+    if(percentage != -1)
+        last_percentage = percentage;
+
+    if(speed != -1)
+        last_speed = speed;
+
     const char *PBSTR =
         "============================================================";
     const int PBWIDTH = 60;
-    int val = (int)(percentage * 100);
-    int lpad = (int)(percentage * PBWIDTH);
+    int val = (int)(last_percentage * 100);
+    int lpad = (int)(last_percentage * PBWIDTH);
     int rpad = PBWIDTH - lpad;
 
     if (val < 0 || val > 100)
         return;
 
     if (val == 100 || val == 0) {
-        printf("\r[%.*s%*s] %3d%%", lpad, PBSTR, rpad, "", val);
+        printf("\r[%.*s%*s] %3d%% %8d kb/s", lpad, PBSTR, rpad, "", val, last_speed);
     } else {
-        printf("\r[%.*s>%*s] %3d%%", lpad, PBSTR, rpad - 1, "", val);
+        printf("\r[%.*s>%*s] %3d%% %8d kb/s", lpad, PBSTR, rpad - 1, "", val, last_speed);
     }
     fflush(stdout);
 }

@@ -1,3 +1,17 @@
+/*******************************************************************************
+* Copyright (C) 2019 - 2023, winsoft666, <winsoft666@outlook.com>.
+*
+* THIS CODE AND INFORMATION IS PROVIDED "AS IS" WITHOUT WARRANTY OF ANY KIND,
+* EITHER EXPRESSED OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE IMPLIED
+* WARRANTIES OF MERCHANTABILITY AND/OR FITNESS FOR A PARTICULAR PURPOSE.
+*
+* Expect bugs
+*
+* Please use and enjoy. Please let me know of any bugs/improvements
+* that you have found/implemented and I will fix/incorporate them into this
+* file.
+*******************************************************************************/
+
 #include "slice_manage.h"
 #include <array>
 #include <io.h>
@@ -33,40 +47,29 @@ namespace easy_file_download {
     Result SliceManage::Start(
         const std::string &url,
         const std::string &target_file_path, 
+        bool enable_save_slice_to_tmp_dir,
         size_t thread_num, 
-        ProgressFunctor progress_functor) {
+        ProgressFunctor progress_functor,
+        RealtimeSpeedFunctor realtime_speed_functor) {
         if (url.length() == 0)
             return Result::UrlInvalid;
 
-        if (thread_num == 0 || thread_num > 10)
+        if (thread_num == 0 || thread_num > 80)
             return Result::ThreadNumInvalid;
 
+        // be sure previous thread has exit
         if (progress_notify_thread_.valid())
             progress_notify_thread_.wait();
+        if (speed_notify_thread_.valid())
+            speed_notify_thread_.wait();
+
         stop_ = false;
-        progress_notify_thread_ = std::async(std::launch::async, [this]() {
-            while (true) {
-                {
-                    std::unique_lock<std::mutex> ul(stop_mutex_);
-                    stop_cond_var_.wait_for(ul, std::chrono::milliseconds(500), [this] {return stop_; });
-                    if (stop_)
-                        return;
-                }
-
-                long downloaded = 0;
-                for (const auto &s : slices_) {
-                    downloaded += s->capacity();
-                }
-
-                if (progress_functor_)
-                    progress_functor_(file_size_, downloaded);
-            }
-        });
-
 
         url_ = url;
         progress_functor_ = progress_functor;
+        speed_functor_ = realtime_speed_functor;
         target_file_path_ = target_file_path;
+        enable_save_slice_to_tmp_dir_ = enable_save_slice_to_tmp_dir;
         index_file_path_ = GenerateIndexFilePath(target_file_path);
 
         bool valid_resume = false;
@@ -91,9 +94,7 @@ namespace easy_file_download {
                 for (size_t i = 0; i < thread_num; i++) {
                     long end = (i == thread_num - 1) ? file_size_ - 1 : ((i + 1) * each_slice_size) - 1;
                     std::shared_ptr<Slice> slice = std::make_shared<Slice>(i, shared_from_this());
-                    slice->Init(target_file_path_,
-                        "",
-                        url,
+                    slice->Init("",
                         i * each_slice_size,
                         end,
                         0);
@@ -103,9 +104,7 @@ namespace easy_file_download {
             } else {
                 thread_num = 1;
                 std::shared_ptr<Slice> slice = std::make_shared<Slice>(0, shared_from_this());
-                slice->Init(target_file_path_,
-                    "",
-                    url,
+                slice->Init("",
                     0,
                     -1,
                     0);
@@ -135,6 +134,52 @@ namespace easy_file_download {
             Destory();
             return Result::InternalNetworkError;
         }
+
+        progress_notify_thread_ = std::async(std::launch::async, [this]() {
+            while (true) {
+                {
+                    std::unique_lock<std::mutex> ul(stop_mutex_);
+                    stop_cond_var_.wait_for(ul, std::chrono::milliseconds(500), [this] {return stop_; });
+                    if (stop_)
+                        return;
+                }
+
+                long downloaded = 0;
+                for (const auto &s : slices_) {
+                    downloaded += s->capacity();
+                }
+
+                if (progress_functor_)
+                    progress_functor_(file_size_, downloaded);
+            }
+        });
+
+        long init_total_capacity = 0;
+        for (const auto &s : slices_)
+            init_total_capacity += s->capacity();
+
+        speed_notify_thread_ = std::async(std::launch::async, [this, init_total_capacity]() {
+            while (true) {
+                {
+                    std::unique_lock<std::mutex> ul(stop_mutex_);
+                    stop_cond_var_.wait_for(ul, std::chrono::milliseconds(1000), [this] {return stop_; });
+                    if (stop_)
+                        return;
+                }
+
+                long now = 0;
+                for (const auto &s : slices_)
+                    now += s->capacity();
+
+                static long last = init_total_capacity;
+                if (now >= last) {
+                    long downloaded = now - last;
+                    last = now;
+                    if (speed_functor_)
+                        speed_functor_(downloaded);
+                }
+            }
+        });
 
         int still_running = 0;
         CURLMcode m_code = curl_multi_perform(multi_, &still_running);
@@ -258,6 +303,10 @@ namespace easy_file_download {
         stop_ = true;
     }
 
+    bool SliceManage::IsEnableSaveSliceFileToTmpDir() const {
+        return enable_save_slice_to_tmp_dir_;
+    }
+
     std::string SliceManage::GetTargetFilePath() const {
         return target_file_path_;
     }
@@ -268,6 +317,10 @@ namespace easy_file_download {
 
     int SliceManage::GetThreadNum() const {
         return thread_num_;
+    }
+
+    std::string SliceManage::GetUrl() const {
+        return url_;
     }
 
     std::string SliceManage::DumpSlicesInfo() const {
@@ -347,8 +400,8 @@ namespace easy_file_download {
                 return false;
             for (auto &it : j["slices"]) {
                 std::shared_ptr<Slice> slice = std::make_shared<Slice>(9999, shared_from_this());
-                slice->Init(target_file_path_, 
-                    it["path"].get<std::string>(), url, it["begin"].get<long>(), it["end"].get<long>(), it["capacity"].get<long>());
+                slice->Init( 
+                    it["path"].get<std::string>(), it["begin"].get<long>(), it["end"].get<long>(), it["capacity"].get<long>());
                 slices_.push_back(slice);
             }
         } catch (const std::exception &e) {

@@ -1,3 +1,17 @@
+/*******************************************************************************
+* Copyright (C) 2019 - 2023, winsoft666, <winsoft666@outlook.com>.
+*
+* THIS CODE AND INFORMATION IS PROVIDED "AS IS" WITHOUT WARRANTY OF ANY KIND,
+* EITHER EXPRESSED OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE IMPLIED
+* WARRANTIES OF MERCHANTABILITY AND/OR FITNESS FOR A PARTICULAR PURPOSE.
+*
+* Expect bugs
+*
+* Please use and enjoy. Please let me know of any bugs/improvements
+* that you have found/implemented and I will fix/incorporate them into this
+* file.
+*******************************************************************************/
+
 #include "slice.h"
 #include <io.h>
 #include <iostream>
@@ -32,13 +46,10 @@ namespace easy_file_download {
         }
     }
 
-    bool Slice::Init(const std::string &target_file_path,
-                     const std::string &slice_file_path,
-                     const std::string &url,
+    bool Slice::Init(const std::string &slice_file_path,
                      long begin,
                      long end,
                      long capacity) {
-        url_ = url;
         begin_ = begin;
         end_ = end;
         capacity_ = capacity;
@@ -63,7 +74,7 @@ namespace easy_file_download {
         
         if(need_generate_new_slice) {
             remove(slice_file_path.c_str());
-            file_path_ = GenerateSliceFilePath(index_, target_file_path);
+            file_path_ = GenerateSliceFilePath(index_, slice_manager_->GetTargetFilePath());
             remove(file_path_.c_str());
         } else {
             file_path_ = slice_file_path;
@@ -115,7 +126,7 @@ namespace easy_file_download {
         curl_ = curl_easy_init();
 
         curl_easy_setopt(curl_, CURLOPT_VERBOSE, 0);
-        curl_easy_setopt(curl_, CURLOPT_URL, url_.c_str());
+        curl_easy_setopt(curl_, CURLOPT_URL, slice_manager_->GetUrl().c_str());
         curl_easy_setopt(curl_, CURLOPT_NOSIGNAL, 1L);
         curl_easy_setopt(curl_, CURLOPT_FOLLOWLOCATION, 1);
         //curl_easy_setopt(curl_, CURLOPT_SSL_VERIFYHOST, ca_path_.length() > 0);
@@ -199,7 +210,21 @@ namespace easy_file_download {
     }
 
     std::string Slice::GenerateSliceFilePath(size_t index, const std::string &target_file_path) const {
-        std::string target_dir = GetDirectory(target_file_path);
+        std::string target_dir;
+        if (slice_manager_->IsEnableSaveSliceFileToTmpDir()) {
+#if (defined WIN32 || defined _WIN32)
+            char buf[MAX_PATH] = { 0 };
+            DWORD ret_val = GetTempPathA(MAX_PATH, buf);
+            if (ret_val > 0 && ret_val < MAX_PATH) {
+                target_dir = buf;
+            }
+#else
+            target_dir = "/var/tmp/";
+#endif
+    }
+        if(target_dir.length() == 0)
+            target_dir = GetDirectory(target_file_path);
+
         std::string target_filename = GetFileName(target_file_path);
 
         std::string slice_filename = target_filename + ".edf" + std::to_string(index);

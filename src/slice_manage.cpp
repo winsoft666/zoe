@@ -14,7 +14,6 @@
 
 #include "slice_manage.h"
 #include <array>
-#include <io.h>
 #include <algorithm>
 #include <sstream>
 #include <iostream>
@@ -74,7 +73,7 @@ namespace easy_file_download {
 
         bool valid_resume = false;
         do {
-            if (access(index_file_path_.c_str(), 0) != 0)   break;
+            if (!FileIsRW(index_file_path_.c_str()))   break;
             if (!LoadSlices(url_, progress_functor)) {
                 remove(index_file_path_.c_str());
                 break;
@@ -436,7 +435,7 @@ namespace easy_file_download {
 
     bool SliceManage::CleanupTmpFiles() {
         bool ret = true;
-        if (access(index_file_path_.c_str(), 0) == 0 && remove(index_file_path_.c_str()) != 0) {
+        if (FileIsExist(index_file_path_.c_str()) && remove(index_file_path_.c_str()) != 0) {
             std::cerr << "remove file failed: " << index_file_path_ << std::endl;
             ret = false;
         }

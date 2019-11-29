@@ -24,6 +24,8 @@ namespace easy_file_download {
     std::string GetDirectory(const std::string &path);
     std::string GetFileName(const std::string &path);
     std::string AppendFileName(const std::string &dir, const std::string &filename);
+    bool FileIsExist(const std::string &filepath);
+    bool FileIsRW(const std::string &filepath);
 }
 
 #endif

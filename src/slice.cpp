@@ -13,16 +13,13 @@
 *******************************************************************************/
 
 #include "slice.h"
-#include <io.h>
-#include <iostream>
-#include "file_util.h"
-#include "curl_utils.h"
 #include <iostream>
 #include <assert.h>
+#include <string.h>
+#include "file_util.h"
+#include "curl_utils.h"
 
-#if (defined WIN32 || defined _WIN32)
-    #define _CRT_SECURE_NO_WARNINGS
-#endif
+
 
 namespace easy_file_download {
 
@@ -59,7 +56,7 @@ namespace easy_file_download {
         {
             if(slice_file_path.length() == 0)
                 break;
-            if (access(slice_file_path.c_str(), 0) != 0)
+            if (!FileIsRW(slice_file_path.c_str()))
                 break;
             FILE* f = fopen(slice_file_path.c_str(), "a+b");
             if(!f)
@@ -109,10 +106,11 @@ namespace easy_file_download {
         size_t write_size = size * nitems;
         size_t written = 0;
 
-        if (pThis->file_) {
-            written = fwrite(buffer, 1, write_size, pThis->file_);
-            fflush(pThis->file_);
-            pThis->capacity_ += written;
+        FILE* f = pThis->GetFile();
+        if (f) {
+            written = fwrite(buffer, 1, write_size, f);
+            fflush(f);
+            pThis->IncreaseCapacity(written);
         }
         assert(write_size == written);
         if (write_size != written) {
@@ -209,6 +207,14 @@ namespace easy_file_download {
         return true;
     }
 
+    FILE* Slice::GetFile() {
+        return file_;
+    }
+
+    void Slice::IncreaseCapacity(long i) {
+        capacity_ += i;
+    }
+
     std::string Slice::GenerateSliceFilePath(size_t index, const std::string &target_file_path) const {
         std::string target_dir;
         if (slice_manager_->IsEnableSaveSliceFileToTmpDir()) {
@@ -230,5 +236,4 @@ namespace easy_file_download {
         std::string slice_filename = target_filename + ".edf" + std::to_string(index);
         return AppendFileName(target_dir, slice_filename);
     }
-
 }

@@ -13,6 +13,7 @@
 *******************************************************************************/
 
 #include <iostream>
+#include <string.h>
 #include "easy_file_download.h"
 #include "../md5.h"
 #include <mutex>

@@ -47,6 +47,8 @@ namespace easy_file_download {
 
         bool RemoveFile();
 
+        FILE* GetFile();
+        void IncreaseCapacity(long i);
       protected:
         std::string GenerateSliceFilePath(size_t index, const std::string &target_file_path) const;
 
@@ -60,8 +62,6 @@ namespace easy_file_download {
         FILE *file_;
         CURL *curl_;
         std::shared_ptr<SliceManage> slice_manager_;
-      private:
-        friend size_t DownloadWriteCallback(char *buffer, size_t size, size_t nitems, void *outstream);
     };
 }
 

@@ -13,6 +13,11 @@
 *******************************************************************************/
 
 #include "file_util.h"
+#if (defined WIN32 || defined _WIN32)
+#include <io.h>
+#else
+#include <unistd.h>
+#endif
 
 namespace easy_file_download {
 
@@ -53,6 +58,22 @@ namespace easy_file_download {
 
         result += filename;
         return result;
+    }
+
+    bool FileIsExist(const std::string &filepath) {
+#if (defined WIN32 || defined _WIN32)
+        return (access(filepath.c_str(), 0) == 0);
+#else
+        return (access(filepath.c_str(), F_OK) == 0);
+#endif
+    }
+
+    bool FileIsRW(const std::string &filepath) {
+#if (defined WIN32 || defined _WIN32)
+        return (access(filepath.c_str(), 6) == 0);
+#else
+        return (access(filepath.c_str(), R_OK | W_OK) == 0);
+#endif
     }
 
 }

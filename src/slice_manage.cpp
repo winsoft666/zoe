@@ -294,7 +294,7 @@ namespace easy_file_download {
             stop_ = true;
         }
 
-        return Result::Success;
+        return Result::Successed;
     }
 
     void SliceManage::Stop() {

@@ -20,7 +20,7 @@ namespace easy_file_download {
     namespace {
         int THREAD_setup(void);
         int THREAD_cleanup(void);
-#if (defined WIN32 || defined _WIN32)
+#if defined(WIN32) || defined(_WIN32) || defined(__WIN32__) || defined(__NT__)
     #define MUTEX_TYPE HANDLE
     #define MUTEX_SETUP(x) (x) = CreateMutex(NULL, FALSE, NULL)
     #define MUTEX_CLEANUP(x) CloseHandle(x)

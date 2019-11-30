@@ -17,7 +17,7 @@
 #include "easy_file_download.h"
 #include "../md5.h"
 #include <mutex>
-#if (defined WIN32 || defined _WIN32)
+#if defined(WIN32) || defined(_WIN32) || defined(__WIN32__) || defined(__NT__)
     #include <windows.h>
 #else
     #include <signal.h>
@@ -50,8 +50,7 @@ BOOL WINAPI ControlSignalHandler(DWORD fdwCtrlType) {
 #else
 
 void ControlSignalHandler(int s) {
-    printf("Caught signal %d\n", s);
-    exit(1);
+    efd.Stop(true);
 }
 #endif
 
@@ -59,7 +58,7 @@ void ControlSignalHandler(int s) {
 
 //
 // Usage:
-// easy_download_tool thread_num url target_file_path [md5]
+// easy_download_tool thread_num url target_file_path [md5] [save_slice_to_tmp_dir]
 //
 int main(int argc, char **argv) {
     if (argc < 4) {
@@ -77,18 +76,23 @@ int main(int argc, char **argv) {
     sigIntHandler.sa_flags = 0;
 
     sigaction(SIGINT, &sigIntHandler, NULL);
+    sigaction(SIGQUIT, &sigIntHandler, NULL);
 #endif
 
     int thread_num = atoi(argv[1]);
     char *url = argv[2];
     char *target_file_path = argv[3];
     char *md5 = nullptr;
+    bool save_slice_to_tmp_dir = 0;
+
     if(argc >= 5)
         md5 = argv[4];
+    if (argc >= 6)
+        save_slice_to_tmp_dir = (atoi(argv[5]) == 1);
 
     EasyFileDownload::GlobalInit();
 
-    efd.Start(true,
+    efd.Start(save_slice_to_tmp_dir,
               thread_num,
               url,
               target_file_path,
@@ -98,18 +102,18 @@ int main(int argc, char **argv) {
         PrintConsole(-1, byte_per_secs / 1000);
     }).then([ = ](pplx::task<Result> result) {
         std::cout << std::endl << GetResultString(result.get()) << std::endl;
-        if (result.get() == Result::Success) {
+        if (result.get() == Result::Successed) {
             if (md5) {
                 if (strcmp(md5, ppx::base::GetFileMd5(target_file_path).c_str()) == 0)
-                    std::cout << "MD5 checksum successful" << std::endl;
+                    std::cout << "MD5 checksum successful." << std::endl;
                 else
-                    std::cout << "MD5 checksum failed" << std::endl;
+                    std::cout << "MD5 checksum failed." << std::endl;
             }
         }
     }).wait();
 
     EasyFileDownload::GlobalUnInit();
-    std::cout << "Global UnInit" << std::endl;
+    std::cout << "Global UnInit." << std::endl;
     return 0;
 }
 

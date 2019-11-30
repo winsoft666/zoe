@@ -47,7 +47,7 @@ namespace easy_file_download {
         AlreadyDownloading,
         Broken,
         BrokenAndUpdateIndexFailed,
-        Success
+        Successed
     };
     EFD_API const char* GetResultString(int enumVal);
 

@@ -13,18 +13,19 @@
 *******************************************************************************/
 
 #include "file_util.h"
-#if (defined WIN32 || defined _WIN32)
-#include <io.h>
+#if defined(WIN32) || defined(_WIN32) || defined(__WIN32__) || defined(__NT__)
+    #include <io.h>
 #else
-#include <unistd.h>
+    #include <unistd.h>
 #endif
+
 
 namespace easy_file_download {
 
-#if (defined _WIN32 || defined WIN32)
-#define PATH_SEPARATOR '\\'
+#if defined(WIN32) || defined(_WIN32) || defined(__WIN32__) || defined(__NT__)
+    #define PATH_SEPARATOR '\\'
 #else
-#define PATH_SEPARATOR '/'
+    #define PATH_SEPARATOR '/'
 #endif
 
     long GetFileSize(FILE *f) {

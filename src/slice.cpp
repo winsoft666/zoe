@@ -19,8 +19,6 @@
 #include "file_util.h"
 #include "curl_utils.h"
 
-
-
 namespace easy_file_download {
 
     Slice::Slice(size_t index, std::shared_ptr<SliceManage> slice_manager) :
@@ -52,13 +50,12 @@ namespace easy_file_download {
         capacity_ = capacity;
 
         bool need_generate_new_slice = true;
-        do 
-        {
+        do {
             if(slice_file_path.length() == 0)
                 break;
             if (!FileIsRW(slice_file_path.c_str()))
                 break;
-            FILE* f = fopen(slice_file_path.c_str(), "a+b");
+            FILE *f = fopen(slice_file_path.c_str(), "a+b");
             if(!f)
                 break;
             if (GetFileSize(f) != capacity_) {
@@ -68,7 +65,7 @@ namespace easy_file_download {
             fclose(f);
             need_generate_new_slice = false;
         } while (false);
-        
+
         if(need_generate_new_slice) {
             remove(slice_file_path.c_str());
             file_path_ = GenerateSliceFilePath(index_, slice_manager_->GetTargetFilePath());
@@ -106,7 +103,7 @@ namespace easy_file_download {
         size_t write_size = size * nitems;
         size_t written = 0;
 
-        FILE* f = pThis->GetFile();
+        FILE *f = pThis->GetFile();
         if (f) {
             written = fwrite(buffer, 1, write_size, f);
             fflush(f);
@@ -207,7 +204,7 @@ namespace easy_file_download {
         return true;
     }
 
-    FILE* Slice::GetFile() {
+    FILE *Slice::GetFile() {
         return file_;
     }
 
@@ -227,7 +224,7 @@ namespace easy_file_download {
 #else
             target_dir = "/var/tmp/";
 #endif
-    }
+        }
         if(target_dir.length() == 0)
             target_dir = GetDirectory(target_file_path);
 

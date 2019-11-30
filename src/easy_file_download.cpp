@@ -26,10 +26,10 @@ namespace easy_file_download {
             "InternalNetworkError",
             "CombineSliceFailed",
             "CleanupTmpFileFailed",
-            "Downloading",
+            "AlreadyDownloading",
             "Broken",
             "BrokenAndUpdateIndexFailed",
-            "Success"
+            "Successed"
         };
         return EnumStrings[enumVal];
     }
@@ -62,7 +62,11 @@ namespace easy_file_download {
     }
 
     void EasyFileDownload::GlobalInit() {
-        GlobalCurlInit();
+        static bool has_init = false;
+        if (!has_init) {
+            has_init = true;
+            GlobalCurlInit();
+        }
     }
 
     void EasyFileDownload::GlobalUnInit() {

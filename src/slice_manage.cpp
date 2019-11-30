@@ -340,7 +340,7 @@ namespace easy_file_download {
         ScopedCurl scoped_curl;
         CURL *curl = scoped_curl.GetCurl();
 
-        curl_easy_setopt(curl, CURLOPT_VERBOSE, 0);
+        curl_easy_setopt(curl, CURLOPT_VERBOSE, 1);
         curl_easy_setopt(curl, CURLOPT_NOSIGNAL, 1L);
         curl_easy_setopt(curl, CURLOPT_URL, url_.c_str());
         curl_easy_setopt(curl, CURLOPT_HEADER, 1);
@@ -348,8 +348,8 @@ namespace easy_file_download {
         curl_easy_setopt(curl, CURLOPT_FOLLOWLOCATION, 1);
         //curl_easy_setopt(curl, CURLOPT_SSL_VERIFYHOST, ca_path_.length() > 0);
         //curl_easy_setopt(curl, CURLOPT_SSL_VERIFYPEER, ca_path_.length() > 0);
-        curl_easy_setopt(curl, CURLOPT_CONNECTTIMEOUT, 3); // Time-out connect operations after this amount of seconds
-        curl_easy_setopt(curl, CURLOPT_TIMEOUT, 2); // Time-out the read operation after this amount of seconds
+        curl_easy_setopt(curl, CURLOPT_CONNECTTIMEOUT, 30); // Time-out connect operations after this amount of seconds
+        curl_easy_setopt(curl, CURLOPT_TIMEOUT, 20); // Time-out the read operation after this amount of seconds
 
         //if (ca_path_.length() > 0)
         //    curl_easy_setopt(curl, CURLOPT_CAINFO, ca_path_.c_str());
@@ -366,7 +366,11 @@ namespace easy_file_download {
         ret_code = curl_easy_getinfo(curl, CURLINFO_RESPONSE_CODE, &http_code);
 
         if (ret_code == CURLE_OK) {
-            if (http_code != 200) {
+            if (http_code != 200 && 
+                // A 350 response code is sent by the server in response to a file-related command that
+                // requires further commands in order for the operation to be completed
+                http_code != 350
+                ) {
                 return -1;
             }
         } else {

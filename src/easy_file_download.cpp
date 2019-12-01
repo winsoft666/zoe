@@ -20,16 +20,18 @@
 namespace easy_file_download {
     const char *GetResultString(int enumVal) {
         static const char *EnumStrings[] = {
+            "Successed",
             "UrlInvalid",
             "TargetFilePathInvalid",
             "ThreadNumInvalid",
+            "NetworkConnTimeoutInvalid",
+            "NetworkReadTimeoutInvalid",
             "InternalNetworkError",
-            "CombineSliceFailed",
+            "GenerateTargetFileFailed",
             "CleanupTmpFileFailed",
             "AlreadyDownloading",
             "Broken",
             "BrokenAndUpdateIndexFailed",
-            "Successed"
         };
         return EnumStrings[enumVal];
     }
@@ -37,17 +39,17 @@ namespace easy_file_download {
     class EasyFileDownload::EasyFileDownloadImpl {
       public:
         EasyFileDownloadImpl() :
-            thread_num(0) {
+            thread_num(1)
+            , network_conn_timeout(3000)
+            , network_read_timeout(3000) {
 
         }
 
       public:
         bool enable_save_slice_file_to_tmp_dir;
         size_t thread_num;
-        std::string url;
-        std::string target_file_path;
-        ProgressFunctor progress_functor;
-        RealtimeSpeedFunctor realtime_speed_functor;
+        size_t network_conn_timeout;
+        size_t network_read_timeout;
         std::shared_ptr<SliceManage> slice_manager;
         pplx::task<Result> result;
     };
@@ -77,56 +79,63 @@ namespace easy_file_download {
         impl_->enable_save_slice_file_to_tmp_dir = enabled;
     }
 
+    bool EasyFileDownload::IsEnableSaveSliceFileToTempDir() const {
+        return impl_->enable_save_slice_file_to_tmp_dir;
+    }
+
     void EasyFileDownload::SetThreadNum(size_t thread_num) {
         impl_->thread_num = thread_num;
     }
 
-    void EasyFileDownload::SetUrl(const std::string &url) {
-        impl_->url = url;
+    size_t EasyFileDownload::GetThreadNum() const {
+        return impl_->slice_manager->GetThreadNum();
     }
 
-    void EasyFileDownload::SetTargetFilePath(const std::string &file_path) {
-        impl_->target_file_path = file_path;
+    std::string EasyFileDownload::GetUrl() const {
+        return impl_->slice_manager->GetUrl();
     }
 
-    void EasyFileDownload::SetProgressFunctor(ProgressFunctor progress_functor) {
-        impl_->progress_functor = progress_functor;
+    std::string EasyFileDownload::GetTargetFilePath() const {
+        return impl_->slice_manager->GetTargetFilePath();
     }
 
-    void EasyFileDownload::SetRealtimeSpeedFunctor(RealtimeSpeedFunctor realtime_speed_functor) {
-        impl_->realtime_speed_functor = realtime_speed_functor;
+    void EasyFileDownload::SetNetworkConnectionTimeout(size_t milliseconds) {
+        impl_->network_conn_timeout = milliseconds;
+    }
+
+    size_t EasyFileDownload::GetNetworkConnectionTimeout() const {
+        return impl_->network_conn_timeout;
+    }
+
+    void EasyFileDownload::SetNetworkReadTimeout(size_t milliseconds) {
+        impl_->network_read_timeout = milliseconds;
+    }
+
+    size_t EasyFileDownload::GetNetworkReadTimeout() const {
+        return impl_->network_read_timeout;
     }
 
     pplx::task<Result> EasyFileDownload::Start(
-        bool enable_save_slice_to_tmp,
-        size_t thread_num,
         const std::string url,
         const std::string &target_file_path,
         ProgressFunctor progress_functor,
         RealtimeSpeedFunctor realtime_speed_functor
     ) {
-        impl_->enable_save_slice_file_to_tmp_dir = enable_save_slice_to_tmp;
-        impl_->thread_num = thread_num;
-        impl_->url = url;
-        impl_->target_file_path = target_file_path;
-        impl_->progress_functor = progress_functor;
-        impl_->realtime_speed_functor = realtime_speed_functor;
-
-        return Start();
-    }
-
-    pplx::task<Result> EasyFileDownload::Start() {
         if (impl_->result._GetImpl() && !impl_->result.is_done())
             return pplx::task_from_result(Result::AlreadyDownloading);
 
-        impl_->result = pplx::task<Result>([this]() {
+        Result network_res = impl_->slice_manager->SetNetworkTimeout(impl_->network_conn_timeout, impl_->network_read_timeout);
+        if (network_res != Result::Successed)
+            return pplx::task_from_result(network_res);
+
+        impl_->result = pplx::task<Result>([ = ]() {
             Result result = impl_->slice_manager->Start(
-                                impl_->url,
-                                impl_->target_file_path,
+                                url,
+                                target_file_path,
                                 impl_->enable_save_slice_file_to_tmp_dir,
                                 impl_->thread_num,
-                                impl_->progress_functor,
-                                impl_->realtime_speed_functor
+                                progress_functor,
+                                realtime_speed_functor
                             );
             return pplx::task_from_result(result);
         });

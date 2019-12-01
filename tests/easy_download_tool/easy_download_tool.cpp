@@ -14,6 +14,8 @@
 
 #include <iostream>
 #include <string.h>
+#include <sstream>
+#include <iomanip>
 #include "easy_file_download.h"
 #include "../md5.h"
 #include <mutex>
@@ -30,7 +32,7 @@ using namespace easy_file_download;
 EasyFileDownload efd;
 std::mutex console_mutex;
 
-void PrintConsole(double percentage, long speed);
+void PrintConsole(long total, long downloaded, long speed);
 
 #if (defined WIN32 || defined _WIN32)
 BOOL WINAPI ControlSignalHandler(DWORD fdwCtrlType) {
@@ -58,10 +60,10 @@ void ControlSignalHandler(int s) {
 
 //
 // Usage:
-// easy_download_tool thread_num url target_file_path [md5] [save_slice_to_tmp_dir]
+// easy_download_tool URL TargetFilePath [ThreadNum] [MD5] [EnableSaveSliceToTmp]
 //
 int main(int argc, char **argv) {
-    if (argc < 4) {
+    if (argc < 3) {
         std::cout << "Argument Number Error\n";
         return 1;
     }
@@ -79,71 +81,111 @@ int main(int argc, char **argv) {
     sigaction(SIGQUIT, &sigIntHandler, NULL);
 #endif
 
-    int thread_num = atoi(argv[1]);
-    char *url = argv[2];
-    char *target_file_path = argv[3];
+    char *url = argv[1];
+    char *target_file_path = argv[2];
     char *md5 = nullptr;
-    bool save_slice_to_tmp_dir = 0;
 
+    if (argc >= 4)
+        efd.SetThreadNum(atoi(argv[3]));
     if(argc >= 5)
         md5 = argv[4];
     if (argc >= 6)
-        save_slice_to_tmp_dir = (atoi(argv[5]) == 1);
+        efd.SetEnableSaveSliceFileToTempDir((atoi(argv[5]) == 1));
 
+    int exit_code = 0;
     EasyFileDownload::GlobalInit();
 
-    efd.Start(save_slice_to_tmp_dir,
-              thread_num,
-              url,
+    efd.Start(url,
               target_file_path,
     [](long total, long downloaded) {
-        PrintConsole((double)downloaded / (double)total, -1);
+        PrintConsole(total, downloaded, -1);
     }, [](long byte_per_secs) {
-        PrintConsole(-1, byte_per_secs / 1000);
-    }).then([ = ](pplx::task<Result> result) {
+        PrintConsole(-1, -1, byte_per_secs / 1000);
+    }).then([ =, &exit_code](pplx::task<Result> result) {
         std::cout << std::endl << GetResultString(result.get()) << std::endl;
+        exit_code = result.get();
+
         if (result.get() == Result::Successed) {
             if (md5) {
-                if (strcmp(md5, ppx::base::GetFileMd5(target_file_path).c_str()) == 0)
+                if (strcmp(md5, ppx::base::GetFileMd5(target_file_path).c_str()) == 0) {
                     std::cout << "MD5 checksum successful." << std::endl;
-                else
+                } else {
+                    exit_code = -1;
                     std::cout << "MD5 checksum failed." << std::endl;
+                }
             }
         }
     }).wait();
 
     EasyFileDownload::GlobalUnInit();
     std::cout << "Global UnInit." << std::endl;
-    return 0;
+    return exit_code;
 }
 
 
-void PrintConsole(double percentage, long speed) {
-    std::lock_guard<std::mutex> lg(console_mutex);
-
-    static double last_percentage = 0;
-    static long last_speed = 0;
-
-    if(percentage != -1)
-        last_percentage = percentage;
-
-    if(speed != -1)
-        last_speed = speed;
-
+void PrintConsole(long total, long downloaded, long speed) {
     const char *PBSTR =
         "============================================================";
     const int PBWIDTH = 60;
-    int val = (int)(last_percentage * 100);
-    int lpad = (int)(last_percentage * PBWIDTH);
+
+    std::lock_guard<std::mutex> lg(console_mutex);
+
+    static long avaliable_total = -1;
+    static long avaliable_downloaded = -1;
+    static long avaliable_speed = 0;
+
+    if (total > 0)
+        avaliable_total = total;
+
+    if (downloaded > 0)
+        avaliable_downloaded = downloaded;
+
+    double percentage = 0;
+    if (avaliable_total > 0 && avaliable_downloaded >= 0)
+        percentage = (double)avaliable_downloaded / (double)avaliable_total;
+
+    if(speed >= 0)
+        avaliable_speed = speed;
+
+
+    int val = (int)(percentage * 100);
+    int lpad = (int)(percentage * PBWIDTH);
     int rpad = PBWIDTH - lpad;
 
     if (val < 0 || val > 100)
         return;
 
+    std::stringstream ss_buf;
+    if (avaliable_downloaded >= 1073741824)
+        ss_buf << std::fixed << std::setprecision(1) << (double)avaliable_downloaded / 1073741824.f << "G";
+    else if (avaliable_downloaded >= 1048576)
+        ss_buf << std::fixed << std::setprecision(1) << (double)avaliable_downloaded / 1048576 << "M";
+    else if (avaliable_downloaded >= 1024)
+        ss_buf << std::fixed << std::setprecision(1) << (double)avaliable_downloaded / 1024 << "K";
+    else if (avaliable_downloaded == -1)
+        ss_buf << "-";
+    else
+        ss_buf << avaliable_downloaded << "b";
+
+    ss_buf << " / ";
+
+    if (avaliable_total >= 1073741824)
+        ss_buf << std::fixed << std::setprecision(1) << (double)avaliable_total / 1073741824.f << "G";
+    else if (avaliable_total >= 1048576)
+        ss_buf << std::fixed << std::setprecision(1) << (double)avaliable_total / 1048576.f << "M";
+    else if (avaliable_total >= 1024)
+        ss_buf << std::fixed << std::setprecision(1) << (double)avaliable_total / 1024.f << "K";
+    else if (avaliable_total == -1)
+        ss_buf << "-";
+    else
+        ss_buf << avaliable_total << "b";
+
+
+
     if (val == 100 || val == 0) {
-        printf("\r[%.*s%*s] %3d%% %8d kb/s", lpad, PBSTR, rpad, "", val, last_speed);
+        printf("\r[%.*s%*s] %-14s %3d%% %8d kb/s", lpad, PBSTR, rpad, "", ss_buf.str().c_str(), val, avaliable_speed);
     } else {
-        printf("\r[%.*s>%*s] %3d%% %8d kb/s", lpad, PBSTR, rpad - 1, "", val, last_speed);
+        printf("\r[%.*s>%*s] %-14s %3d%% %8d kb/s", lpad, PBSTR, rpad - 1, "", ss_buf.str().c_str(), val,  avaliable_speed);
     }
     fflush(stdout);
 }

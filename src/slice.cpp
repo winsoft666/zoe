@@ -96,7 +96,6 @@ namespace easy_file_download {
         return file_path_;
     }
 
-
     static size_t DownloadWriteCallback(char *buffer, size_t size, size_t nitems, void *outstream) {
         Slice *pThis = (Slice *)outstream;
 
@@ -215,7 +214,7 @@ namespace easy_file_download {
     std::string Slice::GenerateSliceFilePath(size_t index, const std::string &target_file_path) const {
         std::string target_dir;
         if (slice_manager_->IsEnableSaveSliceFileToTmpDir()) {
-#if (defined WIN32 || defined _WIN32)
+#if defined(WIN32) || defined(_WIN32) || defined(__WIN32__) || defined(__NT__)
             char buf[MAX_PATH] = { 0 };
             DWORD ret_val = GetTempPathA(MAX_PATH, buf);
             if (ret_val > 0 && ret_val < MAX_PATH) {

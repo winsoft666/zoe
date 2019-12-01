@@ -13,4 +13,5 @@
 ###############################################################################
 
 add_subdirectory(easy_download_tool)
+add_subdirectory(unit_test)
 

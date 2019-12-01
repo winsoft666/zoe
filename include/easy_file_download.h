@@ -38,16 +38,18 @@
 
 namespace easy_file_download {    
     enum Result {
-        UrlInvalid = 0,
+        Successed = 0,
+        UrlInvalid,
         TargetFilePathInvalid,
         ThreadNumInvalid,
+        NetworkConnTimeoutInvalid,
+        NetworkReadTimeoutInvalid,
         InternalNetworkError,
-        CombineSliceFailed,
+        GenerateTargetFileFailed,
         CleanupTmpFileFailed,
         AlreadyDownloading,
         Broken,
         BrokenAndUpdateIndexFailed,
-        Successed
     };
     EFD_API const char* GetResultString(int enumVal);
 
@@ -62,22 +64,32 @@ namespace easy_file_download {
         static void GlobalInit();
         static void GlobalUnInit();
 
+
+        // Common Option, also can be set through Start(...) function
+        //
         void SetEnableSaveSliceFileToTempDir(bool enabled);
+        bool IsEnableSaveSliceFileToTempDir() const;
+
         void SetThreadNum(size_t thread_num);
-        void SetUrl(const std::string &url);
-        void SetTargetFilePath(const std::string &file_path);
-        void SetProgressFunctor(ProgressFunctor progress_functor);
-        void SetRealtimeSpeedFunctor(RealtimeSpeedFunctor realtime_speed_functor);
+        size_t GetThreadNum() const;
+
+        std::string GetUrl() const;
+        std::string GetTargetFilePath() const;
+
+        // Advance Option
+        //
+        void SetNetworkConnectionTimeout(size_t milliseconds); // default is 3000ms
+        size_t GetNetworkConnectionTimeout() const;
+
+        void SetNetworkReadTimeout(size_t milliseconds); // default is 3000ms
+        size_t GetNetworkReadTimeout() const;
 
         pplx::task<Result> Start(
-            bool enable_save_slice_to_tmp,
-            size_t thread_num,
             const std::string url,
             const std::string &target_file_path,
             ProgressFunctor progress_functor,
             RealtimeSpeedFunctor realtime_speed_functor);
 
-        pplx::task<Result> Start();
 
         void Stop(bool wait = false);
 

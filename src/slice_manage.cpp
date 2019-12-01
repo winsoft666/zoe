@@ -27,6 +27,10 @@ namespace easy_file_download {
 
     SliceManage::SliceManage() :
         multi_(nullptr)
+        , enable_save_slice_to_tmp_dir_(false)
+        , thread_num_(0)
+        , network_conn_timeout_(0)
+        , network_read_timeout_(0)
         , stop_(false)
         , file_size_(-1) {
     }
@@ -43,11 +47,24 @@ namespace easy_file_download {
         return target_file_path_;
     }
 
+    Result SliceManage::SetNetworkTimeout(size_t conn_timeout_ms, size_t read_timeout_ms) {
+        if (conn_timeout_ms == 0)
+            return Result::NetworkConnTimeoutInvalid;
+
+        if (read_timeout_ms == 0)
+            return Result::NetworkReadTimeoutInvalid;
+
+        network_conn_timeout_ = conn_timeout_ms;
+        network_read_timeout_ = read_timeout_ms;
+
+        return Result::Successed;
+    }
+
     Result SliceManage::Start(
         const std::string &url,
-        const std::string &target_file_path, 
+        const std::string &target_file_path,
         bool enable_save_slice_to_tmp_dir,
-        size_t thread_num, 
+        size_t thread_num,
         ProgressFunctor progress_functor,
         RealtimeSpeedFunctor realtime_speed_functor) {
         if (url.length() == 0)
@@ -55,6 +72,12 @@ namespace easy_file_download {
 
         if (thread_num == 0 || thread_num > 80)
             return Result::ThreadNumInvalid;
+
+        if (network_conn_timeout_ == 0)
+            return Result::NetworkConnTimeoutInvalid;
+
+        if (network_read_timeout_ == 0)
+            return Result::NetworkReadTimeoutInvalid;
 
         // be sure previous thread has exit
         if (progress_notify_thread_.valid())
@@ -94,19 +117,24 @@ namespace easy_file_download {
                     long end = (i == thread_num - 1) ? file_size_ - 1 : ((i + 1) * each_slice_size) - 1;
                     std::shared_ptr<Slice> slice = std::make_shared<Slice>(i, shared_from_this());
                     slice->Init("",
-                        i * each_slice_size,
-                        end,
-                        0);
+                                i * each_slice_size,
+                                end,
+                                0);
                     slices_.push_back(slice);
                 }
             } else if (file_size_ == 0) {
+                FILE *f = fopen(target_file_path_.c_str(), "wb");
+                if (!f)
+                    return GenerateTargetFileFailed;
+                fclose(f);
+                return Successed;
             } else {
                 thread_num = 1;
                 std::shared_ptr<Slice> slice = std::make_shared<Slice>(0, shared_from_this());
                 slice->Init("",
-                    0,
-                    -1,
-                    0);
+                            0,
+                            -1,
+                            0);
                 slices_.push_back(slice);
             }
         }
@@ -224,8 +252,8 @@ namespace easy_file_download {
 
             int rc;
             if (maxfd == -1) {
-#ifdef _WIN32
-                Sleep(100);
+#if defined(WIN32) || defined(_WIN32) || defined(__WIN32__) || defined(__NT__)
+                std::this_thread::sleep_for(std::chrono::milliseconds(100));
                 rc = 0;
 #else
                 /* Portable sleep for platforms other than Windows. */
@@ -237,15 +265,15 @@ namespace easy_file_download {
             }
 
             switch (rc) {
-            case -1:
-                break; /* select error */
-            case 0: /* timeout */
-            default: /* action */
-                curl_multi_perform(multi_, &still_running);
-                break;
+                case -1:
+                    break; /* select error */
+                case 0: /* timeout */
+                default: /* action */
+                    curl_multi_perform(multi_, &still_running);
+                    break;
             }
 
-#if (defined _WIN32 || defined WIN32)
+#if defined(WIN32) || defined(_WIN32) || defined(__WIN32__) || defined(__NT__)
             std::this_thread::sleep_for(std::chrono::milliseconds(50));
 #else
             struct timeval wait = { 0, 10 * 1000 }; /* 100ms */
@@ -255,7 +283,7 @@ namespace easy_file_download {
 
         /* See how the transfers went */
         size_t done_thread = 0;
-        CURLMsg *msg;  /* for picking up messages with the transfer status */
+        CURLMsg *msg = NULL;
         int msgsInQueue;
         while ((msg = curl_multi_info_read(multi_, &msgsInQueue)) != NULL) {
             if (msg->msg == CURLMSG_DONE) {
@@ -269,16 +297,16 @@ namespace easy_file_download {
         for (auto slice : slices_)
             total_capacity += slice->capacity();
 
-        if (done_thread != thread_num_ && total_capacity != file_size_) {
+        if (done_thread != thread_num_ || (file_size_ > 0 && total_capacity != file_size_)) {
             Result ret = UpdateIndexFile() ? Result::Broken : Result::BrokenAndUpdateIndexFailed;
-            std::cout << std::endl << "Dump Slices:" << std::endl << DumpSlicesInfo() << std::endl;
+            std::cout << std::endl << "Broken Dump Slices:" << std::endl << DumpSlicesInfo() << std::endl;
             Destory();
             return ret;
         }
 
         if (!CombineSlice()) {
             Destory();
-            return Result::CombineSliceFailed;
+            return Result::GenerateTargetFileFailed;
         }
 
         if (!CleanupTmpFiles()) {
@@ -287,7 +315,7 @@ namespace easy_file_download {
         }
 
         if (progress_functor_)
-            progress_functor_(file_size_, file_size_);
+            progress_functor_(file_size_, total_capacity);
 
         {
             std::lock_guard<std::mutex> lg(stop_mutex_);
@@ -340,7 +368,7 @@ namespace easy_file_download {
         ScopedCurl scoped_curl;
         CURL *curl = scoped_curl.GetCurl();
 
-        curl_easy_setopt(curl, CURLOPT_VERBOSE, 1);
+        curl_easy_setopt(curl, CURLOPT_VERBOSE, 0);
         curl_easy_setopt(curl, CURLOPT_NOSIGNAL, 1L);
         curl_easy_setopt(curl, CURLOPT_URL, url_.c_str());
         curl_easy_setopt(curl, CURLOPT_HEADER, 1);
@@ -348,8 +376,8 @@ namespace easy_file_download {
         curl_easy_setopt(curl, CURLOPT_FOLLOWLOCATION, 1);
         //curl_easy_setopt(curl, CURLOPT_SSL_VERIFYHOST, ca_path_.length() > 0);
         //curl_easy_setopt(curl, CURLOPT_SSL_VERIFYPEER, ca_path_.length() > 0);
-        curl_easy_setopt(curl, CURLOPT_CONNECTTIMEOUT, 30); // Time-out connect operations after this amount of seconds
-        curl_easy_setopt(curl, CURLOPT_TIMEOUT, 20); // Time-out the read operation after this amount of seconds
+        curl_easy_setopt(curl, CURLOPT_CONNECTTIMEOUT_MS, network_conn_timeout_); // Time-out connect operations after this amount of seconds
+        curl_easy_setopt(curl, CURLOPT_TIMEOUT_MS, network_read_timeout_); // Time-out the read operation after this amount of seconds
 
         //if (ca_path_.length() > 0)
         //    curl_easy_setopt(curl, CURLOPT_CAINFO, ca_path_.c_str());
@@ -366,11 +394,11 @@ namespace easy_file_download {
         ret_code = curl_easy_getinfo(curl, CURLINFO_RESPONSE_CODE, &http_code);
 
         if (ret_code == CURLE_OK) {
-            if (http_code != 200 && 
-                // A 350 response code is sent by the server in response to a file-related command that
-                // requires further commands in order for the operation to be completed
-                http_code != 350
-                ) {
+            if (http_code != 200 &&
+                    // A 350 response code is sent by the server in response to a file-related command that
+                    // requires further commands in order for the operation to be completed
+                    http_code != 350
+               ) {
                 return -1;
             }
         } else {
@@ -403,7 +431,7 @@ namespace easy_file_download {
                 return false;
             for (auto &it : j["slices"]) {
                 std::shared_ptr<Slice> slice = std::make_shared<Slice>(9999, shared_from_this());
-                slice->Init( 
+                slice->Init(
                     it["path"].get<std::string>(), it["begin"].get<long>(), it["end"].get<long>(), it["capacity"].get<long>());
                 slices_.push_back(slice);
             }

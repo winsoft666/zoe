@@ -36,11 +36,13 @@ namespace easy_file_download {
         std::string indexFilePath() const;
         std::string targetFilePath() const;
 
+        Result SetNetworkTimeout(size_t conn_timeout_ms, size_t read_timeout_ms);
+
         Result Start(
-            const std::string &url, 
-            const std::string &target_file_path, 
+            const std::string &url,
+            const std::string &target_file_path,
             bool enable_save_slice_to_tmp_dir,
-            size_t thread_num, 
+            size_t thread_num,
             ProgressFunctor progress_functor,
             RealtimeSpeedFunctor realtime_speed_functor);
         void Stop();
@@ -65,7 +67,9 @@ namespace easy_file_download {
         std::string target_file_path_;
         std::string index_file_path_;
         bool enable_save_slice_to_tmp_dir_;
-        int thread_num_;
+        size_t thread_num_;
+        size_t network_conn_timeout_;
+        size_t network_read_timeout_;
         long file_size_;
         CURLM *multi_;
         ProgressFunctor progress_functor_;

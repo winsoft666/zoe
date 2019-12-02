@@ -35,61 +35,61 @@ void DoTest(std::vector<TestData> test_datas, int thread_num, bool enable_save_s
     EasyFileDownload::GlobalUnInit();
 }
 
-TEST(MultiThreadTest, Http_DefaultThreadNum_SliceToTmp_Flase) {
+TEST(MultiThreadHttpTest, Http_DefaultThreadNum_SliceToTmp_Flase) {
     DoTest(http_test_datas, -1, false);
 }
 
-TEST(MultiThreadTest, Http_ThreadNum_2_SliceToTmp_Flase) {
+TEST(MultiThreadHttpTest, Http_ThreadNum_2_SliceToTmp_Flase) {
     DoTest(http_test_datas, 2, false);
 }
 
-TEST(MultiThreadTest, Http_ThreadNum_3_SliceToTmp_Flase) {
+TEST(MultiThreadHttpTest, Http_ThreadNum_3_SliceToTmp_Flase) {
     DoTest(http_test_datas, 3, false);
 }
 
-TEST(MultiThreadTest, Http_ThreadNum_20_SliceToTmp_Flase) {
+TEST(MultiThreadHttpTest, Http_ThreadNum_20_SliceToTmp_Flase) {
     DoTest(http_test_datas, 20, false);
 }
 
-TEST(MultiThreadTest, Http_DefaultThreadNum_SliceToTmp_True) {
+TEST(MultiThreadHttpTest, Http_DefaultThreadNum_SliceToTmp_True) {
     DoTest(http_test_datas, -1, true);
 }
 
-TEST(MultiThreadTest, Http_ThreadNum_2_SliceToTmp_True) {
+TEST(MultiThreadHttpTest, Http_ThreadNum_2_SliceToTmp_True) {
     DoTest(http_test_datas, 2, true);
 }
 
-TEST(MultiThreadTest, Http_ThreadNum_3_SliceToTmp_True) {
+TEST(MultiThreadHttpTest, Http_ThreadNum_3_SliceToTmp_True) {
     DoTest(http_test_datas, 3, true);
 }
 
 
 // FTP
 
-TEST(MultiThreadTest, FTP_DefaultThreadNum_SliceToTmp_Flase) {
+TEST(MultiThreadFTPTest, FTP_DefaultThreadNum_SliceToTmp_Flase) {
     DoTest(ftp_test_datas, -1, false);
 }
 
-TEST(MultiThreadTest, FTP_ThreadNum_2_SliceToTmp_Flase) {
+TEST(MultiThreadFTPTest, FTP_ThreadNum_2_SliceToTmp_Flase) {
     DoTest(ftp_test_datas, 2, false);
 }
 
-TEST(MultiThreadTest, FTP_ThreadNum_3_SliceToTmp_Flase) {
+TEST(MultiThreadFTPTest, FTP_ThreadNum_3_SliceToTmp_Flase) {
     DoTest(ftp_test_datas, 3, false);
 }
 
-TEST(MultiThreadTest, FTP_ThreadNum_20_SliceToTmp_Flase) {
+TEST(MultiThreadFTPTest, FTP_ThreadNum_20_SliceToTmp_Flase) {
     DoTest(ftp_test_datas, 20, false);
 }
 
-TEST(MultiThreadTest, FTP_DefaultThreadNum_SliceToTmp_True) {
+TEST(MultiThreadFTPTest, FTP_DefaultThreadNum_SliceToTmp_True) {
     DoTest(ftp_test_datas, -1, true);
 }
 
-TEST(MultiThreadTest, FTP_ThreadNum_2_SliceToTmp_True) {
+TEST(MultiThreadFTPTest, FTP_ThreadNum_2_SliceToTmp_True) {
     DoTest(ftp_test_datas, 2, true);
 }
 
-TEST(MultiThreadTest, FTP_ThreadNum_3_SliceToTmp_True) {
+TEST(MultiThreadFTPTest, FTP_ThreadNum_3_SliceToTmp_True) {
     DoTest(ftp_test_datas, 3, true);
 }

@@ -23,15 +23,18 @@
 
 using json = nlohmann::json;
 
+#define INDEX_FILE_SIGN_STRING "EASY-FILE-DOWNLOAD"
+
 namespace easy_file_download {
 
     SliceManage::SliceManage() :
         multi_(nullptr)
         , enable_save_slice_to_tmp_dir_(false)
-        , thread_num_(0)
-        , network_conn_timeout_(0)
-        , network_read_timeout_(0)
-        , stop_(false)
+        , thread_num_(1)
+        , slice_cache_expired_seconds_(-1)
+        , network_conn_timeout_(3000)
+        , network_read_timeout_(3000)
+        , stop_(true)
         , file_size_(-1) {
     }
 
@@ -47,37 +50,71 @@ namespace easy_file_download {
         return target_file_path_;
     }
 
-    Result SliceManage::SetNetworkTimeout(size_t conn_timeout_ms, size_t read_timeout_ms) {
+    Result SliceManage::SetNetworkConnectionTimeout(size_t conn_timeout_ms) {
+        if (!stop_)
+            return AlreadyDownloading;
         if (conn_timeout_ms == 0)
-            return Result::NetworkConnTimeoutInvalid;
-
-        if (read_timeout_ms == 0)
-            return Result::NetworkReadTimeoutInvalid;
+            return NetworkConnTimeoutInvalid;
 
         network_conn_timeout_ = conn_timeout_ms;
-        network_read_timeout_ = read_timeout_ms;
+        return Successed;
+    }
 
-        return Result::Successed;
+    size_t SliceManage::GetNetworkConnectionTimeout() const {
+        return network_conn_timeout_;
+    }
+
+    Result SliceManage::SetNetworkReadTimeout(size_t read_timeout_ms) {
+        if (!stop_)
+            return AlreadyDownloading;
+        if (read_timeout_ms == 0)
+            return NetworkReadTimeoutInvalid;
+
+        network_read_timeout_ = read_timeout_ms;
+        return Successed;
+    }
+
+    size_t SliceManage::GetNetworkReadTimeout() const {
+        return network_read_timeout_;
+    }
+
+    void SliceManage::SetSliceCacheExpiredTime(int seconds) {
+        slice_cache_expired_seconds_ = seconds;
+    }
+
+    int SliceManage::GetSliceCacheExpiredTime() const {
+        return slice_cache_expired_seconds_;
+    }
+
+    Result SliceManage::SetThreadNum(size_t thread_num) {
+        if (!stop_)
+            return AlreadyDownloading;
+        if (thread_num == 0 || thread_num > 100)
+            return ThreadNumInvalid;
+
+        thread_num_ = thread_num;
+        return Successed;
+    }
+
+    size_t SliceManage::GetThreadNum() const {
+        return thread_num_;
+    }
+
+    void SliceManage::SetEnableSaveSliceFileToTempDir(bool enabled) {
+        enable_save_slice_to_tmp_dir_ = enabled;
+    }
+
+    bool SliceManage::IsEnableSaveSliceFileToTempDir() const {
+        return enable_save_slice_to_tmp_dir_;
     }
 
     Result SliceManage::Start(
         const std::string &url,
         const std::string &target_file_path,
-        bool enable_save_slice_to_tmp_dir,
-        size_t thread_num,
         ProgressFunctor progress_functor,
         RealtimeSpeedFunctor realtime_speed_functor) {
         if (url.length() == 0)
             return Result::UrlInvalid;
-
-        if (thread_num == 0 || thread_num > 80)
-            return Result::ThreadNumInvalid;
-
-        if (network_conn_timeout_ == 0)
-            return Result::NetworkConnTimeoutInvalid;
-
-        if (network_read_timeout_ == 0)
-            return Result::NetworkReadTimeoutInvalid;
 
         // be sure previous thread has exit
         if (progress_notify_thread_.valid())
@@ -91,7 +128,6 @@ namespace easy_file_download {
         progress_functor_ = progress_functor;
         speed_functor_ = realtime_speed_functor;
         target_file_path_ = target_file_path;
-        enable_save_slice_to_tmp_dir_ = enable_save_slice_to_tmp_dir;
         index_file_path_ = GenerateIndexFilePath(target_file_path);
 
         bool valid_resume = false;
@@ -111,10 +147,10 @@ namespace easy_file_download {
             slices_.clear();
 
             if (file_size_ > 0) {
-                thread_num = std::min(file_size_, (long)thread_num);
-                long each_slice_size = file_size_ / thread_num;
-                for (size_t i = 0; i < thread_num; i++) {
-                    long end = (i == thread_num - 1) ? file_size_ - 1 : ((i + 1) * each_slice_size) - 1;
+                thread_num_ = std::min(file_size_, (long)thread_num_);
+                long each_slice_size = file_size_ / thread_num_;
+                for (size_t i = 0; i < thread_num_; i++) {
+                    long end = (i == thread_num_ - 1) ? file_size_ - 1 : ((i + 1) * each_slice_size) - 1;
                     std::shared_ptr<Slice> slice = std::make_shared<Slice>(i, shared_from_this());
                     slice->Init("",
                                 i * each_slice_size,
@@ -129,7 +165,7 @@ namespace easy_file_download {
                 fclose(f);
                 return Successed;
             } else {
-                thread_num = 1;
+                thread_num_ = 1;
                 std::shared_ptr<Slice> slice = std::make_shared<Slice>(0, shared_from_this());
                 slice->Init("",
                             0,
@@ -140,8 +176,6 @@ namespace easy_file_download {
         }
 
         std::cout << std::endl << "Dump Slices:" << std::endl << DumpSlicesInfo() << std::endl;
-
-        thread_num_ = thread_num;
 
         multi_ = curl_multi_init();
         if (!multi_) {
@@ -210,6 +244,7 @@ namespace easy_file_download {
 
         int still_running = 0;
         CURLMcode m_code = curl_multi_perform(multi_, &still_running);
+        size_t thread_num_copy = thread_num_;
 
         do {
             {
@@ -297,32 +332,40 @@ namespace easy_file_download {
         for (auto slice : slices_)
             total_capacity += slice->capacity();
 
-        if (done_thread != thread_num_ || (file_size_ > 0 && total_capacity != file_size_)) {
-            Result ret = UpdateIndexFile() ? Result::Broken : Result::BrokenAndUpdateIndexFailed;
-            std::cout << std::endl << "Broken Dump Slices:" << std::endl << DumpSlicesInfo() << std::endl;
-            Destory();
-            return ret;
-        }
-
-        if (!CombineSlice()) {
-            Destory();
-            return Result::GenerateTargetFileFailed;
-        }
-
-        if (!CleanupTmpFiles()) {
-            Destory();
-            return Result::CleanupTmpFileFailed;
-        }
-
-        if (progress_functor_)
-            progress_functor_(file_size_, total_capacity);
-
+        Result ret;
+        do 
         {
-            std::lock_guard<std::mutex> lg(stop_mutex_);
-            stop_ = true;
-        }
+            if (done_thread == thread_num_copy) {
+                if (file_size_ == -1 || (file_size_ > 0 && total_capacity == file_size_)) {
+                    if (!CombineSlice()) {
+                        ret = GenerateTargetFileFailed;
+                        break;
+                    }
 
-        return Result::Successed;
+                    if (!CleanupTmpFiles()) {
+                        ret = CleanupTmpFileFailed;
+                        break;
+                    }
+
+                    if (progress_functor_)
+                        progress_functor_(file_size_, total_capacity);
+
+                    ret = Successed;
+                    break;
+                }
+            }
+
+            if (stop_) {
+                ret = UpdateIndexFile() ? Canceled : CanceledAndUpdateIndexFailed;
+                break;
+            }
+
+            ret = UpdateIndexFile() ? Failed : FailedAndUpdateIndexFailed;
+        } while (false);
+
+        Destory();
+
+        return ret;
     }
 
     void SliceManage::Stop() {
@@ -340,10 +383,6 @@ namespace easy_file_download {
 
     std::string SliceManage::GetIndexFilePath() const {
         return index_file_path_;
-    }
-
-    int SliceManage::GetThreadNum() const {
-        return thread_num_;
     }
 
     std::string SliceManage::GetUrl() const {
@@ -374,8 +413,8 @@ namespace easy_file_download {
         curl_easy_setopt(curl, CURLOPT_HEADER, 1);
         curl_easy_setopt(curl, CURLOPT_NOBODY, 1);
         curl_easy_setopt(curl, CURLOPT_FOLLOWLOCATION, 1);
-        //curl_easy_setopt(curl, CURLOPT_SSL_VERIFYHOST, ca_path_.length() > 0);
-        //curl_easy_setopt(curl, CURLOPT_SSL_VERIFYPEER, ca_path_.length() > 0);
+        curl_easy_setopt(curl, CURLOPT_SSL_VERIFYHOST, 0);
+        curl_easy_setopt(curl, CURLOPT_SSL_VERIFYPEER, 0);
         curl_easy_setopt(curl, CURLOPT_CONNECTTIMEOUT_MS, network_conn_timeout_); // Time-out connect operations after this amount of seconds
         curl_easy_setopt(curl, CURLOPT_TIMEOUT_MS, network_read_timeout_); // Time-out the read operation after this amount of seconds
 
@@ -424,8 +463,20 @@ namespace easy_file_download {
         fclose(file);
 
         try {
-            std::string str_json(file_content.data());
+            std::string str_sign(file_content.data(), strlen(INDEX_FILE_SIGN_STRING));
+            if (str_sign != INDEX_FILE_SIGN_STRING)
+                return false;
+
+            std::string str_json(file_content.data() + 18);
             json j = json::parse(str_json);
+            
+            time_t last_update_time = j["update_time"].get<time_t>();
+            if (slice_cache_expired_seconds_ >= 0) {
+                time_t now = time(nullptr);
+                if (now - last_update_time > slice_cache_expired_seconds_)
+                    return false;
+            }
+
             file_size_ = j["file_size"];
             if (j["url"].get<std::string>() != url)
                 return false;
@@ -484,6 +535,7 @@ namespace easy_file_download {
         if (!f)
             return false;
         json j;
+        j["update_time"] = time(nullptr);
         j["file_size"] = file_size_;
         j["url"] = url_;
         json s;
@@ -492,6 +544,7 @@ namespace easy_file_download {
         }
         j["slices"] = s;
         std::string str_json = j.dump();
+        fwrite(INDEX_FILE_SIGN_STRING, 1, strlen(INDEX_FILE_SIGN_STRING), f);
         fwrite(str_json.c_str(), 1, str_json.size(), f);
         fclose(f);
 

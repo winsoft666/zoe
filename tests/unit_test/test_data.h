@@ -12,15 +12,15 @@ typedef struct _TestData {
 static std::vector<TestData> http_test_datas = {
 #if defined(WIN32) || defined(_WIN32) || defined(__WIN32__) || defined(__NT__)
     {
-        "http://dl.softmgr.qq.com/original/Input/QQWubi_Setup_2.2.344.400.exe",
-        "D:\\QQWubi_Setup_2.2.344.400.exe",
-        "e635d2c510da6f17f3218683b4162b56",
+        "https://download.skype.com/s4l/download/win/Skype-8.54.0.91.exe",
+        "D:\\Skype-8.54.0.91.exe",
+        "bf593256fd9faafe68a507a8151b1f29"
     }
 #else
     {
-        "http://dl.softmgr.qq.com/original/Input/QQWubi_Setup_2.2.344.400.exe",
-        "/root/QQWubi_Setup_2.2.344.400.exe",
-        "e635d2c510da6f17f3218683b4162b56",
+        "https://download.skype.com/s4l/download/win/Skype-8.54.0.91.exe",
+        "D:\\Skype-8.54.0.91.exe",
+        "bf593256fd9faafe68a507a8151b1f29"
     }
 #endif
 };

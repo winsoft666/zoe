@@ -18,7 +18,7 @@ void DoBreakpointTest(std::vector<TestData> test_datas, int thread_num, bool ena
                 nullptr,
                 nullptr)
                 .then([=](pplx::task<Result> result) {
-                EXPECT_TRUE(result.get() == Successed || result.get() == Broken);
+                EXPECT_TRUE(result.get() == Successed || result.get() == Canceled);
                 if (result.get() == Result::Successed) {
                     if (test_data.md5.length()) {
                         EXPECT_TRUE(test_data.md5 == ppx::base::GetFileMd5(test_data.target_file_path));
@@ -51,53 +51,53 @@ void DoBreakpointTest(std::vector<TestData> test_datas, int thread_num, bool ena
 }
 
 
-TEST(BreakPointTest, Http_ThreadNum_1_SliceToTmp_True_Breakpoint) {
+TEST(BreakPointHttpTest, Http_ThreadNum_1_SliceToTmp_True_Breakpoint) {
     DoBreakpointTest(http_test_datas, 1, true);
 }
 
-TEST(BreakPointTest, Http_ThreadNum_3_SliceToTmp_True_Breakpoint) {
+TEST(BreakPointHttpTest, Http_ThreadNum_3_SliceToTmp_True_Breakpoint) {
     DoBreakpointTest(http_test_datas, 3, true);
 }
 
-TEST(BreakPointTest, Http_ThreadNum_10_SliceToTmp_True_Breakpoint) {
+TEST(BreakPointHttpTest, Http_ThreadNum_10_SliceToTmp_True_Breakpoint) {
     DoBreakpointTest(http_test_datas, 10, true);
 }
 
-TEST(BreakPointTest, Http_ThreadNum_1_SliceToTmp_False_Breakpoint) {
+TEST(BreakPointHttpTest, Http_ThreadNum_1_SliceToTmp_False_Breakpoint) {
     DoBreakpointTest(http_test_datas, 1, false);
 }
 
-TEST(BreakPointTest, Http_ThreadNum_3_SliceToTmp_False_Breakpoint) {
+TEST(BreakPointHttpTest, Http_ThreadNum_3_SliceToTmp_False_Breakpoint) {
     DoBreakpointTest(http_test_datas, 3, false);
 }
 
-TEST(BreakPointTest, Http_ThreadNum_10_SliceToTmp_False_Breakpoint) {
+TEST(BreakPointHttpTest, Http_ThreadNum_10_SliceToTmp_False_Breakpoint) {
     DoBreakpointTest(http_test_datas, 10, false);
 }
 
 
 // FTP
 
-TEST(BreakPointTest, FTP_ThreadNum_1_SliceToTmp_True_Breakpoint) {
+TEST(BreakPointFTPTest, FTP_ThreadNum_1_SliceToTmp_True_Breakpoint) {
     DoBreakpointTest(ftp_test_datas, 1, true);
 }
 
-TEST(BreakPointTest, FTP_ThreadNum_3_SliceToTmp_True_Breakpoint) {
+TEST(BreakPointFTPTest, FTP_ThreadNum_3_SliceToTmp_True_Breakpoint) {
     DoBreakpointTest(ftp_test_datas, 3, true);
 }
 
-TEST(BreakPointTest, FTP_ThreadNum_10_SliceToTmp_True_Breakpoint) {
+TEST(BreakPointFTPTest, FTP_ThreadNum_10_SliceToTmp_True_Breakpoint) {
     DoBreakpointTest(ftp_test_datas, 10, true);
 }
 
-TEST(BreakPointTest, FTP_ThreadNum_1_SliceToTmp_False_Breakpoint) {
+TEST(BreakPointFTPTest, FTP_ThreadNum_1_SliceToTmp_False_Breakpoint) {
     DoBreakpointTest(ftp_test_datas, 1, false);
 }
 
-TEST(BreakPointTest, FTP_ThreadNum_3_SliceToTmp_False_Breakpoint) {
+TEST(BreakPointFTPTest, FTP_ThreadNum_3_SliceToTmp_False_Breakpoint) {
     DoBreakpointTest(ftp_test_datas, 3, false);
 }
 
-TEST(BreakPointTest, FTP_ThreadNum_10_SliceToTmp_False_Breakpoint) {
+TEST(BreakPointFTPTest, FTP_ThreadNum_10_SliceToTmp_False_Breakpoint) {
     DoBreakpointTest(ftp_test_datas, 10, false);
 }

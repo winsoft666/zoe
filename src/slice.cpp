@@ -123,8 +123,8 @@ namespace easy_file_download {
         curl_easy_setopt(curl_, CURLOPT_URL, slice_manager_->GetUrl().c_str());
         curl_easy_setopt(curl_, CURLOPT_NOSIGNAL, 1L);
         curl_easy_setopt(curl_, CURLOPT_FOLLOWLOCATION, 1);
-        //curl_easy_setopt(curl_, CURLOPT_SSL_VERIFYHOST, ca_path_.length() > 0);
-        //curl_easy_setopt(curl_, CURLOPT_SSL_VERIFYPEER, ca_path_.length() > 0);
+        curl_easy_setopt(curl_, CURLOPT_SSL_VERIFYHOST, 0);
+        curl_easy_setopt(curl_, CURLOPT_SSL_VERIFYPEER, 0);
         //if (ca_path_.length() > 0)
         //    curl_easy_setopt(curl_, CURLOPT_CAINFO, ca_path_.c_str());
         curl_easy_setopt(curl_, CURLOPT_LOW_SPEED_LIMIT, 10L);

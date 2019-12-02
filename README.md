@@ -56,7 +56,7 @@ make
 `easy_download_tool` is command line download tool based on `EasyFileDownload` library. Usage:
 
 ```
-easy_download_tool URL TargetFilePath [ThreadNum] [MD5] [EnableSaveSliceToTmp]
+easy_download_tool URL TargetFilePath [ThreadNum] [MD5] [EnableSaveSliceToTmp] [SliceCacheExpiredSeconds]
 ```
 
 - URL: Download URL.
@@ -64,3 +64,4 @@ easy_download_tool URL TargetFilePath [ThreadNum] [MD5] [EnableSaveSliceToTmp]
 - ThreadNum: thread number, optional, default is `1`.
 - MD5: target file md5, optional, if this value isn't empty, tools will check file md5 after download finished.
 - EnableSaveSliceToTmp: 0 or 1, optional, whether save slice file to system temp directory or not, Windows system is the path returned by `GetTempPath` API, Linux is `/var/tmp/`.
+- SliceCacheExpiredSeconds: seconds, optional, slice cache file expired after these senconds.

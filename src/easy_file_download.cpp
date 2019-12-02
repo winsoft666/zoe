@@ -30,26 +30,21 @@ namespace easy_file_download {
             "GenerateTargetFileFailed",
             "CleanupTmpFileFailed",
             "AlreadyDownloading",
-            "Broken",
-            "BrokenAndUpdateIndexFailed",
+            "Canceled",
+            "CanceledAndUpdateIndexFailed",
+            "Failed",
+            "FailedAndUpdateIndexFailed"
         };
         return EnumStrings[enumVal];
     }
 
     class EasyFileDownload::EasyFileDownloadImpl {
       public:
-        EasyFileDownloadImpl() :
-            thread_num(1)
-            , network_conn_timeout(3000)
-            , network_read_timeout(3000) {
+        EasyFileDownloadImpl() {
 
         }
 
       public:
-        bool enable_save_slice_file_to_tmp_dir;
-        size_t thread_num;
-        size_t network_conn_timeout;
-        size_t network_read_timeout;
         std::shared_ptr<SliceManage> slice_manager;
         pplx::task<Result> result;
     };
@@ -76,15 +71,15 @@ namespace easy_file_download {
     }
 
     void EasyFileDownload::SetEnableSaveSliceFileToTempDir(bool enabled) {
-        impl_->enable_save_slice_file_to_tmp_dir = enabled;
+        impl_->slice_manager->SetEnableSaveSliceFileToTempDir(enabled);
     }
 
     bool EasyFileDownload::IsEnableSaveSliceFileToTempDir() const {
-        return impl_->enable_save_slice_file_to_tmp_dir;
+        return impl_->slice_manager->IsEnableSaveSliceFileToTempDir();
     }
 
-    void EasyFileDownload::SetThreadNum(size_t thread_num) {
-        impl_->thread_num = thread_num;
+    Result EasyFileDownload::SetThreadNum(size_t thread_num) {
+        return impl_->slice_manager->SetThreadNum(thread_num);
     }
 
     size_t EasyFileDownload::GetThreadNum() const {
@@ -99,20 +94,28 @@ namespace easy_file_download {
         return impl_->slice_manager->GetTargetFilePath();
     }
 
-    void EasyFileDownload::SetNetworkConnectionTimeout(size_t milliseconds) {
-        impl_->network_conn_timeout = milliseconds;
+    Result EasyFileDownload::SetNetworkConnectionTimeout(size_t milliseconds) {
+        return impl_->slice_manager->SetNetworkConnectionTimeout(milliseconds);
     }
 
     size_t EasyFileDownload::GetNetworkConnectionTimeout() const {
-        return impl_->network_conn_timeout;
+        return impl_->slice_manager->GetNetworkConnectionTimeout();
     }
 
-    void EasyFileDownload::SetNetworkReadTimeout(size_t milliseconds) {
-        impl_->network_read_timeout = milliseconds;
+    Result EasyFileDownload::SetNetworkReadTimeout(size_t milliseconds) {
+        return impl_->slice_manager->SetNetworkReadTimeout(milliseconds);
     }
 
     size_t EasyFileDownload::GetNetworkReadTimeout() const {
-        return impl_->network_read_timeout;
+        return impl_->slice_manager->GetNetworkReadTimeout();
+    }
+
+    void EasyFileDownload::SetSliceCacheExpiredTime(int seconds) {
+        return impl_->slice_manager->SetSliceCacheExpiredTime(seconds);
+    }
+
+    int EasyFileDownload::GetSliceCacheExpiredTime() const {
+        return impl_->slice_manager->GetSliceCacheExpiredTime();
     }
 
     pplx::task<Result> EasyFileDownload::Start(
@@ -122,18 +125,12 @@ namespace easy_file_download {
         RealtimeSpeedFunctor realtime_speed_functor
     ) {
         if (impl_->result._GetImpl() && !impl_->result.is_done())
-            return pplx::task_from_result(Result::AlreadyDownloading);
-
-        Result network_res = impl_->slice_manager->SetNetworkTimeout(impl_->network_conn_timeout, impl_->network_read_timeout);
-        if (network_res != Result::Successed)
-            return pplx::task_from_result(network_res);
+            return pplx::task_from_result(AlreadyDownloading);
 
         impl_->result = pplx::task<Result>([ = ]() {
             Result result = impl_->slice_manager->Start(
                                 url,
                                 target_file_path,
-                                impl_->enable_save_slice_file_to_tmp_dir,
-                                impl_->thread_num,
                                 progress_functor,
                                 realtime_speed_functor
                             );

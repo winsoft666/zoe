@@ -48,8 +48,10 @@ namespace easy_file_download {
         GenerateTargetFileFailed,
         CleanupTmpFileFailed,
         AlreadyDownloading,
-        Broken,
-        BrokenAndUpdateIndexFailed,
+        Canceled,
+        CanceledAndUpdateIndexFailed,
+        Failed,
+        FailedAndUpdateIndexFailed,
     };
     EFD_API const char* GetResultString(int enumVal);
 
@@ -64,25 +66,25 @@ namespace easy_file_download {
         static void GlobalInit();
         static void GlobalUnInit();
 
-
-        // Common Option, also can be set through Start(...) function
-        //
         void SetEnableSaveSliceFileToTempDir(bool enabled);
         bool IsEnableSaveSliceFileToTempDir() const;
 
-        void SetThreadNum(size_t thread_num);
+        Result SetThreadNum(size_t thread_num);
         size_t GetThreadNum() const;
 
         std::string GetUrl() const;
         std::string GetTargetFilePath() const;
 
-        // Advance Option
-        //
-        void SetNetworkConnectionTimeout(size_t milliseconds); // default is 3000ms
+        Result SetNetworkConnectionTimeout(size_t milliseconds); // default is 3000ms
         size_t GetNetworkConnectionTimeout() const;
 
-        void SetNetworkReadTimeout(size_t milliseconds); // default is 3000ms
+        Result SetNetworkReadTimeout(size_t milliseconds); // default is 3000ms
         size_t GetNetworkReadTimeout() const;
+
+        void SetSliceCacheExpiredTime(int seconds); // default is -1 = forever
+        int GetSliceCacheExpiredTime() const;
+
+
 
         pplx::task<Result> Start(
             const std::string url,

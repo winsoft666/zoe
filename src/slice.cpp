@@ -116,7 +116,7 @@ namespace easy_file_download {
         return write_size;
     }
 
-    bool Slice::InitCURL(CURLM *multi) {
+    bool Slice::InitCURL(CURLM *multi, size_t max_download_speed /* = 0*/) {
         curl_ = curl_easy_init();
 
         curl_easy_setopt(curl_, CURLOPT_VERBOSE, 0);
@@ -131,8 +131,10 @@ namespace easy_file_download {
         curl_easy_setopt(curl_, CURLOPT_LOW_SPEED_TIME, 30L);
 
         curl_easy_setopt(curl_, CURLOPT_NOPROGRESS, 1);
-        //curl_easy_setopt(curl_, CURLOPT_XFERINFOFUNCTION, DownloadProgressCallback);
-        //curl_easy_setopt(curl_, CURLOPT_XFERINFODATA, this);
+
+        if (max_download_speed > 0) {
+            curl_easy_setopt(curl_, CURLOPT_MAX_RECV_SPEED_LARGE, (curl_off_t)max_download_speed);
+        }
 
         curl_easy_setopt(curl_, CURLOPT_WRITEFUNCTION, DownloadWriteCallback);
         curl_easy_setopt(curl_, CURLOPT_WRITEDATA, this);
@@ -213,7 +215,7 @@ namespace easy_file_download {
 
     std::string Slice::GenerateSliceFilePath(size_t index, const std::string &target_file_path) const {
         std::string target_dir;
-        if (slice_manager_->IsEnableSaveSliceFileToTmpDir()) {
+        if (slice_manager_->IsEnableSaveSliceFileToTempDir()) {
 #if defined(WIN32) || defined(_WIN32) || defined(__WIN32__) || defined(__NT__)
             char buf[MAX_PATH] = { 0 };
             DWORD ret_val = GetTempPathA(MAX_PATH, buf);

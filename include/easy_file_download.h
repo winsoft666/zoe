@@ -81,9 +81,11 @@ namespace easy_file_download {
         Result SetNetworkReadTimeout(size_t milliseconds); // default is 3000ms
         size_t GetNetworkReadTimeout() const;
 
-        void SetSliceCacheExpiredTime(int seconds); // default is -1 = forever
+        void SetSliceCacheExpiredTime(int seconds); // default is -1 = forever, 0 = not use exist slice cache
         int GetSliceCacheExpiredTime() const;
 
+        void SetMaxDownloadSpeed(size_t byte_per_seconds); // default is 0 = not limit
+        size_t GetMaxDownloadSpeed() const;
 
 
         pplx::task<Result> Start(

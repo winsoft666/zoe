@@ -118,6 +118,14 @@ namespace easy_file_download {
         return impl_->slice_manager->GetSliceCacheExpiredTime();
     }
 
+    void EasyFileDownload::SetMaxDownloadSpeed(size_t byte_per_seconds) {
+        impl_->slice_manager->SetMaxDownloadSpeed(byte_per_seconds);
+    }
+
+    size_t EasyFileDownload::GetMaxDownloadSpeed() const {
+        return impl_->slice_manager->GetMaxDownloadSpeed();
+    }
+
     pplx::task<Result> EasyFileDownload::Start(
         const std::string url,
         const std::string &target_file_path,

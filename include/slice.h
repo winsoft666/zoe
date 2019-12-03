@@ -40,7 +40,7 @@ namespace easy_file_download {
         long capacity() const;
         std::string filePath() const;
 
-        bool InitCURL(CURLM *multi);
+        bool InitCURL(CURLM *multi, size_t max_download_speed = 0); // bytes per seconds
         void UnInitCURL(CURLM *multi);
 
         bool AppendSelfToFile(FILE *f);

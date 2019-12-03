@@ -33,9 +33,6 @@ namespace easy_file_download {
         SliceManage();
         virtual ~SliceManage();
 
-        std::string indexFilePath() const;
-        std::string targetFilePath() const;
-
         Result SetNetworkConnectionTimeout(size_t conn_timeout_ms);
         size_t GetNetworkConnectionTimeout() const;
 
@@ -51,6 +48,9 @@ namespace easy_file_download {
         void SetEnableSaveSliceFileToTempDir(bool enabled);
         bool IsEnableSaveSliceFileToTempDir() const;
 
+        void SetMaxDownloadSpeed(size_t byte_per_seconds);
+        size_t GetMaxDownloadSpeed() const;
+
         Result Start(
             const std::string &url,
             const std::string &target_file_path,
@@ -59,7 +59,6 @@ namespace easy_file_download {
         void Stop();
 
 
-        bool IsEnableSaveSliceFileToTmpDir() const;
         std::string GetUrl() const;
         std::string GetTargetFilePath() const;
         std::string GetIndexFilePath() const;
@@ -80,6 +79,7 @@ namespace easy_file_download {
         size_t thread_num_;
         size_t network_conn_timeout_;
         size_t network_read_timeout_;
+        size_t max_download_speed_;
         int slice_cache_expired_seconds_;
         long file_size_;
         CURLM *multi_;
@@ -95,4 +95,4 @@ namespace easy_file_download {
     };
 }
 
-#endif
+#endif // !EFD_SLICE_MANAGE_H__

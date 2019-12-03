@@ -34,20 +34,13 @@ namespace easy_file_download {
         , slice_cache_expired_seconds_(-1)
         , network_conn_timeout_(3000)
         , network_read_timeout_(3000)
+        , max_download_speed_(0)
         , stop_(true)
         , file_size_(-1) {
     }
 
     SliceManage::~SliceManage() {
 
-    }
-
-    std::string SliceManage::indexFilePath() const {
-        return index_file_path_;
-    }
-
-    std::string SliceManage::targetFilePath() const {
-        return target_file_path_;
     }
 
     Result SliceManage::SetNetworkConnectionTimeout(size_t conn_timeout_ms) {
@@ -108,6 +101,14 @@ namespace easy_file_download {
         return enable_save_slice_to_tmp_dir_;
     }
 
+    void SliceManage::SetMaxDownloadSpeed(size_t byte_per_seconds) {
+        max_download_speed_ = byte_per_seconds;
+    }
+
+    size_t SliceManage::GetMaxDownloadSpeed() const {
+        return max_download_speed_;
+    }
+
     Result SliceManage::Start(
         const std::string &url,
         const std::string &target_file_path,
@@ -116,7 +117,7 @@ namespace easy_file_download {
         if (url.length() == 0)
             return Result::UrlInvalid;
 
-        // be sure previous thread has exit
+        // be sure previous threads has exit
         if (progress_notify_thread_.valid())
             progress_notify_thread_.wait();
         if (speed_notify_thread_.valid())
@@ -152,10 +153,7 @@ namespace easy_file_download {
                 for (size_t i = 0; i < thread_num_; i++) {
                     long end = (i == thread_num_ - 1) ? file_size_ - 1 : ((i + 1) * each_slice_size) - 1;
                     std::shared_ptr<Slice> slice = std::make_shared<Slice>(i, shared_from_this());
-                    slice->Init("",
-                                i * each_slice_size,
-                                end,
-                                0);
+                    slice->Init("", i * each_slice_size, end, 0);
                     slices_.push_back(slice);
                 }
             } else if (file_size_ == 0) {
@@ -163,14 +161,12 @@ namespace easy_file_download {
                 if (!f)
                     return GenerateTargetFileFailed;
                 fclose(f);
+                Destory();
                 return Successed;
             } else {
                 thread_num_ = 1;
                 std::shared_ptr<Slice> slice = std::make_shared<Slice>(0, shared_from_this());
-                slice->Init("",
-                            0,
-                            -1,
-                            0);
+                slice->Init("", 0, -1, 0);
                 slices_.push_back(slice);
             }
         }
@@ -184,8 +180,9 @@ namespace easy_file_download {
         }
 
         bool init_curl_ret = true;
+        size_t each_slice_download_speed = max_download_speed_ / slices_.size();
         for (auto &slice : slices_) {
-            if (!slice->InitCURL(multi_)) {
+            if (!slice->InitCURL(multi_, each_slice_download_speed)) {
                 init_curl_ret = false;
                 break;
             }
@@ -285,16 +282,16 @@ namespace easy_file_download {
                 break;
             }
 
+
+            /* On success the value of maxfd is guaranteed to be >= -1. We call
+                select(maxfd + 1, ...); specially in case of (maxfd == -1) there are
+                no fds ready yet so we sleep 100ms, which is the minimum suggested value in the
+                curl_multi_fdset() doc. 
+            */
             int rc;
             if (maxfd == -1) {
-#if defined(WIN32) || defined(_WIN32) || defined(__WIN32__) || defined(__NT__)
                 std::this_thread::sleep_for(std::chrono::milliseconds(100));
                 rc = 0;
-#else
-                /* Portable sleep for platforms other than Windows. */
-                struct timeval wait = { 0, 100 * 1000 }; /* 100ms */
-                rc = select(0, NULL, NULL, NULL, &wait);
-#endif
             } else {
                 rc = select(maxfd + 1, &fdread, &fdwrite, &fdexcep, &timeout);
             }
@@ -308,12 +305,6 @@ namespace easy_file_download {
                     break;
             }
 
-#if defined(WIN32) || defined(_WIN32) || defined(__WIN32__) || defined(__NT__)
-            std::this_thread::sleep_for(std::chrono::milliseconds(50));
-#else
-            struct timeval wait = { 0, 10 * 1000 }; /* 100ms */
-            rc = select(0, NULL, NULL, NULL, &wait);
-#endif
         } while (still_running);
 
         /* See how the transfers went */
@@ -333,8 +324,7 @@ namespace easy_file_download {
             total_capacity += slice->capacity();
 
         Result ret;
-        do 
-        {
+        do {
             if (done_thread == thread_num_copy) {
                 if (file_size_ == -1 || (file_size_ > 0 && total_capacity == file_size_)) {
                     if (!CombineSlice()) {
@@ -371,10 +361,6 @@ namespace easy_file_download {
     void SliceManage::Stop() {
         std::lock_guard<std::mutex> lg(stop_mutex_);
         stop_ = true;
-    }
-
-    bool SliceManage::IsEnableSaveSliceFileToTmpDir() const {
-        return enable_save_slice_to_tmp_dir_;
     }
 
     std::string SliceManage::GetTargetFilePath() const {
@@ -469,7 +455,7 @@ namespace easy_file_download {
 
             std::string str_json(file_content.data() + 18);
             json j = json::parse(str_json);
-            
+
             time_t last_update_time = j["update_time"].get<time_t>();
             if (slice_cache_expired_seconds_ >= 0) {
                 time_t now = time(nullptr);

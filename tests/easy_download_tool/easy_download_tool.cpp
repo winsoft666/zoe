@@ -60,7 +60,7 @@ void ControlSignalHandler(int s) {
 
 //
 // Usage:
-// easy_download_tool URL TargetFilePath [ThreadNum] [MD5] [EnableSaveSliceToTmp] [SliceCacheExpiredSeconds]
+// easy_download_tool URL TargetFilePath [ThreadNum] [MD5] [EnableSaveSliceToTmp] [SliceCacheExpiredSeconds] [MaxSpeed]
 //
 int main(int argc, char **argv) {
     if (argc < 3) {
@@ -93,6 +93,8 @@ int main(int argc, char **argv) {
         efd.SetEnableSaveSliceFileToTempDir((atoi(argv[5]) == 1));
     if (argc >= 7)
         efd.SetSliceCacheExpiredTime(atoi(argv[6]));
+    if (argc >= 8)
+        efd.SetMaxDownloadSpeed(atoi(argv[7]));
 
     int exit_code = 0;
     EasyFileDownload::GlobalInit();

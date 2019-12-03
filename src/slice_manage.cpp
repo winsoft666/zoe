@@ -179,12 +179,21 @@ namespace easy_file_download {
             return Result::InternalNetworkError;
         }
 
-        bool init_curl_ret = true;
-        size_t each_slice_download_speed = max_download_speed_ / slices_.size();
+        size_t uncomplete_slice_num = 0;
         for (auto &slice : slices_) {
-            if (!slice->InitCURL(multi_, each_slice_download_speed)) {
-                init_curl_ret = false;
-                break;
+            if (!slice->IsDownloadCompleted())
+                uncomplete_slice_num++;
+        }
+        thread_num_ = uncomplete_slice_num;
+        size_t each_slice_download_speed = max_download_speed_ / uncomplete_slice_num;
+
+        bool init_curl_ret = true;
+        for (auto &slice : slices_) {
+            if (!slice->IsDownloadCompleted()) {
+                if (!slice->InitCURL(multi_, each_slice_download_speed)) {
+                    init_curl_ret = false;
+                    break;
+                }
             }
         }
 

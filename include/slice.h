@@ -49,6 +49,8 @@ namespace easy_file_download {
 
         FILE* GetFile();
         void IncreaseCapacity(long i);
+
+        bool IsDownloadCompleted();
       protected:
         std::string GenerateSliceFilePath(size_t index, const std::string &target_file_path) const;
 

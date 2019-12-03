@@ -213,6 +213,13 @@ namespace easy_file_download {
         capacity_ += i;
     }
 
+    bool Slice::IsDownloadCompleted() {
+        if (end_ == -1)
+            return false;
+        
+        return ((end_ - begin_ + 1) == capacity_);
+    }
+
     std::string Slice::GenerateSliceFilePath(size_t index, const std::string &target_file_path) const {
         std::string target_dir;
         if (slice_manager_->IsEnableSaveSliceFileToTempDir()) {

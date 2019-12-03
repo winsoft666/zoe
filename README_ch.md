@@ -41,6 +41,38 @@ cmake -DBUILD_SHARED_LIBS=ON -DBUILD_TESTS=ON
 make
 ```
 
+# 使用EasyFileDownload库
+```c++
+#include <iostream>
+#include "easy_file_download.h"
+
+using namespace easy_file_download;
+
+int main(int argc, char **argv) {
+	EasyFileDownload::GlobalInit();
+
+	EasyFileDownload efd;
+	efd.Start("http://xxx.xxx.com/test.exe",
+              "D:\\test.exe",
+    [](long total, long downloaded) {
+        // progress callback
+    }, 
+	[](long byte_per_secs) {
+        // realtime speed callback
+    })
+	.then([=](pplx::task<Result> result) {
+        std::cout << std::endl << GetResultString(result.get()) << std::endl;
+        if (result.get() == Result::Successed) {
+			// Successed
+        }
+    }).wait();
+	
+    EasyFileDownload::GlobalUnInit();
+	
+	return 0;
+}
+```
+
 # easy_download_tool命令行工具
 `easy_download_tool`是一个基于`EasyFileDownload`库开发的命令行下载工具，用法如下：
 ```

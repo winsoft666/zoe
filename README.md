@@ -63,7 +63,7 @@ int main(int argc, char **argv) {
     EasyFileDownload::GlobalInit();
 
     EasyFileDownload efd;
-	efd.Start("http://xxx.xxx.com/test.exe",
+    efd.Start("http://xxx.xxx.com/test.exe",
               "D:\\test.exe",
     [](long total, long downloaded) {
         // progress callback

@@ -15,6 +15,7 @@
 #define EFD_EASY_FILE_DOWNLOAD_H_
 #pragma once
 #include <string>
+#include <memory>
 #include "pplx/pplxtasks.h"
 
 
@@ -99,7 +100,7 @@ namespace easy_file_download {
 
       protected:
         class EasyFileDownloadImpl;
-        EasyFileDownloadImpl *impl_;
+        std::unique_ptr<EasyFileDownloadImpl> impl_;
     };
 }
 

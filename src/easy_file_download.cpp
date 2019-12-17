@@ -49,13 +49,13 @@ namespace easy_file_download {
         pplx::task<Result> result;
     };
 
-    EasyFileDownload::EasyFileDownload() : impl_(new EasyFileDownloadImpl()) {
+    EasyFileDownload::EasyFileDownload() {
+        impl_ = std::make_unique<EasyFileDownloadImpl>();
+
         impl_->slice_manager = std::make_shared<SliceManage>();
     }
 
     EasyFileDownload::~EasyFileDownload() {
-        delete impl_;
-        impl_ = nullptr;
     }
 
     void EasyFileDownload::GlobalInit() {

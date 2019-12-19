@@ -14,6 +14,7 @@ So I developed this download library named "EasyFileDownload" based on libcurl, 
 
 5. Support download speed limit.
 
+---
 
 # Build
 ### 1. Install Dependent Library
@@ -52,6 +53,8 @@ cmake -DBUILD_SHARED_LIBS=ON -DBUILD_TESTS=ON
 make
 ```
 
+---
+
 # Getting Started
 ```c++
 #include <iostream>
@@ -84,7 +87,9 @@ int main(int argc, char **argv) {
 }
 ```
 
-# easy_download_tool command line tool
+---
+
+# Command line tool
 `easy_download_tool` is command line download tool based on `EasyFileDownload` library. Usage:
 
 ```

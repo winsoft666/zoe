@@ -6,6 +6,8 @@
 4. 支持获取实时下载速率
 5. 支持下载限速
 
+---
+
 # 编译
 ### 1. 安装依赖项
 #### 1.1 libcurl
@@ -30,6 +32,8 @@ vcpkg安装方式：
 vcpkg install gtest
 ```
 
+---
+
 ## 2. 开始编译
 使用CMake生成相应的工程，然后编译即可。
 ```bash
@@ -40,6 +44,8 @@ cmake.exe -G "Visual Studio 15 2017" -DBUILD_SHARED_LIBS=ON -DBUILD_TESTS=ON -S 
 cmake -DBUILD_SHARED_LIBS=ON -DBUILD_TESTS=ON
 make
 ```
+
+---
 
 # 使用EasyFileDownload库
 ```c++
@@ -73,7 +79,9 @@ int main(int argc, char **argv) {
 }
 ```
 
-# easy_download_tool命令行工具
+---
+
+# 命令行工具
 `easy_download_tool`是一个基于`EasyFileDownload`库开发的命令行下载工具，用法如下：
 ```
 easy_download_tool URL TargetFilePath [ThreadNum] [MD5] [EnableSaveSliceToTmp] [SliceCacheExpiredSeconds] [MaxSpeed]

@@ -15,7 +15,7 @@ So I developed this download library named "EasyFileDownload" based on libcurl, 
 5. Support download speed limit.
 
 
-# Compile
+# Build
 ### 1. Install Dependent Library
 #### 1.1 libcurl
 
@@ -40,7 +40,7 @@ Install via vcpkg:
 vcpkg install gtest
 ```
 
-## 2. Begin Compiling
+## 2. Start build
 Firstly using CMake to generate project or makefile, then comiple.
 
 ```bash
@@ -52,7 +52,7 @@ cmake -DBUILD_SHARED_LIBS=ON -DBUILD_TESTS=ON
 make
 ```
 
-# Using EasyFileDownload library
+# Getting Started
 ```c++
 #include <iostream>
 #include "easy_file_download.h"

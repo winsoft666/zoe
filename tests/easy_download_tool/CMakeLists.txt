@@ -43,6 +43,13 @@ add_executable(
 find_package(cpprestsdk REQUIRED)
 target_link_libraries(${EXE_NAME} cpprestsdk::cpprest)
 
+# CURL
+find_package(CURL REQUIRED)
+target_link_libraries(${EXE_NAME} ${CURL_LIBRARIES})
+
+# OpenSSL
+find_package(OpenSSL REQUIRED)
+target_link_libraries(${EXE_NAME} OpenSSL::SSL OpenSSL::Crypto)
 
 # Win32 Console
 if (WIN32 OR _WIN32)

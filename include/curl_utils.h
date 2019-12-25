@@ -19,26 +19,20 @@
 #include "curl/curl.h"
 
 namespace easy_file_download {
-    void GlobalCurlInit();
-    void GlobalCurlUnInit();
+void GlobalCurlInit();
+void GlobalCurlUnInit();
 
-    class ScopedCurl {
-      public:
-        ScopedCurl() {
-            curl_ = curl_easy_init();
-        }
+class ScopedCurl {
+public:
+  ScopedCurl() { curl_ = curl_easy_init(); }
 
-        ~ScopedCurl() {
-            curl_easy_cleanup(curl_);
-        }
+  ~ScopedCurl() { curl_easy_cleanup(curl_); }
 
-        CURL *GetCurl() {
-            return curl_;
-        }
+  CURL *GetCurl() { return curl_; }
 
-      private:
-        CURL *curl_;
-    };
-}
+private:
+  CURL *curl_;
+};
+} // namespace easy_file_download
 
 #endif // !PPX_NET_GLOBAL_ENV_H_

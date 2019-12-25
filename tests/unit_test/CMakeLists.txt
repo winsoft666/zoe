@@ -48,6 +48,18 @@ endif()
 find_package(GTest MODULE REQUIRED)
 target_link_libraries(${EXE_NAME} GTest::GTest GTest::Main)
 
+# cpprestsdk
+find_package(cpprestsdk REQUIRED)
+target_link_libraries(${EXE_NAME} cpprestsdk::cpprest)
+
+# CURL
+find_package(CURL REQUIRED)
+target_link_libraries(${EXE_NAME} ${CURL_LIBRARIES})
+
+# OpenSSL
+find_package(OpenSSL REQUIRED)
+target_link_libraries(${EXE_NAME} OpenSSL::SSL OpenSSL::Crypto)
+
 add_test(NAME unit
 COMMAND ${CMAKE_BINARY_DIR}/${CMAKE_INSTALL_BINDIR}/unit_tests)
 

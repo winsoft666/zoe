@@ -24,47 +24,45 @@
 #include "easy_file_download.h"
 
 namespace easy_file_download {
-    class SliceManage;
-    class Slice {
-      public:
-        Slice(size_t index, std::shared_ptr<SliceManage> slice_manager);
-        virtual ~Slice();
+class SliceManage;
+class Slice {
+public:
+  Slice(size_t index, std::shared_ptr<SliceManage> slice_manager);
+  virtual ~Slice();
 
-        bool Init(const std::string &slice_file_path,
-                  long begin,
-                  long end,
-                  long capacity);
+  bool Init(const std::string &slice_file_path, long begin, long end, long capacity);
 
-        long begin() const;
-        long end() const;
-        long capacity() const;
-        std::string filePath() const;
+  long begin() const;
+  long end() const;
+  long capacity() const;
+  std::string filePath() const;
 
-        bool InitCURL(CURLM *multi, size_t max_download_speed = 0); // bytes per seconds
-        void UnInitCURL(CURLM *multi);
+  bool InitCURL(CURLM *multi, size_t max_download_speed = 0); // bytes per seconds
+  void UnInitCURL(CURLM *multi);
 
-        bool AppendSelfToFile(FILE *f);
+  bool AppendSelfToFile(FILE *f);
 
-        bool RemoveFile();
+  bool RemoveFile();
 
-        FILE* GetFile();
-        void IncreaseCapacity(long i);
+  FILE *GetFile();
+  void IncreaseCapacity(long i);
 
-        bool IsDownloadCompleted();
-      protected:
-        std::string GenerateSliceFilePath(size_t index, const std::string &target_file_path) const;
+  bool IsDownloadCompleted();
 
-      protected:
-        size_t index_;
-        long begin_;
-        long end_;
-        long capacity_;
-        long origin_capacity_;
-        std::string file_path_;
-        FILE *file_;
-        CURL *curl_;
-        std::shared_ptr<SliceManage> slice_manager_;
-    };
-}
+protected:
+  std::string GenerateSliceFilePath(size_t index, const std::string &target_file_path) const;
+
+protected:
+  size_t index_;
+  long begin_;
+  long end_;
+  long capacity_;
+  long origin_capacity_;
+  std::string file_path_;
+  FILE *file_;
+  CURL *curl_;
+  std::shared_ptr<SliceManage> slice_manager_;
+};
+} // namespace easy_file_download
 
 #endif

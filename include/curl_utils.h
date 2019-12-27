@@ -12,13 +12,13 @@
 * file.
 *******************************************************************************/
 
-#ifndef PPX_NET_GLOBAL_ENV_H_
-#define PPX_NET_GLOBAL_ENV_H_
+#ifndef TEEMO_GLOBAL_ENV_H_
+#define TEEMO_GLOBAL_ENV_H_
 #pragma once
 
 #include "curl/curl.h"
 
-namespace easy_file_download {
+namespace teemo {
 void GlobalCurlInit();
 void GlobalCurlUnInit();
 
@@ -33,6 +33,6 @@ public:
 private:
   CURL *curl_;
 };
-} // namespace easy_file_download
+} // namespace teemo
 
-#endif // !PPX_NET_GLOBAL_ENV_H_
+#endif // !TEEMO_GLOBAL_ENV_H_

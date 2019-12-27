@@ -15,7 +15,7 @@
 cmake_minimum_required(VERSION 3.4 FATAL_ERROR)
 set(CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/CMake;${CMAKE_MODULE_PATH};")
 
-project(Easy-File-Download CXX)
+project(teemo CXX)
 
 option(BUILD_SHARED_LIBS "Build shared libraries" OFF)
 option(BUILD_TESTS "Build tests project" ON)
@@ -32,11 +32,11 @@ if(WIN32)
 endif()
 
 if(MSVC)
-  set(EFD_INSTALL_CMAKE_DIR share/easy-file-download)
+  set(TEEMO_INSTALL_CMAKE_DIR share/teemo)
 elseif(WIN32 AND NOT CYGWIN)
-  set(EFD_INSTALL_CMAKE_DIR CMake)
+  set(TEEMO_INSTALL_CMAKE_DIR CMake)
 else()
-  set(EFD_INSTALL_CMAKE_DIR lib/cmake/easy-file-download)
+  set(TEEMO_INSTALL_CMAKE_DIR lib/cmake/teemo)
 endif()
 
 set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)

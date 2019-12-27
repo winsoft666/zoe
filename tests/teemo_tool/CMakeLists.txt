@@ -12,7 +12,7 @@
 # file.
 ###############################################################################
 
-set(EXE_NAME easy_download_tool)
+set(EXE_NAME teemo_tool)
 
 if (MSVC AND USE_STATIC_CRT)
     set(CompilerFlags
@@ -29,7 +29,7 @@ if (MSVC AND USE_STATIC_CRT)
 endif()
 
 if (NOT BUILD_SHARED_LIBS)
-	add_definitions(-DEFD_STATIC)
+	add_definitions(-DTEEMO_STATIC)
 endif()
 
 file(GLOB SOURCE_FILES 			./*.cpp ../md5.h ../md5.cpp)
@@ -59,15 +59,15 @@ endif()
 
 
 if(BUILD_SHARED_LIBS)
-	add_dependencies(${EXE_NAME} easyfiledownload)
+	add_dependencies(${EXE_NAME} teemo)
 	
 	target_link_libraries(${EXE_NAME} 
-		$<TARGET_LINKER_FILE:easyfiledownload> )
+		$<TARGET_LINKER_FILE:teemo> )
 else()
-	add_dependencies(${EXE_NAME} easyfiledownload-static)
+	add_dependencies(${EXE_NAME} teemo-static)
 	
 	target_link_libraries(${EXE_NAME} 
-		$<TARGET_LINKER_FILE:easyfiledownload-static> )
+		$<TARGET_LINKER_FILE:teemo-static> )
 
 endif()
 

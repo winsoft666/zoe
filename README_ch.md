@@ -1,5 +1,6 @@
-# 项目介绍
-目前虽然有很多成熟且功能强大的下载工具，如Free Download Manager, Aria2等等，但当我想找一个支持多种协议(如http， ftp)、多线程下载、断点续传、跨平台的开源库时，发现很难找到满意的，特别是使用C++开发的。于是我基于libcurl开发了这个名为"EasyFileDownload"下载库，它可以支持如下特性：
+# 介绍
+目前虽然有很多成熟且功能强大的下载工具，如Free Download Manager, Aria2等等，但当我想找一个支持多种协议(如http， ftp)、多线程下载、断点续传、跨平台的开源库时，发现很难找到满意的，特别是使用C++开发的。于是我基于libcurl开发了这个名为`"teemo"`下载库，它可以支持如下特性：
+
 1. 多协议支持，由于是基于libcurl的，所以支持libcurl所支持的所有协议，如http, https, ftp等。
 2. 支持多线程下载
 3. 支持断点续传
@@ -50,14 +51,14 @@ make
 # 使用EasyFileDownload库
 ```c++
 #include <iostream>
-#include "easy_file_download.h"
+#include "teemo.h"
 
-using namespace easy_file_download;
+using namespace teemo;
 
 int main(int argc, char **argv) {
-    EasyFileDownload::GlobalInit();
+    Teemo::GlobalInit();
 
-    EasyFileDownload efd;
+    Teemo efd;
     efd.Start("http://xxx.xxx.com/test.exe",
               "D:\\test.exe",
     [](long total, long downloaded) {
@@ -73,7 +74,7 @@ int main(int argc, char **argv) {
         }
     }).wait();
 	
-    EasyFileDownload::GlobalUnInit();
+    Teemo::GlobalUnInit();
 	
 	return 0;
 }
@@ -82,9 +83,10 @@ int main(int argc, char **argv) {
 ---
 
 # 命令行工具
-`easy_download_tool`是一个基于`EasyFileDownload`库开发的命令行下载工具，用法如下：
-```
-easy_download_tool URL TargetFilePath [ThreadNum] [MD5] [EnableSaveSliceToTmp] [SliceCacheExpiredSeconds] [MaxSpeed]
+`teemo_tool`是一个基于`teemo`库开发的命令行下载工具，用法如下：
+
+```bash
+teemo_tool URL TargetFilePath [ThreadNum] [MD5] [EnableSaveSliceToTmp] [SliceCacheExpiredSeconds] [MaxSpeed]
 ```
 
 - URL: 下载链接

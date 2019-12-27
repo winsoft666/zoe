@@ -11,32 +11,32 @@
 * that you have found/implemented and I will fix/incorporate them into this
 * file.
 *******************************************************************************/
-#ifndef EFD_EASY_FILE_DOWNLOAD_H_
-#define EFD_EASY_FILE_DOWNLOAD_H_
+#ifndef TEEMO_H_
+#define TEEMO_H_
 #pragma once
 #include <string>
 #include <memory>
 #include "pplx/pplxtasks.h"
 
-#ifdef EFD_STATIC
-#define EFD_API
+#ifdef TEEMO_STATIC
+#define TEEMO_API
 #else
-#if defined(EFD_EXPORTS)
+#if defined(TEEMO_EXPORTS)
 #if defined(_MSC_VER)
-#define EFD_API __declspec(dllexport)
+#define TEEMO_API __declspec(dllexport)
 #else
-#define EFD_API
+#define TEEMO_API
 #endif
 #else
 #if defined(_MSC_VER)
-#define EFD_API __declspec(dllimport)
+#define TEEMO_API __declspec(dllimport)
 #else
-#define EFD_API
+#define TEEMO_API
 #endif
 #endif
 #endif
 
-namespace easy_file_download {
+namespace teemo {
 enum Result {
   Successed = 0,
   UrlInvalid,
@@ -53,15 +53,16 @@ enum Result {
   Failed,
   FailedAndUpdateIndexFailed,
 };
-EFD_API const char *GetResultString(int enumVal);
+
+TEEMO_API const char *GetResultString(int enumVal);
 
 typedef std::function<void(long total, long downloaded)> ProgressFunctor;
 typedef std::function<void(long byte_per_sec)> RealtimeSpeedFunctor;
 
-class EFD_API EasyFileDownload {
+class TEEMO_API Teemo {
 public:
-  EasyFileDownload();
-  virtual ~EasyFileDownload();
+  Teemo();
+  ~Teemo();
 
   static void GlobalInit();
   static void GlobalUnInit();
@@ -96,9 +97,9 @@ public:
   void Stop(bool wait = false);
 
 protected:
-  class EasyFileDownloadImpl;
-  std::unique_ptr<EasyFileDownloadImpl> impl_;
+  class TeemoImpl;
+  TeemoImpl* impl_;
 };
-} // namespace easy_file_download
+} // namespace teemo
 
 #endif

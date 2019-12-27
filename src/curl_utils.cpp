@@ -16,7 +16,7 @@
 #include "curl/curl.h"
 #include <openssl/crypto.h>
 
-namespace easy_file_download {
+namespace teemo {
 namespace {
 int THREAD_setup(void);
 int THREAD_cleanup(void);
@@ -81,4 +81,4 @@ void GlobalCurlUnInit() {
   curl_global_cleanup();
   THREAD_cleanup();
 }
-} // namespace easy_file_download
+} // namespace teemo

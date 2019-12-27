@@ -12,8 +12,8 @@
 * file.
 *******************************************************************************/
 
-#ifndef EFD_SLICE_H__
-#define EFD_SLICE_H__
+#ifndef TEEMO_SLICE_H__
+#define TEEMO_SLICE_H__
 #pragma once
 
 #include <string>
@@ -21,9 +21,9 @@
 #include <memory>
 #include "slice_manage.h"
 #include "curl/curl.h"
-#include "easy_file_download.h"
+#include "teemo.h"
 
-namespace easy_file_download {
+namespace teemo {
 class SliceManage;
 class Slice {
 public:
@@ -63,6 +63,6 @@ protected:
   CURL *curl_;
   std::shared_ptr<SliceManage> slice_manager_;
 };
-} // namespace easy_file_download
+} // namespace teemo
 
 #endif

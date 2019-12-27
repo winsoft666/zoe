@@ -12,8 +12,8 @@
 * file.
 *******************************************************************************/
 
-#ifndef EFD_SLICE_MANAGE_H__
-#define EFD_SLICE_MANAGE_H__
+#ifndef TEEMO_SLICE_MANAGE_H__
+#define TEEMO_SLICE_MANAGE_H__
 #pragma once
 
 #include <string>
@@ -24,9 +24,9 @@
 #include <condition_variable>
 #include "slice.h"
 #include "curl/curl.h"
-#include "easy_file_download.h"
+#include "teemo.h"
 
-namespace easy_file_download {
+namespace teemo {
 class Slice;
 class SliceManage : public std::enable_shared_from_this<SliceManage> {
 public:
@@ -91,6 +91,6 @@ protected:
   std::mutex stop_mutex_;
   std::condition_variable stop_cond_var_;
 };
-} // namespace easy_file_download
+} // namespace teemo
 
-#endif // !EFD_SLICE_MANAGE_H__
+#endif

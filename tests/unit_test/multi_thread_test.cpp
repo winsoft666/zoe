@@ -1,16 +1,16 @@
 #include "gtest/gtest.h"
-#include "easy_file_download.h"
+#include "teemo.h"
 #include "../md5.h"
 #include "test_data.h"
 #include <future>
-using namespace easy_file_download;
+using namespace teemo;
 
 void DoTest(std::vector<TestData> test_datas, int thread_num, bool enable_save_slice_to_tmp) {
-  EasyFileDownload::GlobalInit();
+  Teemo::GlobalInit();
 
   for (auto test_data : test_datas) {
 
-    EasyFileDownload efd;
+    Teemo efd;
 
     if (thread_num != -1)
       efd.SetThreadNum(thread_num);
@@ -29,7 +29,7 @@ void DoTest(std::vector<TestData> test_datas, int thread_num, bool enable_save_s
         .wait();
   }
 
-  EasyFileDownload::GlobalUnInit();
+  Teemo::GlobalUnInit();
 }
 
 TEST(MultiThreadHttpTest, Http_DefaultThreadNum_SliceToTmp_Flase) {

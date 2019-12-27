@@ -12,20 +12,20 @@
 * file.
 *******************************************************************************/
 
-#ifndef EFD_FILE_UTIL_H__
-#define EFD_FILE_UTIL_H__
+#ifndef TEEMO_FILE_UTIL_H__
+#define TEEMO_FILE_UTIL_H__
 #pragma once
 
 #include <stdio.h>
 #include <string>
 
-namespace easy_file_download {
+namespace teemo {
 long GetFileSize(FILE *f);
 std::string GetDirectory(const std::string &path);
 std::string GetFileName(const std::string &path);
 std::string AppendFileName(const std::string &dir, const std::string &filename);
 bool FileIsExist(const std::string &filepath);
 bool FileIsRW(const std::string &filepath);
-} // namespace easy_file_download
+} // namespace teemo
 
 #endif

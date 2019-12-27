@@ -19,7 +19,7 @@
 #include "file_util.h"
 #include "curl_utils.h"
 
-namespace easy_file_download {
+namespace teemo {
 
 Slice::Slice(size_t index, std::shared_ptr<SliceManage> slice_manager)
     : index_(index)
@@ -224,4 +224,4 @@ std::string Slice::GenerateSliceFilePath(size_t index, const std::string &target
   std::string slice_filename = target_filename + ".edf" + std::to_string(index);
   return AppendFileName(target_dir, slice_filename);
 }
-} // namespace easy_file_download
+} // namespace teemo

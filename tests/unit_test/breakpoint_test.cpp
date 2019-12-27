@@ -1,16 +1,16 @@
 #include "gtest/gtest.h"
-#include "easy_file_download.h"
+#include "teemo.h"
 #include "../md5.h"
 #include "test_data.h"
 #include <future>
-using namespace easy_file_download;
+using namespace teemo;
 
 void DoBreakpointTest(std::vector<TestData> test_datas, int thread_num,
                       bool enable_save_slice_to_tmp) {
   for (auto test_data : test_datas) {
     std::future<void> test_task =
         std::async(std::launch::async, [test_data, thread_num, enable_save_slice_to_tmp]() {
-          EasyFileDownload efd;
+          Teemo efd;
 
           efd.SetThreadNum(thread_num);
           efd.SetEnableSaveSliceFileToTempDir(enable_save_slice_to_tmp);

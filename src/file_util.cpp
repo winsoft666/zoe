@@ -19,7 +19,7 @@
 #include <unistd.h>
 #endif
 
-namespace easy_file_download {
+namespace teemo {
 
 #if defined(WIN32) || defined(_WIN32) || defined(__WIN32__) || defined(__NT__)
 #define PATH_SEPARATOR '\\'
@@ -76,4 +76,4 @@ bool FileIsRW(const std::string &filepath) {
 #endif
 }
 
-} // namespace easy_file_download
+} // namespace teemo

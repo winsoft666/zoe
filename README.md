@@ -1,8 +1,8 @@
 [中文版](README_ch.md)
-# Project Introduction
+# Introduction
 Although there are many mature and powerful download tools at present, such as `Free Download Manager`, `Aria2`, etc. However when I want to find a library that support multiple protocols (such as http, ftp), multi-threaded download, breakpoint resume download, cross-platform, I realize that this is difficult to find a satisfactory library, especially developed by C++. 
 
-So I developed this download library named "EasyFileDownload" based on libcurl, which can support the following features:
+So I developed this download library named `"teemo"` based on libcurl, which can support the following features:
 
 1. Support Multi-protocol. Since it is based on libcurl, so it supports all protocols that supported by libcurl, such as http, https, ftp, etc.
 
@@ -26,7 +26,7 @@ vcpkg install curl[non-http]
 ```
 
 #### 1.2 cpprestsdk
-`EasyFileDownload` depend on pplx that give you access to the Concurrency Runtime, a concurrent programming framework for C++, pplx is a part of `cpprestsdk` library.
+`Teemo` depend on pplx that give you access to the Concurrency Runtime, a concurrent programming framework for C++, pplx is a part of `cpprestsdk` library.
 
 Install via vcpkg:
 ```
@@ -58,14 +58,14 @@ make
 # Getting Started
 ```c++
 #include <iostream>
-#include "easy_file_download.h"
+#include "teemo.h"
 
-using namespace easy_file_download;
+using namespace teemo;
 
 int main(int argc, char **argv) {
-    EasyFileDownload::GlobalInit();
+    Teemo::GlobalInit();
 
-    EasyFileDownload efd;
+    Teemo efd;
     efd.Start("http://xxx.xxx.com/test.exe",
               "D:\\test.exe",
     [](long total, long downloaded) {
@@ -81,7 +81,7 @@ int main(int argc, char **argv) {
         }
     }).wait();
 	
-    EasyFileDownload::GlobalUnInit();
+    Teemo::GlobalUnInit();
 	
 	return 0;
 }
@@ -90,10 +90,10 @@ int main(int argc, char **argv) {
 ---
 
 # Command line tool
-`easy_download_tool` is command line download tool based on `EasyFileDownload` library. Usage:
+`teemo` is command line download tool based on `teemo` library. Usage:
 
-```
-easy_download_tool URL TargetFilePath [ThreadNum] [MD5] [EnableSaveSliceToTmp] [SliceCacheExpiredSeconds] [MaxSpeed]
+```bash
+teemo_tool URL TargetFilePath [ThreadNum] [MD5] [EnableSaveSliceToTmp] [SliceCacheExpiredSeconds] [MaxSpeed]
 ```
 
 - URL: Download URL.

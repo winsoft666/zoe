@@ -13,9 +13,9 @@
 ###############################################################################
 
 if(BUILD_SHARED_LIBS)
-	set(LIB_NAME easyfiledownload)
+	set(LIB_NAME teemo)
 else()
-	set(LIB_NAME easyfiledownload-static)
+	set(LIB_NAME teemo-static)
 endif()
 
 
@@ -42,8 +42,8 @@ source_group("Source Files" 			FILES ${SOURCE_FILES})
 source_group("Header Files" 			FILES ${HEADER_FILES})
 
 if(BUILD_SHARED_LIBS)
-	add_definitions(-DEFD_EXPORTS)
-	set(EFD_STATIC NO)
+	add_definitions(-DTEEMO_EXPORTS)
+	set(TEEMO_STATIC NO)
 	
 	add_library(
 		${LIB_NAME}
@@ -57,8 +57,8 @@ if(BUILD_SHARED_LIBS)
 		OUTPUT_NAME ${LIB_NAME}
 		DEBUG_OUTPUT_NAME ${LIB_NAME}${DEBUG_LIBNAME_SUFFIX})
 else()
-	add_definitions(-DEFD_STATIC)
-	set(EFD_STATIC YES)
+	add_definitions(-DTEEMO_STATIC)
+	set(TEEMO_STATIC YES)
 	
 	add_library(
 		${LIB_NAME}
@@ -73,7 +73,7 @@ else()
 		DEBUG_OUTPUT_NAME ${LIB_NAME}${DEBUG_LIBNAME_SUFFIX})
 		
 	set_target_properties(${LIB_NAME} PROPERTIES 
-		INTERFACE_COMPILE_DEFINITIONS EFD_STATIC)
+		INTERFACE_COMPILE_DEFINITIONS TEEMO_STATIC)
 endif()
 
 
@@ -118,8 +118,8 @@ install(TARGETS ${LIB_NAME}
 install(FILES ${HEADER_FILES} 			DESTINATION include)
 
 
-install(FILES ${CMAKE_CURRENT_SOURCE_DIR}/../CMake/easyfiledownload-config.cmake 
-	DESTINATION ${EFD_INSTALL_CMAKE_DIR})
+install(FILES ${CMAKE_CURRENT_SOURCE_DIR}/../CMake/teemo-config.cmake 
+	DESTINATION ${TEEMO_INSTALL_CMAKE_DIR})
 
 export(TARGETS ${LIB_NAME}
        APPEND FILE ${PROJECT_BINARY_DIR}/${LIB_NAME}-target.cmake
@@ -127,5 +127,5 @@ export(TARGETS ${LIB_NAME}
 
 install(EXPORT ${LIB_NAME}-target
         FILE ${LIB_NAME}-target.cmake
-        DESTINATION ${EFD_INSTALL_CMAKE_DIR}
+        DESTINATION ${TEEMO_INSTALL_CMAKE_DIR}
 )

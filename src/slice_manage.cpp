@@ -25,7 +25,7 @@ using json = nlohmann::json;
 
 #define INDEX_FILE_SIGN_STRING "EASY-FILE-DOWNLOAD"
 
-namespace easy_file_download {
+namespace teemo {
 
 SliceManage::SliceManage()
     : multi_(nullptr)
@@ -559,4 +559,4 @@ std::string SliceManage::GenerateIndexFilePath(const std::string &target_file_pa
   std::string indexfilename = target_filename + ".efdindex";
   return AppendFileName(target_dir, indexfilename);
 }
-} // namespace easy_file_download
+} // namespace teemo

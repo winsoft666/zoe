@@ -16,7 +16,7 @@
 #include <string.h>
 #include <sstream>
 #include <iomanip>
-#include "easy_file_download.h"
+#include "teemo.h"
 #include "../md5.h"
 #include <mutex>
 #if defined(WIN32) || defined(_WIN32) || defined(__WIN32__) || defined(__NT__)
@@ -28,8 +28,8 @@
 #include <unistd.h>
 #endif
 
-using namespace easy_file_download;
-EasyFileDownload efd;
+using namespace teemo;
+Teemo efd;
 std::mutex console_mutex;
 
 void PrintConsole(long total, long downloaded, long speed);
@@ -93,7 +93,7 @@ int main(int argc, char **argv) {
     efd.SetMaxDownloadSpeed(atoi(argv[7]));
 
   int exit_code = 0;
-  EasyFileDownload::GlobalInit();
+  Teemo::GlobalInit();
 
   efd.Start(
          url, target_file_path,
@@ -117,7 +117,7 @@ int main(int argc, char **argv) {
       })
       .wait();
 
-  EasyFileDownload::GlobalUnInit();
+  Teemo::GlobalUnInit();
   std::cout << "Global UnInit." << std::endl;
   return exit_code;
 }

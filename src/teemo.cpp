@@ -12,12 +12,12 @@
 * file.
 *******************************************************************************/
 
-#include "easy_file_download.h"
+#include "teemo.h"
 #include "file_util.h"
 #include "curl_utils.h"
 #include "slice_manage.h"
 
-namespace easy_file_download {
+namespace teemo {
 const char *GetResultString(int enumVal) {
   static const char *EnumStrings[] = {"Successed",
                                       "UrlInvalid",
@@ -36,24 +36,29 @@ const char *GetResultString(int enumVal) {
   return EnumStrings[enumVal];
 }
 
-class EasyFileDownload::EasyFileDownloadImpl {
+class Teemo::TeemoImpl {
 public:
-  EasyFileDownloadImpl() {}
+  TeemoImpl() {}
 
 public:
   std::shared_ptr<SliceManage> slice_manager;
   pplx::task<Result> result;
 };
 
-EasyFileDownload::EasyFileDownload() {
-  impl_ = std::make_unique<EasyFileDownloadImpl>();
+Teemo::Teemo() {
+  impl_ = new TeemoImpl();
 
   impl_->slice_manager = std::make_shared<SliceManage>();
 }
 
-EasyFileDownload::~EasyFileDownload() {}
+Teemo::~Teemo() {
+  if (impl_) {
+    delete impl_;
+    impl_ = nullptr;
+  }
+}
 
-void EasyFileDownload::GlobalInit() {
+void Teemo::GlobalInit() {
   static bool has_init = false;
   if (!has_init) {
     has_init = true;
@@ -61,64 +66,59 @@ void EasyFileDownload::GlobalInit() {
   }
 }
 
-void EasyFileDownload::GlobalUnInit() { GlobalCurlInit(); }
+void Teemo::GlobalUnInit() { GlobalCurlInit(); }
 
-void EasyFileDownload::SetEnableSaveSliceFileToTempDir(bool enabled) {
+void Teemo::SetEnableSaveSliceFileToTempDir(bool enabled) {
   impl_->slice_manager->SetEnableSaveSliceFileToTempDir(enabled);
 }
 
-bool EasyFileDownload::IsEnableSaveSliceFileToTempDir() const {
+bool Teemo::IsEnableSaveSliceFileToTempDir() const {
   return impl_->slice_manager->IsEnableSaveSliceFileToTempDir();
 }
 
-Result EasyFileDownload::SetThreadNum(size_t thread_num) {
+Result Teemo::SetThreadNum(size_t thread_num) {
   return impl_->slice_manager->SetThreadNum(thread_num);
 }
 
-size_t EasyFileDownload::GetThreadNum() const { return impl_->slice_manager->GetThreadNum(); }
+size_t Teemo::GetThreadNum() const { return impl_->slice_manager->GetThreadNum(); }
 
-std::string EasyFileDownload::GetUrl() const { return impl_->slice_manager->GetUrl(); }
+std::string Teemo::GetUrl() const { return impl_->slice_manager->GetUrl(); }
 
-std::string EasyFileDownload::GetTargetFilePath() const {
-  return impl_->slice_manager->GetTargetFilePath();
-}
+std::string Teemo::GetTargetFilePath() const { return impl_->slice_manager->GetTargetFilePath(); }
 
-Result EasyFileDownload::SetNetworkConnectionTimeout(size_t milliseconds) {
+Result Teemo::SetNetworkConnectionTimeout(size_t milliseconds) {
   return impl_->slice_manager->SetNetworkConnectionTimeout(milliseconds);
 }
 
-size_t EasyFileDownload::GetNetworkConnectionTimeout() const {
+size_t Teemo::GetNetworkConnectionTimeout() const {
   return impl_->slice_manager->GetNetworkConnectionTimeout();
 }
 
-Result EasyFileDownload::SetNetworkReadTimeout(size_t milliseconds) {
+Result Teemo::SetNetworkReadTimeout(size_t milliseconds) {
   return impl_->slice_manager->SetNetworkReadTimeout(milliseconds);
 }
 
-size_t EasyFileDownload::GetNetworkReadTimeout() const {
+size_t Teemo::GetNetworkReadTimeout() const {
   return impl_->slice_manager->GetNetworkReadTimeout();
 }
 
-void EasyFileDownload::SetSliceCacheExpiredTime(int seconds) {
+void Teemo::SetSliceCacheExpiredTime(int seconds) {
   return impl_->slice_manager->SetSliceCacheExpiredTime(seconds);
 }
 
-int EasyFileDownload::GetSliceCacheExpiredTime() const {
+int Teemo::GetSliceCacheExpiredTime() const {
   return impl_->slice_manager->GetSliceCacheExpiredTime();
 }
 
-void EasyFileDownload::SetMaxDownloadSpeed(size_t byte_per_seconds) {
+void Teemo::SetMaxDownloadSpeed(size_t byte_per_seconds) {
   impl_->slice_manager->SetMaxDownloadSpeed(byte_per_seconds);
 }
 
-size_t EasyFileDownload::GetMaxDownloadSpeed() const {
-  return impl_->slice_manager->GetMaxDownloadSpeed();
-}
+size_t Teemo::GetMaxDownloadSpeed() const { return impl_->slice_manager->GetMaxDownloadSpeed(); }
 
-pplx::task<Result> EasyFileDownload::Start(const std::string url,
-                                           const std::string &target_file_path,
-                                           ProgressFunctor progress_functor,
-                                           RealtimeSpeedFunctor realtime_speed_functor) {
+pplx::task<Result> Teemo::Start(const std::string url, const std::string &target_file_path,
+                                ProgressFunctor progress_functor,
+                                RealtimeSpeedFunctor realtime_speed_functor) {
   if (impl_->result._GetImpl() && !impl_->result.is_done())
     return pplx::task_from_result(AlreadyDownloading);
 
@@ -131,7 +131,7 @@ pplx::task<Result> EasyFileDownload::Start(const std::string url,
   return impl_->result;
 }
 
-void EasyFileDownload::Stop(bool wait) {
+void Teemo::Stop(bool wait) {
   if (impl_->slice_manager)
     impl_->slice_manager->Stop();
 
@@ -139,4 +139,4 @@ void EasyFileDownload::Stop(bool wait) {
     impl_->result.wait();
   }
 }
-} // namespace easy_file_download
+} // namespace teemo

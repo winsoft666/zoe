@@ -170,6 +170,27 @@ Result SliceManage::Start(const std::string &url, const std::string &target_file
     if (!slice->IsDownloadCompleted())
       uncomplete_slice_num++;
   }
+
+  if (uncomplete_slice_num == 0) {
+    Result ret;
+    do {
+      if (!CombineSlice()) {
+        ret = GenerateTargetFileFailed;
+        break;
+      }
+      if (!CleanupTmpFiles()) {
+        ret = CleanupTmpFileFailed;
+        break;
+      }
+      ret = Successed;
+    } while (false);
+
+    Destory();
+    if (progress_functor_)
+      progress_functor_(file_size_, file_size_);
+    return ret;
+  }
+
   thread_num_ = uncomplete_slice_num;
   size_t each_slice_download_speed = max_download_speed_ / uncomplete_slice_num;
 

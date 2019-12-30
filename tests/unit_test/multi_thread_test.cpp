@@ -17,9 +17,16 @@ void DoTest(std::vector<TestData> test_datas, int thread_num, bool enable_save_s
 
     efd.SetEnableSaveSliceFileToTempDir(enable_save_slice_to_tmp);
 
-    efd.Start(test_data.url, test_data.target_file_path, nullptr, nullptr)
+    efd.Start(
+           test_data.url, test_data.target_file_path,
+           [](long total, long downloaded) {
+             if (total > 0)
+               printf("%3d%%\b\b\b\b", (int)((double)downloaded * 100.f / (double)total));
+           },
+           nullptr)
         .then([=](pplx::task<Result> result) {
-          EXPECT_TRUE(result.get() == Successed);
+          printf("\nResult: %s\n", GetResultString(result.get()));
+          EXPECT_TRUE(result.get() == Successed || result.get() == Canceled);
           if (result.get() == Result::Successed) {
             if (test_data.md5.length()) {
               EXPECT_TRUE(test_data.md5 == ppx::base::GetFileMd5(test_data.target_file_path));

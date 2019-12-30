@@ -1,4 +1,5 @@
-[中文版](README_ch.md)
+[ >>> 中文版](README_ch.md)
+
 # Introduction
 Although there are many mature and powerful download tools at present, such as `Free Download Manager`, `Aria2`, etc. However when I want to find a library that support multiple protocols (such as http, ftp), multi-threaded download, breakpoint resume download, cross-platform, I realize that this is difficult to find a satisfactory library, especially developed by C++. 
 
@@ -16,32 +17,30 @@ So I developed this download library named `"teemo"` based on libcurl, which can
 
 ---
 
-# Build
-### 1. Install Dependent Library
-#### 1.1 libcurl
+# Dependencies
+I prefer to use vcpkg to install dependencies, of course, this is not the only way, you can install dependencies through any ways.
 
-Install via vcpkg:
-```
-vcpkg install curl[non-http]
-```
+- libcurl
 
-#### 1.2 cpprestsdk
+    ```bash
+    # if you want support non-http protocol, such as ftp, the [non-http] option must be specified.
+    vcpkg install curl[non-http]:x86-windows
+    ```
+- cpprestsdk
 `Teemo` depend on pplx that give you access to the Concurrency Runtime, a concurrent programming framework for C++, pplx is a part of `cpprestsdk` library.
 
-Install via vcpkg:
-```
-vcpkg install cpprestsdk
-```
+    ```bash
+    vcpkg install cpprestsdk:x86-windows
+    ```
 
-#### 1.3 gtest
+- gtest
 unit test project depend on gtest.
 
-Install via vcpkg:
-```
-vcpkg install gtest
-```
+    ```bash
+    vcpkg install gtest:x86-windows
+    ```
 
-## 2. Start build
+# Build
 Firstly using CMake to generate project or makefile, then comiple.
 
 ```bash
@@ -51,6 +50,7 @@ cmake.exe -G "Visual Studio 15 2017" -DBUILD_SHARED_LIBS=ON -DBUILD_TESTS=ON -S 
 # Linux Sample
 cmake -DBUILD_SHARED_LIBS=ON -DBUILD_TESTS=ON
 make
+make install
 ```
 
 ---

@@ -1,3 +1,5 @@
+[ >>> English Version](README.md)
+
 # 介绍
 目前虽然有很多成熟且功能强大的下载工具，如Free Download Manager, Aria2等等，但当我想找一个支持多种协议(如http， ftp)、多线程下载、断点续传、跨平台的开源库时，发现很难找到满意的，特别是使用C++开发的。于是我基于libcurl开发了这个名为`"teemo"`下载库，它可以支持如下特性：
 
@@ -9,33 +11,31 @@
 
 ---
 
-# 编译
-### 1. 安装依赖项
-#### 1.1 libcurl
-vcpkg安装方式：
-```
-vcpkg install curl[non-http]
-```
+# 安装依赖项
+我倾向于使用vcpkg来安装依赖项，当然，这不是安装依赖项的唯一方式，你可以使用任何方式来安装依赖项。
 
-#### 1.2 cpprestsdk
-使用了cpprestsdk库中的pplx并行开发库。
+- libcurl
+    ```bash
+    vcpkg install curl[non-http]
+    ```
 
-vcpkg安装方式：
-```
-vcpkg install cpprestsdk
-```
+- cpprestsdk
+仅仅使用了cpprestsdk库中的pplx并行开发库。
 
-#### 1.3 gtest
+    ```bash
+    vcpkg install cpprestsdk
+    ```
+
+- gtest
 单元测试项目使用了gtest。
 
-vcpkg安装方式：
-```
-vcpkg install gtest
-```
+    ```bash
+    vcpkg install gtest
+    ```
 
 ---
 
-## 2. 开始编译
+# 编译
 使用CMake生成相应的工程，然后编译即可。
 ```bash
 # Windows示例
@@ -48,7 +48,7 @@ make
 
 ---
 
-# 使用EasyFileDownload库
+# 开始工作
 ```c++
 #include <iostream>
 #include "teemo.h"

@@ -10,11 +10,11 @@ typedef struct _TestData {
 
 static std::vector<TestData> http_test_datas = {
 #if defined(WIN32) || defined(_WIN32) || defined(__WIN32__) || defined(__NT__)
-    {"https://download.skype.com/s4l/download/win/Skype-8.54.0.91.exe", "D:\\Skype-8.54.0.91.exe",
-     "bf593256fd9faafe68a507a8151b1f29"}
+    {"https://dlie.sogoucdn.com/se/sogou_explorer_8.6_1120.exe", "D:\\sogou_explorer_8.6_1120.exe",
+     "8e78e77400cdc268032a5491d2fe18d8"}
 #else
-    {"https://download.skype.com/s4l/download/win/Skype-8.54.0.91.exe", "D:\\Skype-8.54.0.91.exe",
-     "bf593256fd9faafe68a507a8151b1f29"}
+    {"https://dlie.sogoucdn.com/se/sogou_explorer_8.6_1120.exe", "D:\\sogou_explorer_8.6_1120.exe",
+     "8e78e77400cdc268032a5491d2fe18d8"}
 #endif
 };
 

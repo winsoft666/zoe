@@ -16,21 +16,22 @@
 
 - libcurl
     ```bash
-    vcpkg install curl[non-http]
+    # 如果需要支持非http协议，如ftp等，需要指定[non-http]选项
+    vcpkg install curl[non-http]:x86-windows
     ```
 
 - cpprestsdk
 仅仅使用了cpprestsdk库中的pplx并行开发库。
 
     ```bash
-    vcpkg install cpprestsdk
+    vcpkg install cpprestsdk:x86-windows
     ```
 
 - gtest
 单元测试项目使用了gtest。
 
     ```bash
-    vcpkg install gtest
+    vcpkg install gtest:x86-windows
     ```
 
 ---

@@ -82,6 +82,8 @@ long Slice::end() const { return end_; }
 
 long Slice::capacity() const { return capacity_; }
 
+size_t Slice::index() const { return index_; }
+
 std::string Slice::filePath() const { return file_path_; }
 
 static size_t DownloadWriteCallback(char *buffer, size_t size, size_t nitems, void *outstream) {
@@ -205,7 +207,7 @@ bool Slice::IsDownloadCompleted() {
 
 std::string Slice::GenerateSliceFilePath(size_t index, const std::string &target_file_path) const {
   std::string target_dir;
-  if (slice_manager_->IsEnableSaveSliceFileToTempDir()) {
+  if (slice_manager_->IsSaveSliceFileToTempDir()) {
 #if defined(WIN32) || defined(_WIN32) || defined(__WIN32__) || defined(__NT__)
     char buf[MAX_PATH] = {0};
     DWORD ret_val = GetTempPathA(MAX_PATH, buf);

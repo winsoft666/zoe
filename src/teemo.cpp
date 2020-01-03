@@ -68,12 +68,16 @@ void Teemo::GlobalInit() {
 
 void Teemo::GlobalUnInit() { GlobalCurlInit(); }
 
-void Teemo::SetEnableSaveSliceFileToTempDir(bool enabled) {
-  impl_->slice_manager->SetEnableSaveSliceFileToTempDir(enabled);
+void Teemo::SetVerboseOutput(VerboseOuputFunctor verbose_functor) {
+  impl_->slice_manager->SetVerboseOutput(verbose_functor);
 }
 
-bool Teemo::IsEnableSaveSliceFileToTempDir() const {
-  return impl_->slice_manager->IsEnableSaveSliceFileToTempDir();
+void Teemo::SetSaveSliceFileToTempDir(bool enabled) {
+  impl_->slice_manager->SetSaveSliceFileToTempDir(enabled);
+}
+
+bool Teemo::IsSaveSliceFileToTempDir() const {
+  return impl_->slice_manager->IsSaveSliceFileToTempDir();
 }
 
 Result Teemo::SetThreadNum(size_t thread_num) {

@@ -33,6 +33,8 @@ public:
   SliceManage();
   virtual ~SliceManage();
 
+  void SetVerboseOutput(VerboseOuputFunctor verbose_functor);
+
   Result SetNetworkConnectionTimeout(size_t conn_timeout_ms);
   size_t GetNetworkConnectionTimeout() const;
 
@@ -45,8 +47,8 @@ public:
   Result SetThreadNum(size_t thread_num);
   size_t GetThreadNum() const;
 
-  void SetEnableSaveSliceFileToTempDir(bool enabled);
-  bool IsEnableSaveSliceFileToTempDir() const;
+  void SetSaveSliceFileToTempDir(bool enabled);
+  bool IsSaveSliceFileToTempDir() const;
 
   void SetMaxDownloadSpeed(size_t byte_per_seconds);
   size_t GetMaxDownloadSpeed() const;
@@ -58,8 +60,7 @@ public:
   std::string GetUrl() const;
   std::string GetTargetFilePath() const;
   std::string GetIndexFilePath() const;
-  std::string DumpSlicesInfo() const;
-
+  void OutputVerboseInfo(const std::string &info);
 protected:
   long QueryFileSize() const;
   bool LoadSlices(const std::string url, ProgressFunctor functor);
@@ -73,7 +74,7 @@ protected:
   std::string url_;
   std::string target_file_path_;
   std::string index_file_path_;
-  bool enable_save_slice_to_tmp_dir_;
+  bool save_slice_to_tmp_dir_;
   size_t thread_num_;
   size_t network_conn_timeout_;
   size_t network_read_timeout_;
@@ -83,6 +84,7 @@ protected:
   CURLM *multi_;
   ProgressFunctor progress_functor_;
   RealtimeSpeedFunctor speed_functor_;
+  VerboseOuputFunctor verbose_functor_;
   std::vector<std::shared_ptr<Slice>> slices_;
   std::future<void> progress_notify_thread_;
   std::future<void> speed_notify_thread_;

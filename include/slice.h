@@ -35,6 +35,7 @@ public:
   long begin() const;
   long end() const;
   long capacity() const;
+  size_t index() const;
   std::string filePath() const;
 
   bool InitCURL(CURLM *multi, size_t max_download_speed = 0); // bytes per seconds

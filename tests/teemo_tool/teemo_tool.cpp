@@ -86,7 +86,7 @@ int main(int argc, char **argv) {
   if (argc >= 5)
     md5 = argv[4];
   if (argc >= 6)
-    efd.SetEnableSaveSliceFileToTempDir((atoi(argv[5]) == 1));
+    efd.SetSaveSliceFileToTempDir((atoi(argv[5]) == 1));
   if (argc >= 7)
     efd.SetSliceCacheExpiredTime(atoi(argv[6]));
   if (argc >= 8)
@@ -94,6 +94,13 @@ int main(int argc, char **argv) {
 
   int exit_code = 0;
   Teemo::GlobalInit();
+  FILE *f_verbose = fopen("teemo_tool_verbose.log", "wb");
+  efd.SetVerboseOutput([f_verbose](const std::string &verbose) { 
+    fwrite(verbose.c_str(), 1, verbose.size(), f_verbose);
+#if defined(WIN32) || defined(_WIN32) || defined(__WIN32__) || defined(__NT__)
+    OutputDebugStringA(verbose.c_str());
+#endif
+  });
 
   efd.Start(
          url, target_file_path,
@@ -117,6 +124,7 @@ int main(int argc, char **argv) {
       })
       .wait();
 
+  fclose(f_verbose);
   Teemo::GlobalUnInit();
   std::cout << "Global UnInit." << std::endl;
   return exit_code;

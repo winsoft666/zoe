@@ -23,13 +23,15 @@
 
 using json = nlohmann::json;
 
-#define INDEX_FILE_SIGN_STRING "EASY-FILE-DOWNLOAD"
+#define INDEX_FILE_SIGN_STRING "TEEMO:EASY-FILE-DOWNLOAD"
 
 namespace teemo {
 
+std::string bool_to_string(bool b) { return (b ? "true" : "false"); }
+
 SliceManage::SliceManage()
     : multi_(nullptr)
-    , enable_save_slice_to_tmp_dir_(false)
+    , save_slice_to_tmp_dir_(false)
     , thread_num_(1)
     , slice_cache_expired_seconds_(-1)
     , network_conn_timeout_(3000)
@@ -39,6 +41,10 @@ SliceManage::SliceManage()
     , file_size_(-1) {}
 
 SliceManage::~SliceManage() {}
+
+void SliceManage::SetVerboseOutput(VerboseOuputFunctor verbose_functor) {
+  verbose_functor_ = verbose_functor;
+}
 
 Result SliceManage::SetNetworkConnectionTimeout(size_t conn_timeout_ms) {
   if (!stop_)
@@ -80,11 +86,9 @@ Result SliceManage::SetThreadNum(size_t thread_num) {
 
 size_t SliceManage::GetThreadNum() const { return thread_num_; }
 
-void SliceManage::SetEnableSaveSliceFileToTempDir(bool enabled) {
-  enable_save_slice_to_tmp_dir_ = enabled;
-}
+void SliceManage::SetSaveSliceFileToTempDir(bool enabled) { save_slice_to_tmp_dir_ = enabled; }
 
-bool SliceManage::IsEnableSaveSliceFileToTempDir() const { return enable_save_slice_to_tmp_dir_; }
+bool SliceManage::IsSaveSliceFileToTempDir() const { return save_slice_to_tmp_dir_; }
 
 void SliceManage::SetMaxDownloadSpeed(size_t byte_per_seconds) {
   max_download_speed_ = byte_per_seconds;
@@ -112,12 +116,27 @@ Result SliceManage::Start(const std::string &url, const std::string &target_file
   target_file_path_ = target_file_path;
   index_file_path_ = GenerateIndexFilePath(target_file_path);
 
+  OutputVerboseInfo("max download speed: " + std::to_string(max_download_speed_) + "\r\n");
+  OutputVerboseInfo("network conn timeout: " + std::to_string(network_conn_timeout_) + "\r\n");
+  OutputVerboseInfo("network read timeout: " + std::to_string(network_read_timeout_) + "\r\n");
+  OutputVerboseInfo("slice cache expired seconds: " + std::to_string(slice_cache_expired_seconds_) +
+                    "\r\n");
+  OutputVerboseInfo("save slice to tmp dir: " + bool_to_string(save_slice_to_tmp_dir_) + "\r\n");
+  OutputVerboseInfo("target file path: " + target_file_path_ + "\r\n");
+  OutputVerboseInfo("index file path: " + index_file_path_ + "\r\n");
+
   bool valid_resume = false;
   do {
-    if (!FileIsRW(index_file_path_.c_str()))
+    bool bret = FileIsRW(index_file_path_.c_str());
+    OutputVerboseInfo("index file path RW: " + bool_to_string(bret) + "\r\n");
+    if (!bret)
       break;
-    if (!LoadSlices(url_, progress_functor)) {
-      remove(index_file_path_.c_str());
+
+    bret = LoadSlices(url_, progress_functor);
+    OutputVerboseInfo("load slices: " + bool_to_string(bret) + "\r\n");
+    if (!bret) {
+      int remove_ret = remove(index_file_path_.c_str());
+      OutputVerboseInfo("remove index file: " + bool_to_string(remove_ret == 0) + "\r\n");
       break;
     }
     if (file_size_ == -1)
@@ -127,13 +146,20 @@ Result SliceManage::Start(const std::string &url, const std::string &target_file
     valid_resume = true;
   } while (false);
 
+  OutputVerboseInfo("valid resume download: " + bool_to_string(valid_resume) + "\r\n");
+
   if (!valid_resume) {
     file_size_ = QueryFileSize();
+    OutputVerboseInfo("queried file size: " + std::to_string(file_size_) + "\r\n");
     slices_.clear();
 
     if (file_size_ > 0) {
       thread_num_ = std::min(file_size_, (long)thread_num_);
+      OutputVerboseInfo("thread num: " + std::to_string(thread_num_) + "\r\n");
+
       long each_slice_size = file_size_ / thread_num_;
+      OutputVerboseInfo("each slice size: " + std::to_string(each_slice_size) + "\r\n");
+
       for (size_t i = 0; i < thread_num_; i++) {
         long end = (i == thread_num_ - 1) ? file_size_ - 1 : ((i + 1) * each_slice_size) - 1;
         std::shared_ptr<Slice> slice = std::make_shared<Slice>(i, shared_from_this());
@@ -151,16 +177,27 @@ Result SliceManage::Start(const std::string &url, const std::string &target_file
     }
     else {
       thread_num_ = 1;
+      OutputVerboseInfo("thread num: " + std::to_string(thread_num_) + "\r\n");
+
       std::shared_ptr<Slice> slice = std::make_shared<Slice>(0, shared_from_this());
       slice->Init("", 0, -1, 0);
       slices_.push_back(slice);
     }
   }
 
-  std::cout << std::endl << "Dump Slices:" << std::endl << DumpSlicesInfo() << std::endl;
+  {
+    std::stringstream ss_verbose;
+    ss_verbose << "slices: \r\n";
+    for (auto &s : slices_) {
+      ss_verbose << s->index() << ": " << s->filePath() << ": " << s->begin() << " ~ " << s->end()
+                 << ": " << s->capacity() << "\r\n";
+    }
+    OutputVerboseInfo(ss_verbose.str());
+  }
 
   multi_ = curl_multi_init();
   if (!multi_) {
+    OutputVerboseInfo("curl_multi_init failed\r\n");
     Destory();
     return Result::InternalNetworkError;
   }
@@ -170,6 +207,7 @@ Result SliceManage::Start(const std::string &url, const std::string &target_file
     if (!slice->IsDownloadCompleted())
       uncomplete_slice_num++;
   }
+  OutputVerboseInfo("uncompleted slice num: " + std::to_string(uncomplete_slice_num) + "\r\n");
 
   if (uncomplete_slice_num == 0) {
     Result ret;
@@ -192,7 +230,11 @@ Result SliceManage::Start(const std::string &url, const std::string &target_file
   }
 
   thread_num_ = uncomplete_slice_num;
+  OutputVerboseInfo("thread num: " + std::to_string(thread_num_) + "\r\n");
+
   size_t each_slice_download_speed = max_download_speed_ / uncomplete_slice_num;
+  OutputVerboseInfo("each slice max download speed: " + std::to_string(each_slice_download_speed) +
+                    "\r\n");
 
   bool init_curl_ret = true;
   for (auto &slice : slices_) {
@@ -205,6 +247,7 @@ Result SliceManage::Start(const std::string &url, const std::string &target_file
   }
 
   if (!init_curl_ret) {
+    OutputVerboseInfo("init curl failed\r\n");
     Destory();
     return Result::InternalNetworkError;
   }
@@ -231,6 +274,7 @@ Result SliceManage::Start(const std::string &url, const std::string &target_file
   long init_total_capacity = 0;
   for (const auto &s : slices_)
     init_total_capacity += s->capacity();
+  OutputVerboseInfo("init total capacity: " + std::to_string(init_total_capacity) + "\r\n");
 
   speed_notify_thread_ = std::async(std::launch::async, [this, init_total_capacity]() {
     while (true) {
@@ -296,14 +340,15 @@ Result SliceManage::Start(const std::string &url, const std::string &target_file
 
     CURLMcode code = curl_multi_fdset(multi_, &fdread, &fdwrite, &fdexcep, &maxfd);
     if (code != CURLM_CALL_MULTI_PERFORM && code != CURLM_OK) {
+      OutputVerboseInfo("\r\ncurl_multi_fdset failed, code: " + std::to_string((int)code) + "\r\n");
       break;
     }
 
     /* On success the value of maxfd is guaranteed to be >= -1. We call
-                select(maxfd + 1, ...); specially in case of (maxfd == -1) there are
-                no fds ready yet so we sleep 100ms, which is the minimum suggested value in the
-                curl_multi_fdset() doc. 
-            */
+      select(maxfd + 1, ...); specially in case of (maxfd == -1) there are
+      no fds ready yet so we sleep 100ms, which is the minimum suggested value in the
+      curl_multi_fdset() doc. 
+    */
     int rc;
     if (maxfd == -1) {
       std::this_thread::sleep_for(std::chrono::milliseconds(100));
@@ -324,6 +369,8 @@ Result SliceManage::Start(const std::string &url, const std::string &target_file
 
   } while (still_running);
 
+  OutputVerboseInfo("\r\nstill running handles: " + std::to_string(still_running) + "\r\n");
+
   /* See how the transfers went */
   size_t done_thread = 0;
   CURLMsg *msg = NULL;
@@ -336,20 +383,28 @@ Result SliceManage::Start(const std::string &url, const std::string &target_file
     }
   }
 
+  OutputVerboseInfo("done thread num: " + std::to_string(done_thread) + "\r\n");
+  OutputVerboseInfo("stop: " + std::to_string(stop_) + "\r\n");
+
   long total_capacity = 0;
   for (auto slice : slices_)
     total_capacity += slice->capacity();
+  OutputVerboseInfo("total capacity: " + std::to_string(total_capacity) + "\r\n");
 
   Result ret;
   do {
     if (done_thread == thread_num_copy) {
       if (file_size_ == -1 || (file_size_ > 0 && total_capacity == file_size_)) {
         if (!CombineSlice()) {
+          OutputVerboseInfo("combine slice files failed\r\n");
+
           ret = GenerateTargetFileFailed;
           break;
         }
 
         if (!CleanupTmpFiles()) {
+          OutputVerboseInfo("cleanup temp files failed\r\n");
+
           ret = CleanupTmpFileFailed;
           break;
         }
@@ -363,11 +418,23 @@ Result SliceManage::Start(const std::string &url, const std::string &target_file
     }
 
     if (stop_) {
-      ret = UpdateIndexFile() ? Canceled : CanceledAndUpdateIndexFailed;
+      if (UpdateIndexFile()) {
+        ret = Canceled;
+      }
+      else {
+        ret = CanceledAndUpdateIndexFailed;
+        OutputVerboseInfo("update index file failed\r\n");
+      }
       break;
     }
 
-    ret = UpdateIndexFile() ? Failed : FailedAndUpdateIndexFailed;
+    if (UpdateIndexFile()) {
+      ret = Failed;
+    }
+    else {
+      ret = FailedAndUpdateIndexFailed;
+      OutputVerboseInfo("update index file failed\r\n");
+    }
   } while (false);
 
   Destory();
@@ -386,14 +453,10 @@ std::string SliceManage::GetIndexFilePath() const { return index_file_path_; }
 
 std::string SliceManage::GetUrl() const { return url_; }
 
-std::string SliceManage::DumpSlicesInfo() const {
-  std::stringstream ss_dump;
-  for (auto &s : slices_) {
-    ss_dump << s->filePath() << ": " << s->begin() << " ~ " << s->end() << ": " << s->capacity()
-            << std::endl;
+void SliceManage::OutputVerboseInfo(const std::string &info) {
+  if (verbose_functor_) {
+    verbose_functor_(info);
   }
-
-  return ss_dump.str();
 }
 
 static size_t QueryFileSizeCallback(char *buffer, size_t size, size_t nitems, void *outstream) {

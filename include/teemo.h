@@ -58,6 +58,7 @@ TEEMO_API const char *GetResultString(int enumVal);
 
 typedef std::function<void(long total, long downloaded)> ProgressFunctor;
 typedef std::function<void(long byte_per_sec)> RealtimeSpeedFunctor;
+typedef std::function<void(const std::string &verbose)> VerboseOuputFunctor;
 
 class TEEMO_API Teemo {
 public:
@@ -67,8 +68,10 @@ public:
   static void GlobalInit();
   static void GlobalUnInit();
 
-  void SetEnableSaveSliceFileToTempDir(bool enabled);
-  bool IsEnableSaveSliceFileToTempDir() const;
+  void SetVerboseOutput(VerboseOuputFunctor verbose_functor);
+
+  void SetSaveSliceFileToTempDir(bool enabled);
+  bool IsSaveSliceFileToTempDir() const;
 
   Result SetThreadNum(size_t thread_num);
   size_t GetThreadNum() const;

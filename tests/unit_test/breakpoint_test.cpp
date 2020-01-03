@@ -13,7 +13,7 @@ void DoBreakpointTest(std::vector<TestData> test_datas, int thread_num,
           Teemo efd;
 
           efd.SetThreadNum(thread_num);
-          efd.SetEnableSaveSliceFileToTempDir(enable_save_slice_to_tmp);
+          efd.SetSaveSliceFileToTempDir(enable_save_slice_to_tmp);
 
           efd.Start(
                  test_data.url, test_data.target_file_path,
@@ -37,7 +37,7 @@ void DoBreakpointTest(std::vector<TestData> test_datas, int thread_num,
           efd.Stop(true);
 
           efd.SetThreadNum(thread_num);
-          efd.SetEnableSaveSliceFileToTempDir(enable_save_slice_to_tmp);
+          efd.SetSaveSliceFileToTempDir(enable_save_slice_to_tmp);
 
           efd.Start(
                  test_data.url, test_data.target_file_path,

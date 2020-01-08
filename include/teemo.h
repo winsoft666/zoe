@@ -69,36 +69,36 @@ public:
   static void GlobalInit();
   static void GlobalUnInit();
 
-  void SetVerboseOutput(VerboseOuputFunctor verbose_functor);
+  void SetVerboseOutput(VerboseOuputFunctor verbose_functor) noexcept;
 
-  void SetSaveSliceFileToTempDir(bool enabled);
-  bool IsSaveSliceFileToTempDir() const;
+  void SetSaveSliceFileToTempDir(bool enabled) noexcept;
+  bool IsSaveSliceFileToTempDir() const noexcept;
 
-  Result SetThreadNum(size_t thread_num);
-  size_t GetThreadNum() const;
+  Result SetThreadNum(size_t thread_num) noexcept;
+  size_t GetThreadNum() const noexcept;
 
-  utf8string GetUrl() const;
-  utf8string GetTargetFilePath() const;
+  utf8string GetUrl() const noexcept;
+  utf8string GetTargetFilePath() const noexcept;
 
-  Result SetNetworkConnectionTimeout(size_t milliseconds); // default is 3000ms
-  size_t GetNetworkConnectionTimeout() const;
+  Result SetNetworkConnectionTimeout(size_t milliseconds) noexcept; // default is 3000ms
+  size_t GetNetworkConnectionTimeout() const noexcept;
 
-  Result SetNetworkReadTimeout(size_t milliseconds); // default is 3000ms
-  size_t GetNetworkReadTimeout() const;
+  Result SetNetworkReadTimeout(size_t milliseconds) noexcept; // default is 3000ms
+  size_t GetNetworkReadTimeout() const noexcept;
 
   // default is -1 = forever, 0 = not use exist slice cache
-  void SetSliceCacheExpiredTime(int seconds);
+  void SetSliceCacheExpiredTime(int seconds) noexcept;
 
-  int GetSliceCacheExpiredTime() const;
+  int GetSliceCacheExpiredTime() const noexcept;
 
-  void SetMaxDownloadSpeed(size_t byte_per_seconds); // default is 0 = not limit
-  size_t GetMaxDownloadSpeed() const;
+  void SetMaxDownloadSpeed(size_t byte_per_seconds) noexcept; // default is 0 = not limit
+  size_t GetMaxDownloadSpeed() const noexcept;
 
   pplx::task<Result> Start(const utf8string url, const utf8string &target_file_path,
                            ProgressFunctor progress_functor,
-                           RealtimeSpeedFunctor realtime_speed_functor);
+                           RealtimeSpeedFunctor realtime_speed_functor) noexcept;
 
-  void Stop(bool wait = false);
+  void Stop(bool wait = false) noexcept;
 
 protected:
   class TeemoImpl;

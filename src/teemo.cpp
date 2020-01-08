@@ -68,61 +68,65 @@ void Teemo::GlobalInit() {
 
 void Teemo::GlobalUnInit() { GlobalCurlInit(); }
 
-void Teemo::SetVerboseOutput(VerboseOuputFunctor verbose_functor) {
+void Teemo::SetVerboseOutput(VerboseOuputFunctor verbose_functor) noexcept {
   impl_->slice_manager->SetVerboseOutput(verbose_functor);
 }
 
-void Teemo::SetSaveSliceFileToTempDir(bool enabled) {
+void Teemo::SetSaveSliceFileToTempDir(bool enabled) noexcept {
   impl_->slice_manager->SetSaveSliceFileToTempDir(enabled);
 }
 
-bool Teemo::IsSaveSliceFileToTempDir() const {
+bool Teemo::IsSaveSliceFileToTempDir() const noexcept {
   return impl_->slice_manager->IsSaveSliceFileToTempDir();
 }
 
-Result Teemo::SetThreadNum(size_t thread_num) {
+Result Teemo::SetThreadNum(size_t thread_num) noexcept {
   return impl_->slice_manager->SetThreadNum(thread_num);
 }
 
-size_t Teemo::GetThreadNum() const { return impl_->slice_manager->GetThreadNum(); }
+size_t Teemo::GetThreadNum() const noexcept { return impl_->slice_manager->GetThreadNum(); }
 
-utf8string Teemo::GetUrl() const { return impl_->slice_manager->GetUrl(); }
+utf8string Teemo::GetUrl() const noexcept { return impl_->slice_manager->GetUrl(); }
 
-utf8string Teemo::GetTargetFilePath() const { return impl_->slice_manager->GetTargetFilePath(); }
+utf8string Teemo::GetTargetFilePath() const noexcept {
+  return impl_->slice_manager->GetTargetFilePath();
+}
 
-Result Teemo::SetNetworkConnectionTimeout(size_t milliseconds) {
+Result Teemo::SetNetworkConnectionTimeout(size_t milliseconds) noexcept {
   return impl_->slice_manager->SetNetworkConnectionTimeout(milliseconds);
 }
 
-size_t Teemo::GetNetworkConnectionTimeout() const {
+size_t Teemo::GetNetworkConnectionTimeout() const noexcept {
   return impl_->slice_manager->GetNetworkConnectionTimeout();
 }
 
-Result Teemo::SetNetworkReadTimeout(size_t milliseconds) {
+Result Teemo::SetNetworkReadTimeout(size_t milliseconds) noexcept {
   return impl_->slice_manager->SetNetworkReadTimeout(milliseconds);
 }
 
-size_t Teemo::GetNetworkReadTimeout() const {
+size_t Teemo::GetNetworkReadTimeout() const noexcept {
   return impl_->slice_manager->GetNetworkReadTimeout();
 }
 
-void Teemo::SetSliceCacheExpiredTime(int seconds) {
+void Teemo::SetSliceCacheExpiredTime(int seconds) noexcept {
   return impl_->slice_manager->SetSliceCacheExpiredTime(seconds);
 }
 
-int Teemo::GetSliceCacheExpiredTime() const {
+int Teemo::GetSliceCacheExpiredTime() const noexcept {
   return impl_->slice_manager->GetSliceCacheExpiredTime();
 }
 
-void Teemo::SetMaxDownloadSpeed(size_t byte_per_seconds) {
+void Teemo::SetMaxDownloadSpeed(size_t byte_per_seconds) noexcept {
   impl_->slice_manager->SetMaxDownloadSpeed(byte_per_seconds);
 }
 
-size_t Teemo::GetMaxDownloadSpeed() const { return impl_->slice_manager->GetMaxDownloadSpeed(); }
+size_t Teemo::GetMaxDownloadSpeed() const noexcept {
+  return impl_->slice_manager->GetMaxDownloadSpeed();
+}
 
 pplx::task<Result> Teemo::Start(const utf8string url, const utf8string &target_file_path,
                                 ProgressFunctor progress_functor,
-                                RealtimeSpeedFunctor realtime_speed_functor) {
+                                RealtimeSpeedFunctor realtime_speed_functor) noexcept {
   if (impl_->result._GetImpl() && !impl_->result.is_done())
     return pplx::task_from_result(AlreadyDownloading);
 
@@ -135,7 +139,7 @@ pplx::task<Result> Teemo::Start(const utf8string url, const utf8string &target_f
   return impl_->result;
 }
 
-void Teemo::Stop(bool wait) {
+void Teemo::Stop(bool wait) noexcept {
   if (impl_->slice_manager)
     impl_->slice_manager->Stop();
 

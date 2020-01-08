@@ -83,6 +83,8 @@ utf8string AppendFileName(const utf8string &dir, const utf8string &filename) {
 }
 
 bool FileIsExist(const utf8string &filepath) {
+  if (filepath.length() == 0)
+    return false;
 #if defined(WIN32) || defined(_WIN32) || defined(__WIN32__) || defined(__NT__)
   std::wstring unicode_filepath = Utf8ToUnicode(filepath);
   return (_waccess(unicode_filepath.c_str(), 0) == 0);
@@ -92,6 +94,8 @@ bool FileIsExist(const utf8string &filepath) {
 }
 
 bool FileIsRW(const utf8string &filepath) {
+  if (filepath.length() == 0)
+    return false;
 #if defined(WIN32) || defined(_WIN32) || defined(__WIN32__) || defined(__NT__)
   std::wstring unicode_filepath = Utf8ToUnicode(filepath);
   return (_waccess(unicode_filepath.c_str(), 6) == 0);
@@ -101,6 +105,8 @@ bool FileIsRW(const utf8string &filepath) {
 }
 
 bool RemoveFile(const utf8string &filepath) {
+  if (filepath.length() == 0)
+    return false;
 #if defined(WIN32) || defined(_WIN32) || defined(__WIN32__) || defined(__NT__)
   std::wstring unicode_filepath = Utf8ToUnicode(filepath);
   return (_wremove(unicode_filepath.c_str()) == 0);
@@ -111,6 +117,8 @@ bool RemoveFile(const utf8string &filepath) {
 
 FILE *OpenFile(const utf8string &path, const utf8string &mode) {
   FILE *f = nullptr;
+  if (path.length() == 0 || mode.length() == 0)
+    return f;
 #if defined(WIN32) || defined(_WIN32) || defined(__WIN32__) || defined(__NT__)
   std::wstring unicode_path = Utf8ToUnicode(path);
   std::wstring unicode_mode = Utf8ToUnicode(mode);

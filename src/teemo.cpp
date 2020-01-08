@@ -19,20 +19,20 @@
 
 namespace teemo {
 const char *GetResultString(int enumVal) {
-  static const char *EnumStrings[] = {"Successed",
-                                      "UrlInvalid",
-                                      "TargetFilePathInvalid",
-                                      "ThreadNumInvalid",
-                                      "NetworkConnTimeoutInvalid",
-                                      "NetworkReadTimeoutInvalid",
-                                      "InternalNetworkError",
-                                      "GenerateTargetFileFailed",
-                                      "CleanupTmpFileFailed",
-                                      "AlreadyDownloading",
-                                      "Canceled",
-                                      "CanceledAndUpdateIndexFailed",
-                                      "Failed",
-                                      "FailedAndUpdateIndexFailed"};
+  static const char *EnumStrings[] = {u8"Successed",
+                                      u8"UrlInvalid",
+                                      u8"TargetFilePathInvalid",
+                                      u8"ThreadNumInvalid",
+                                      u8"NetworkConnTimeoutInvalid",
+                                      u8"NetworkReadTimeoutInvalid",
+                                      u8"InternalNetworkError",
+                                      u8"GenerateTargetFileFailed",
+                                      u8"CleanupTmpFileFailed",
+                                      u8"AlreadyDownloading",
+                                      u8"Canceled",
+                                      u8"CanceledAndUpdateIndexFailed",
+                                      u8"Failed",
+                                      u8"FailedAndUpdateIndexFailed"};
   return EnumStrings[enumVal];
 }
 
@@ -139,7 +139,7 @@ void Teemo::Stop(bool wait) {
   if (impl_->slice_manager)
     impl_->slice_manager->Stop();
 
-  if (wait && !impl_->result.is_done()) {
+  if (wait && impl_->result._GetImpl() && !impl_->result.is_done()) {
     impl_->result.wait();
   }
 }

@@ -56,9 +56,10 @@ enum Result {
 
 TEEMO_API const char *GetResultString(int enumVal);
 
+typedef std::string utf8string;
 typedef std::function<void(long total, long downloaded)> ProgressFunctor;
 typedef std::function<void(long byte_per_sec)> RealtimeSpeedFunctor;
-typedef std::function<void(const std::string &verbose)> VerboseOuputFunctor;
+typedef std::function<void(const utf8string &verbose)> VerboseOuputFunctor;
 
 class TEEMO_API Teemo {
 public:
@@ -76,8 +77,8 @@ public:
   Result SetThreadNum(size_t thread_num);
   size_t GetThreadNum() const;
 
-  std::string GetUrl() const;
-  std::string GetTargetFilePath() const;
+  utf8string GetUrl() const;
+  utf8string GetTargetFilePath() const;
 
   Result SetNetworkConnectionTimeout(size_t milliseconds); // default is 3000ms
   size_t GetNetworkConnectionTimeout() const;
@@ -93,7 +94,7 @@ public:
   void SetMaxDownloadSpeed(size_t byte_per_seconds); // default is 0 = not limit
   size_t GetMaxDownloadSpeed() const;
 
-  pplx::task<Result> Start(const std::string url, const std::string &target_file_path,
+  pplx::task<Result> Start(const utf8string url, const utf8string &target_file_path,
                            ProgressFunctor progress_functor,
                            RealtimeSpeedFunctor realtime_speed_functor);
 

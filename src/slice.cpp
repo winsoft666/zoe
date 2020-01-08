@@ -39,7 +39,7 @@ Slice::~Slice() {
   }
 }
 
-bool Slice::Init(const std::string &slice_file_path, long begin, long end, long capacity) {
+bool Slice::Init(const utf8string &slice_file_path, long begin, long end, long capacity) {
   begin_ = begin;
   end_ = end;
   capacity_ = capacity;
@@ -50,7 +50,7 @@ bool Slice::Init(const std::string &slice_file_path, long begin, long end, long 
       break;
     if (!FileIsRW(slice_file_path.c_str()))
       break;
-    FILE *f = fopen(slice_file_path.c_str(), "a+b");
+    FILE *f = OpenFile(slice_file_path, u8"a+b");
     if (!f)
       break;
     if (GetFileSize(f) != capacity_) {
@@ -62,15 +62,15 @@ bool Slice::Init(const std::string &slice_file_path, long begin, long end, long 
   } while (false);
 
   if (need_generate_new_slice) {
-    remove(slice_file_path.c_str());
+    RemoveFile(slice_file_path);
     file_path_ = GenerateSliceFilePath(index_, slice_manager_->GetTargetFilePath());
-    remove(file_path_.c_str());
+    RemoveFile(file_path_);
   }
   else {
     file_path_ = slice_file_path;
   }
 
-  file_ = fopen(file_path_.c_str(), "a+b");
+  file_ = OpenFile(file_path_, u8"a+b");
   fseek(file_, 0, SEEK_END);
 
   return true;
@@ -84,7 +84,7 @@ long Slice::capacity() const { return capacity_; }
 
 size_t Slice::index() const { return index_; }
 
-std::string Slice::filePath() const { return file_path_; }
+utf8string Slice::filePath() const { return file_path_; }
 
 static size_t DownloadWriteCallback(char *buffer, size_t size, size_t nitems, void *outstream) {
   Slice *pThis = (Slice *)outstream;
@@ -181,13 +181,13 @@ bool Slice::AppendSelfToFile(FILE *f) {
   return true;
 }
 
-bool Slice::RemoveFile() {
+bool Slice::RemoveSliceFile() {
   if (file_) {
     fclose(file_);
     file_ = nullptr;
   }
 
-  if (remove(file_path_.c_str()) != 0) {
+  if (!RemoveFile(file_path_)) {
     std::cerr << "remove file failed: " << file_path_ << std::endl;
     return false;
   }
@@ -205,8 +205,8 @@ bool Slice::IsDownloadCompleted() {
   return ((end_ - begin_ + 1) == capacity_);
 }
 
-std::string Slice::GenerateSliceFilePath(size_t index, const std::string &target_file_path) const {
-  std::string target_dir;
+utf8string Slice::GenerateSliceFilePath(size_t index, const utf8string &target_file_path) const {
+  utf8string target_dir;
   if (slice_manager_->IsSaveSliceFileToTempDir()) {
 #if defined(WIN32) || defined(_WIN32) || defined(__WIN32__) || defined(__NT__)
     char buf[MAX_PATH] = {0};
@@ -221,9 +221,9 @@ std::string Slice::GenerateSliceFilePath(size_t index, const std::string &target
   if (target_dir.length() == 0)
     target_dir = GetDirectory(target_file_path);
 
-  std::string target_filename = GetFileName(target_file_path);
+  utf8string target_filename = GetFileName(target_file_path);
 
-  std::string slice_filename = target_filename + ".edf" + std::to_string(index);
+  utf8string slice_filename = target_filename + ".edf" + std::to_string(index);
   return AppendFileName(target_dir, slice_filename);
 }
 } // namespace teemo

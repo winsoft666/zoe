@@ -49,7 +49,7 @@ make
 
 ---
 
-# 开始工作
+# 快速开始
 ```c++
 #include <iostream>
 #include "teemo.h"
@@ -60,8 +60,8 @@ int main(int argc, char **argv) {
     Teemo::GlobalInit();
 
     Teemo efd;
-    efd.Start("http://xxx.xxx.com/test.exe",
-              "D:\\test.exe",
+    efd.Start(u8"http://xxx.xxx.com/test.exe",
+              u8"D:\\test.exe",
     [](long total, long downloaded) {
         // progress callback
     }, 

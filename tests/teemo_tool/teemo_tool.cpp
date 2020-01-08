@@ -95,7 +95,7 @@ int main(int argc, char **argv) {
   int exit_code = 0;
   Teemo::GlobalInit();
   FILE *f_verbose = fopen("teemo_tool_verbose.log", "wb");
-  efd.SetVerboseOutput([f_verbose](const std::string &verbose) { 
+  efd.SetVerboseOutput([f_verbose](const utf8string &verbose) { 
     fwrite(verbose.c_str(), 1, verbose.size(), f_verbose);
 #if defined(WIN32) || defined(_WIN32) || defined(__WIN32__) || defined(__NT__)
     OutputDebugStringA(verbose.c_str());

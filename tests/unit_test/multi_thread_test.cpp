@@ -29,7 +29,7 @@ void DoTest(std::vector<TestData> test_datas, int thread_num, bool enable_save_s
           EXPECT_TRUE(result.get() == Successed || result.get() == Canceled);
           if (result.get() == Result::Successed) {
             if (test_data.md5.length()) {
-              EXPECT_TRUE(test_data.md5 == ppx::base::GetFileMd5(test_data.target_file_path));
+              EXPECT_TRUE(test_data.md5 == base::GetFileMd5(test_data.target_file_path));
             }
           }
         })

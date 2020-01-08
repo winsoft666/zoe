@@ -53,27 +53,28 @@ public:
   void SetMaxDownloadSpeed(size_t byte_per_seconds);
   size_t GetMaxDownloadSpeed() const;
 
-  Result Start(const std::string &url, const std::string &target_file_path,
+  Result Start(const utf8string &url, const utf8string &target_file_path,
                ProgressFunctor progress_functor, RealtimeSpeedFunctor realtime_speed_functor);
   void Stop();
 
-  std::string GetUrl() const;
-  std::string GetTargetFilePath() const;
-  std::string GetIndexFilePath() const;
-  void OutputVerboseInfo(const std::string &info);
+  utf8string GetUrl() const;
+  utf8string GetTargetFilePath() const;
+  utf8string GetIndexFilePath() const;
+  void OutputVerboseInfo(const utf8string &info);
+
 protected:
   long QueryFileSize() const;
-  bool LoadSlices(const std::string url, ProgressFunctor functor);
+  bool LoadSlices(const utf8string url, ProgressFunctor functor);
   bool CombineSlice();
   bool CleanupTmpFiles();
   bool UpdateIndexFile();
   void Destory();
-  std::string GenerateIndexFilePath(const std::string &target_file_path) const;
+  utf8string GenerateIndexFilePath(const utf8string &target_file_path) const;
 
 protected:
-  std::string url_;
-  std::string target_file_path_;
-  std::string index_file_path_;
+  utf8string url_;
+  utf8string target_file_path_;
+  utf8string index_file_path_;
   bool save_slice_to_tmp_dir_;
   size_t thread_num_;
   size_t network_conn_timeout_;

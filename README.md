@@ -18,7 +18,7 @@ So I developed this download library named `"teemo"` based on libcurl, which can
 ---
 
 # Dependencies
-I prefer to use vcpkg to install dependencies, of course, this is not the only way, you can install dependencies through any ways.
+I prefer to use `vcpkg` to install dependencies, of course, this is not the only way, you can install dependencies through any ways.
 
 - libcurl
 
@@ -66,8 +66,8 @@ int main(int argc, char **argv) {
     Teemo::GlobalInit();
 
     Teemo efd;
-    efd.Start("http://xxx.xxx.com/test.exe",
-              "D:\\test.exe",
+    efd.Start(u8"http://xxx.xxx.com/test.exe",
+              u8"D:\\test.exe",
     [](long total, long downloaded) {
         // progress callback
     }, 

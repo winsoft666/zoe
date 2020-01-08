@@ -17,15 +17,17 @@
 #pragma once
 
 #include <stdio.h>
-#include <string>
+#include "teemo.h"
 
 namespace teemo {
 long GetFileSize(FILE *f);
-std::string GetDirectory(const std::string &path);
-std::string GetFileName(const std::string &path);
-std::string AppendFileName(const std::string &dir, const std::string &filename);
-bool FileIsExist(const std::string &filepath);
-bool FileIsRW(const std::string &filepath);
+utf8string GetDirectory(const utf8string &path);
+utf8string GetFileName(const utf8string &path);
+utf8string AppendFileName(const utf8string &dir, const utf8string &filename);
+bool FileIsExist(const utf8string &filepath);
+bool FileIsRW(const utf8string &filepath);
+bool RemoveFile(const utf8string &filepath);
+FILE *OpenFile(const utf8string &path, const utf8string &mode);
 } // namespace teemo
 
 #endif

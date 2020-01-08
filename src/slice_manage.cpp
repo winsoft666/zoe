@@ -27,7 +27,7 @@ using json = nlohmann::json;
 
 namespace teemo {
 
-std::string bool_to_string(bool b) { return (b ? "true" : "false"); }
+utf8string bool_to_string(bool b) { return (b ? "true" : "false"); }
 
 SliceManage::SliceManage()
     : multi_(nullptr)
@@ -96,7 +96,7 @@ void SliceManage::SetMaxDownloadSpeed(size_t byte_per_seconds) {
 
 size_t SliceManage::GetMaxDownloadSpeed() const { return max_download_speed_; }
 
-Result SliceManage::Start(const std::string &url, const std::string &target_file_path,
+Result SliceManage::Start(const utf8string &url, const utf8string &target_file_path,
                           ProgressFunctor progress_functor,
                           RealtimeSpeedFunctor realtime_speed_functor) {
   if (url.length() == 0)
@@ -127,7 +127,7 @@ Result SliceManage::Start(const std::string &url, const std::string &target_file
 
   bool valid_resume = false;
   do {
-    bool bret = FileIsRW(index_file_path_.c_str());
+    bool bret = FileIsRW(index_file_path_);
     OutputVerboseInfo("index file path RW: " + bool_to_string(bret) + "\r\n");
     if (!bret)
       break;
@@ -135,8 +135,8 @@ Result SliceManage::Start(const std::string &url, const std::string &target_file
     bret = LoadSlices(url_, progress_functor);
     OutputVerboseInfo("load slices: " + bool_to_string(bret) + "\r\n");
     if (!bret) {
-      int remove_ret = remove(index_file_path_.c_str());
-      OutputVerboseInfo("remove index file: " + bool_to_string(remove_ret == 0) + "\r\n");
+      bool remove_ret = RemoveFile(index_file_path_);
+      OutputVerboseInfo("remove index file: " + bool_to_string(remove_ret) + "\r\n");
       break;
     }
     if (file_size_ == -1)
@@ -168,7 +168,7 @@ Result SliceManage::Start(const std::string &url, const std::string &target_file
       }
     }
     else if (file_size_ == 0) {
-      FILE *f = fopen(target_file_path_.c_str(), "wb");
+      FILE *f = OpenFile(target_file_path_, u8"wb");
       if (!f)
         return GenerateTargetFileFailed;
       fclose(f);
@@ -447,13 +447,13 @@ void SliceManage::Stop() {
   stop_ = true;
 }
 
-std::string SliceManage::GetTargetFilePath() const { return target_file_path_; }
+utf8string SliceManage::GetTargetFilePath() const { return target_file_path_; }
 
-std::string SliceManage::GetIndexFilePath() const { return index_file_path_; }
+utf8string SliceManage::GetIndexFilePath() const { return index_file_path_; }
 
-std::string SliceManage::GetUrl() const { return url_; }
+utf8string SliceManage::GetUrl() const { return url_; }
 
-void SliceManage::OutputVerboseInfo(const std::string &info) {
+void SliceManage::OutputVerboseInfo(const utf8string &info) {
   if (verbose_functor_) {
     verbose_functor_(info);
   }
@@ -517,8 +517,8 @@ long SliceManage::QueryFileSize() const {
   return file_size;
 }
 
-bool SliceManage::LoadSlices(const std::string url, ProgressFunctor functor) {
-  FILE *file = fopen(index_file_path_.c_str(), "rb");
+bool SliceManage::LoadSlices(const utf8string url, ProgressFunctor functor) {
+  FILE *file = OpenFile(index_file_path_, u8"rb");
   if (!file)
     return false;
   long file_size = GetFileSize(file);
@@ -528,11 +528,11 @@ bool SliceManage::LoadSlices(const std::string url, ProgressFunctor functor) {
   fclose(file);
 
   try {
-    std::string str_sign(file_content.data(), strlen(INDEX_FILE_SIGN_STRING));
+    utf8string str_sign(file_content.data(), strlen(INDEX_FILE_SIGN_STRING));
     if (str_sign != INDEX_FILE_SIGN_STRING)
       return false;
 
-    std::string str_json(file_content.data() + 18);
+    utf8string str_json(file_content.data() + 18);
     json j = json::parse(str_json);
 
     time_t last_update_time = j["update_time"].get<time_t>();
@@ -543,11 +543,11 @@ bool SliceManage::LoadSlices(const std::string url, ProgressFunctor functor) {
     }
 
     file_size_ = j["file_size"];
-    if (j["url"].get<std::string>() != url)
+    if (j["url"].get<utf8string>() != url)
       return false;
     for (auto &it : j["slices"]) {
       std::shared_ptr<Slice> slice = std::make_shared<Slice>(9999, shared_from_this());
-      slice->Init(it["path"].get<std::string>(), it["begin"].get<long>(), it["end"].get<long>(),
+      slice->Init(it["path"].get<utf8string>(), it["begin"].get<long>(), it["end"].get<long>(),
                   it["capacity"].get<long>());
       slices_.push_back(slice);
     }
@@ -568,7 +568,7 @@ bool sliceLessBegin(const std::shared_ptr<Slice> &s1, const std::shared_ptr<Slic
 bool SliceManage::CombineSlice() {
   std::sort(slices_.begin(), slices_.end(), sliceLessBegin);
 
-  FILE *f = fopen(target_file_path_.c_str(), "wb");
+  FILE *f = OpenFile(target_file_path_, u8"wb");
   if (!f)
     return false;
   for (auto slice : slices_) {
@@ -583,12 +583,12 @@ bool SliceManage::CombineSlice() {
 
 bool SliceManage::CleanupTmpFiles() {
   bool ret = true;
-  if (FileIsExist(index_file_path_.c_str()) && remove(index_file_path_.c_str()) != 0) {
+  if (FileIsExist(index_file_path_.c_str()) && !RemoveFile(index_file_path_)) {
     std::cerr << "remove file failed: " << index_file_path_ << std::endl;
     ret = false;
   }
   for (auto slice : slices_) {
-    if (!slice->RemoveFile()) {
+    if (!slice->RemoveSliceFile()) {
       ret = false;
     }
   }
@@ -596,7 +596,7 @@ bool SliceManage::CleanupTmpFiles() {
 }
 
 bool SliceManage::UpdateIndexFile() {
-  FILE *f = fopen(index_file_path_.c_str(), "wb");
+  FILE *f = OpenFile(index_file_path_, u8"wb");
   if (!f)
     return false;
   json j;
@@ -611,7 +611,7 @@ bool SliceManage::UpdateIndexFile() {
                  {"capacity", slice->capacity()}});
   }
   j["slices"] = s;
-  std::string str_json = j.dump();
+  utf8string str_json = j.dump();
   fwrite(INDEX_FILE_SIGN_STRING, 1, strlen(INDEX_FILE_SIGN_STRING), f);
   fwrite(str_json.c_str(), 1, str_json.size(), f);
   fclose(f);
@@ -636,11 +636,11 @@ void SliceManage::Destory() {
   }
 }
 
-std::string SliceManage::GenerateIndexFilePath(const std::string &target_file_path) const {
-  std::string target_dir = GetDirectory(target_file_path);
-  std::string target_filename = GetFileName(target_file_path);
+utf8string SliceManage::GenerateIndexFilePath(const utf8string &target_file_path) const {
+  utf8string target_dir = GetDirectory(target_file_path);
+  utf8string target_filename = GetFileName(target_file_path);
 
-  std::string indexfilename = target_filename + ".efdindex";
+  utf8string indexfilename = target_filename + ".efdindex";
   return AppendFileName(target_dir, indexfilename);
 }
 } // namespace teemo

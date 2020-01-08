@@ -86,9 +86,9 @@ Result Teemo::SetThreadNum(size_t thread_num) {
 
 size_t Teemo::GetThreadNum() const { return impl_->slice_manager->GetThreadNum(); }
 
-std::string Teemo::GetUrl() const { return impl_->slice_manager->GetUrl(); }
+utf8string Teemo::GetUrl() const { return impl_->slice_manager->GetUrl(); }
 
-std::string Teemo::GetTargetFilePath() const { return impl_->slice_manager->GetTargetFilePath(); }
+utf8string Teemo::GetTargetFilePath() const { return impl_->slice_manager->GetTargetFilePath(); }
 
 Result Teemo::SetNetworkConnectionTimeout(size_t milliseconds) {
   return impl_->slice_manager->SetNetworkConnectionTimeout(milliseconds);
@@ -120,7 +120,7 @@ void Teemo::SetMaxDownloadSpeed(size_t byte_per_seconds) {
 
 size_t Teemo::GetMaxDownloadSpeed() const { return impl_->slice_manager->GetMaxDownloadSpeed(); }
 
-pplx::task<Result> Teemo::Start(const std::string url, const std::string &target_file_path,
+pplx::task<Result> Teemo::Start(const utf8string url, const utf8string &target_file_path,
                                 ProgressFunctor progress_functor,
                                 RealtimeSpeedFunctor realtime_speed_functor) {
   if (impl_->result._GetImpl() && !impl_->result.is_done())

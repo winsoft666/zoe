@@ -14,8 +14,10 @@
 
 if(BUILD_SHARED_LIBS)
 	set(LIB_NAME teemo)
+	set(TEEMO_STATIC NO)
 else()
 	set(LIB_NAME teemo-static)
+	set(TEEMO_STATIC YES)
 endif()
 
 
@@ -43,7 +45,6 @@ source_group("Header Files" 			FILES ${HEADER_FILES})
 
 if(BUILD_SHARED_LIBS)
 	add_definitions(-DTEEMO_EXPORTS)
-	set(TEEMO_STATIC NO)
 	
 	add_library(
 		${LIB_NAME}
@@ -58,7 +59,6 @@ if(BUILD_SHARED_LIBS)
 		DEBUG_OUTPUT_NAME ${LIB_NAME}${DEBUG_LIBNAME_SUFFIX})
 else()
 	add_definitions(-DTEEMO_STATIC)
-	set(TEEMO_STATIC YES)
 	
 	add_library(
 		${LIB_NAME}

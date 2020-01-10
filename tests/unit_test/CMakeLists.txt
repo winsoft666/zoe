@@ -12,6 +12,8 @@
 # file.
 ###############################################################################
 
+set (CMAKE_CXX_STANDARD 11)
+
 set(EXE_NAME unit_test)
 
 if (MSVC AND USE_STATIC_CRT)

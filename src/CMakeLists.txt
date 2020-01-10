@@ -12,6 +12,8 @@
 # file.
 ###############################################################################
 
+set (CMAKE_CXX_STANDARD 11)
+
 if(BUILD_SHARED_LIBS)
 	set(LIB_NAME teemo)
 	set(TEEMO_STATIC NO)

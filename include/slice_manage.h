@@ -29,7 +29,7 @@
 namespace teemo {
 class Slice;
 class SliceManage : public std::enable_shared_from_this<SliceManage> {
-public:
+ public:
   SliceManage();
   virtual ~SliceManage();
 
@@ -53,25 +53,27 @@ public:
   void SetMaxDownloadSpeed(size_t byte_per_seconds);
   size_t GetMaxDownloadSpeed() const;
 
-  Result Start(const utf8string &url, const utf8string &target_file_path,
-               ProgressFunctor progress_functor, RealtimeSpeedFunctor realtime_speed_functor);
+  Result Start(const utf8string& url,
+               const utf8string& target_file_path,
+               ProgressFunctor progress_functor,
+               RealtimeSpeedFunctor realtime_speed_functor);
   void Stop();
 
   utf8string GetUrl() const;
   utf8string GetTargetFilePath() const;
   utf8string GetIndexFilePath() const;
-  void OutputVerboseInfo(const utf8string &info);
+  void OutputVerboseInfo(const utf8string& info);
 
-protected:
+ protected:
   long QueryFileSize() const;
   bool LoadSlices(const utf8string url, ProgressFunctor functor);
   bool CombineSlice();
   bool CleanupTmpFiles();
   bool UpdateIndexFile();
   void Destory();
-  utf8string GenerateIndexFilePath(const utf8string &target_file_path) const;
+  utf8string GenerateIndexFilePath(const utf8string& target_file_path) const;
 
-protected:
+ protected:
   utf8string url_;
   utf8string target_file_path_;
   utf8string index_file_path_;
@@ -82,7 +84,7 @@ protected:
   size_t max_download_speed_;
   int slice_cache_expired_seconds_;
   long file_size_;
-  CURLM *multi_;
+  CURLM* multi_;
   ProgressFunctor progress_functor_;
   RealtimeSpeedFunctor speed_functor_;
   VerboseOuputFunctor verbose_functor_;
@@ -94,6 +96,6 @@ protected:
   std::mutex stop_mutex_;
   std::condition_variable stop_cond_var_;
 };
-} // namespace teemo
+}  // namespace teemo
 
 #endif

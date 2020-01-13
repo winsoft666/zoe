@@ -27,7 +27,9 @@ using json = nlohmann::json;
 
 namespace teemo {
 
-utf8string bool_to_string(bool b) { return (b ? "true" : "false"); }
+utf8string bool_to_string(bool b) {
+  return (b ? "true" : "false");
+}
 
 SliceManage::SliceManage()
     : multi_(nullptr)
@@ -56,7 +58,9 @@ Result SliceManage::SetNetworkConnectionTimeout(size_t conn_timeout_ms) {
   return Successed;
 }
 
-size_t SliceManage::GetNetworkConnectionTimeout() const { return network_conn_timeout_; }
+size_t SliceManage::GetNetworkConnectionTimeout() const {
+  return network_conn_timeout_;
+}
 
 Result SliceManage::SetNetworkReadTimeout(size_t read_timeout_ms) {
   if (!stop_)
@@ -68,11 +72,17 @@ Result SliceManage::SetNetworkReadTimeout(size_t read_timeout_ms) {
   return Successed;
 }
 
-size_t SliceManage::GetNetworkReadTimeout() const { return network_read_timeout_; }
+size_t SliceManage::GetNetworkReadTimeout() const {
+  return network_read_timeout_;
+}
 
-void SliceManage::SetSliceCacheExpiredTime(int seconds) { slice_cache_expired_seconds_ = seconds; }
+void SliceManage::SetSliceCacheExpiredTime(int seconds) {
+  slice_cache_expired_seconds_ = seconds;
+}
 
-int SliceManage::GetSliceCacheExpiredTime() const { return slice_cache_expired_seconds_; }
+int SliceManage::GetSliceCacheExpiredTime() const {
+  return slice_cache_expired_seconds_;
+}
 
 Result SliceManage::SetThreadNum(size_t thread_num) {
   if (!stop_)
@@ -84,19 +94,28 @@ Result SliceManage::SetThreadNum(size_t thread_num) {
   return Successed;
 }
 
-size_t SliceManage::GetThreadNum() const { return thread_num_; }
+size_t SliceManage::GetThreadNum() const {
+  return thread_num_;
+}
 
-void SliceManage::SetSaveSliceFileToTempDir(bool enabled) { save_slice_to_tmp_dir_ = enabled; }
+void SliceManage::SetSaveSliceFileToTempDir(bool enabled) {
+  save_slice_to_tmp_dir_ = enabled;
+}
 
-bool SliceManage::IsSaveSliceFileToTempDir() const { return save_slice_to_tmp_dir_; }
+bool SliceManage::IsSaveSliceFileToTempDir() const {
+  return save_slice_to_tmp_dir_;
+}
 
 void SliceManage::SetMaxDownloadSpeed(size_t byte_per_seconds) {
   max_download_speed_ = byte_per_seconds;
 }
 
-size_t SliceManage::GetMaxDownloadSpeed() const { return max_download_speed_; }
+size_t SliceManage::GetMaxDownloadSpeed() const {
+  return max_download_speed_;
+}
 
-Result SliceManage::Start(const utf8string &url, const utf8string &target_file_path,
+Result SliceManage::Start(const utf8string& url,
+                          const utf8string& target_file_path,
                           ProgressFunctor progress_functor,
                           RealtimeSpeedFunctor realtime_speed_functor) {
   if (url.length() == 0)
@@ -168,7 +187,7 @@ Result SliceManage::Start(const utf8string &url, const utf8string &target_file_p
       }
     }
     else if (file_size_ == 0) {
-      FILE *f = OpenFile(target_file_path_, u8"wb");
+      FILE* f = OpenFile(target_file_path_, u8"wb");
       if (!f)
         return GenerateTargetFileFailed;
       fclose(f);
@@ -188,7 +207,7 @@ Result SliceManage::Start(const utf8string &url, const utf8string &target_file_p
   {
     std::stringstream ss_verbose;
     ss_verbose << "slices: \r\n";
-    for (auto &s : slices_) {
+    for (auto& s : slices_) {
       ss_verbose << s->index() << ": " << s->filePath() << ": " << s->begin() << " ~ " << s->end()
                  << ": " << s->capacity() << "\r\n";
     }
@@ -203,7 +222,7 @@ Result SliceManage::Start(const utf8string &url, const utf8string &target_file_p
   }
 
   size_t uncomplete_slice_num = 0;
-  for (auto &slice : slices_) {
+  for (auto& slice : slices_) {
     if (!slice->IsDownloadCompleted())
       uncomplete_slice_num++;
   }
@@ -237,7 +256,7 @@ Result SliceManage::Start(const utf8string &url, const utf8string &target_file_p
                     "\r\n");
 
   bool init_curl_ret = true;
-  for (auto &slice : slices_) {
+  for (auto& slice : slices_) {
     if (!slice->IsDownloadCompleted()) {
       if (!slice->InitCURL(multi_, each_slice_download_speed)) {
         init_curl_ret = false;
@@ -262,7 +281,7 @@ Result SliceManage::Start(const utf8string &url, const utf8string &target_file_p
       }
 
       long downloaded = 0;
-      for (const auto &s : slices_) {
+      for (const auto& s : slices_) {
         downloaded += s->capacity();
       }
 
@@ -272,7 +291,7 @@ Result SliceManage::Start(const utf8string &url, const utf8string &target_file_p
   });
 
   long init_total_capacity = 0;
-  for (const auto &s : slices_)
+  for (const auto& s : slices_)
     init_total_capacity += s->capacity();
   OutputVerboseInfo("init total capacity: " + std::to_string(init_total_capacity) + "\r\n");
 
@@ -286,7 +305,7 @@ Result SliceManage::Start(const utf8string &url, const utf8string &target_file_p
       }
 
       long now = 0;
-      for (const auto &s : slices_)
+      for (const auto& s : slices_)
         now += s->capacity();
 
       static long last = init_total_capacity;
@@ -359,12 +378,12 @@ Result SliceManage::Start(const utf8string &url, const utf8string &target_file_p
     }
 
     switch (rc) {
-    case -1:
-      break; /* select error */
-    case 0:  /* timeout */
-    default: /* action */
-      curl_multi_perform(multi_, &still_running);
-      break;
+      case -1:
+        break; /* select error */
+      case 0:  /* timeout */
+      default: /* action */
+        curl_multi_perform(multi_, &still_running);
+        break;
     }
 
   } while (still_running);
@@ -373,7 +392,7 @@ Result SliceManage::Start(const utf8string &url, const utf8string &target_file_p
 
   /* See how the transfers went */
   size_t done_thread = 0;
-  CURLMsg *msg = NULL;
+  CURLMsg* msg = NULL;
   int msgsInQueue;
   while ((msg = curl_multi_info_read(multi_, &msgsInQueue)) != NULL) {
     if (msg->msg == CURLMSG_DONE) {
@@ -447,26 +466,32 @@ void SliceManage::Stop() {
   stop_ = true;
 }
 
-utf8string SliceManage::GetTargetFilePath() const { return target_file_path_; }
+utf8string SliceManage::GetTargetFilePath() const {
+  return target_file_path_;
+}
 
-utf8string SliceManage::GetIndexFilePath() const { return index_file_path_; }
+utf8string SliceManage::GetIndexFilePath() const {
+  return index_file_path_;
+}
 
-utf8string SliceManage::GetUrl() const { return url_; }
+utf8string SliceManage::GetUrl() const {
+  return url_;
+}
 
-void SliceManage::OutputVerboseInfo(const utf8string &info) {
+void SliceManage::OutputVerboseInfo(const utf8string& info) {
   if (verbose_functor_) {
     verbose_functor_(info);
   }
 }
 
-static size_t QueryFileSizeCallback(char *buffer, size_t size, size_t nitems, void *outstream) {
+static size_t QueryFileSizeCallback(char* buffer, size_t size, size_t nitems, void* outstream) {
   size_t avaliable = size * nitems;
   return (avaliable);
 }
 
 long SliceManage::QueryFileSize() const {
   ScopedCurl scoped_curl;
-  CURL *curl = scoped_curl.GetCurl();
+  CURL* curl = scoped_curl.GetCurl();
 
   curl_easy_setopt(curl, CURLOPT_VERBOSE, 0);
   curl_easy_setopt(curl, CURLOPT_NOSIGNAL, 1L);
@@ -478,10 +503,10 @@ long SliceManage::QueryFileSize() const {
   curl_easy_setopt(curl, CURLOPT_SSL_VERIFYPEER, 0);
   curl_easy_setopt(
       curl, CURLOPT_CONNECTTIMEOUT_MS,
-      network_conn_timeout_); // Time-out connect operations after this amount of seconds
+      network_conn_timeout_);  // Time-out connect operations after this amount of seconds
   curl_easy_setopt(
       curl, CURLOPT_TIMEOUT_MS,
-      network_read_timeout_); // Time-out the read operation after this amount of seconds
+      network_read_timeout_);  // Time-out the read operation after this amount of seconds
 
   //if (ca_path_.length() > 0)
   //    curl_easy_setopt(curl, CURLOPT_CAINFO, ca_path_.c_str());
@@ -518,7 +543,7 @@ long SliceManage::QueryFileSize() const {
 }
 
 bool SliceManage::LoadSlices(const utf8string url, ProgressFunctor functor) {
-  FILE *file = OpenFile(index_file_path_, u8"rb");
+  FILE* file = OpenFile(index_file_path_, u8"rb");
   if (!file)
     return false;
   long file_size = GetFileSize(file);
@@ -545,13 +570,13 @@ bool SliceManage::LoadSlices(const utf8string url, ProgressFunctor functor) {
     file_size_ = j["file_size"];
     if (j["url"].get<utf8string>() != url)
       return false;
-    for (auto &it : j["slices"]) {
+    for (auto& it : j["slices"]) {
       std::shared_ptr<Slice> slice = std::make_shared<Slice>(9999, shared_from_this());
       slice->Init(it["path"].get<utf8string>(), it["begin"].get<long>(), it["end"].get<long>(),
                   it["capacity"].get<long>());
       slices_.push_back(slice);
     }
-  } catch (const std::exception &e) {
+  } catch (const std::exception& e) {
     if (e.what())
       std::cerr << e.what() << std::endl;
     file_size_ = -1;
@@ -561,14 +586,14 @@ bool SliceManage::LoadSlices(const utf8string url, ProgressFunctor functor) {
   return true;
 }
 
-bool sliceLessBegin(const std::shared_ptr<Slice> &s1, const std::shared_ptr<Slice> &s2) {
+bool sliceLessBegin(const std::shared_ptr<Slice>& s1, const std::shared_ptr<Slice>& s2) {
   return s1->begin() < s2->begin();
 }
 
 bool SliceManage::CombineSlice() {
   std::sort(slices_.begin(), slices_.end(), sliceLessBegin);
 
-  FILE *f = OpenFile(target_file_path_, u8"wb");
+  FILE* f = OpenFile(target_file_path_, u8"wb");
   if (!f)
     return false;
   for (auto slice : slices_) {
@@ -596,7 +621,7 @@ bool SliceManage::CleanupTmpFiles() {
 }
 
 bool SliceManage::UpdateIndexFile() {
-  FILE *f = OpenFile(index_file_path_, u8"wb");
+  FILE* f = OpenFile(index_file_path_, u8"wb");
   if (!f)
     return false;
   json j;
@@ -636,11 +661,11 @@ void SliceManage::Destory() {
   }
 }
 
-utf8string SliceManage::GenerateIndexFilePath(const utf8string &target_file_path) const {
+utf8string SliceManage::GenerateIndexFilePath(const utf8string& target_file_path) const {
   utf8string target_dir = GetDirectory(target_file_path);
   utf8string target_filename = GetFileName(target_file_path);
 
   utf8string indexfilename = target_filename + ".efdindex";
   return AppendFileName(target_dir, indexfilename);
 }
-} // namespace teemo
+}  // namespace teemo

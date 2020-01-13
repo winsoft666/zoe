@@ -5,7 +5,8 @@
 #include <future>
 using namespace teemo;
 
-void DoBreakpointTest(std::vector<TestData> test_datas, int thread_num,
+void DoBreakpointTest(std::vector<TestData> test_datas,
+                      int thread_num,
                       bool enable_save_slice_to_tmp) {
   for (auto test_data : test_datas) {
     std::future<void> test_task =

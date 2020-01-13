@@ -54,15 +54,15 @@ enum Result {
   FailedAndUpdateIndexFailed,
 };
 
-TEEMO_API const char *GetResultString(int enumVal);
+TEEMO_API const char* GetResultString(int enumVal);
 
 typedef std::string utf8string;
 typedef std::function<void(long total, long downloaded)> ProgressFunctor;
 typedef std::function<void(long byte_per_sec)> RealtimeSpeedFunctor;
-typedef std::function<void(const utf8string &verbose)> VerboseOuputFunctor;
+typedef std::function<void(const utf8string& verbose)> VerboseOuputFunctor;
 
 class TEEMO_API Teemo {
-public:
+ public:
   Teemo();
   ~Teemo();
 
@@ -80,10 +80,10 @@ public:
   utf8string GetUrl() const noexcept;
   utf8string GetTargetFilePath() const noexcept;
 
-  Result SetNetworkConnectionTimeout(size_t milliseconds) noexcept; // default is 3000ms
+  Result SetNetworkConnectionTimeout(size_t milliseconds) noexcept;  // default is 3000ms
   size_t GetNetworkConnectionTimeout() const noexcept;
 
-  Result SetNetworkReadTimeout(size_t milliseconds) noexcept; // default is 3000ms
+  Result SetNetworkReadTimeout(size_t milliseconds) noexcept;  // default is 3000ms
   size_t GetNetworkReadTimeout() const noexcept;
 
   // default is -1 = forever, 0 = not use exist slice cache
@@ -91,19 +91,20 @@ public:
 
   int GetSliceCacheExpiredTime() const noexcept;
 
-  void SetMaxDownloadSpeed(size_t byte_per_seconds) noexcept; // default is 0 = not limit
+  void SetMaxDownloadSpeed(size_t byte_per_seconds) noexcept;  // default is 0 = not limit
   size_t GetMaxDownloadSpeed() const noexcept;
 
-  pplx::task<Result> Start(const utf8string url, const utf8string &target_file_path,
+  pplx::task<Result> Start(const utf8string url,
+                           const utf8string& target_file_path,
                            ProgressFunctor progress_functor,
                            RealtimeSpeedFunctor realtime_speed_functor) noexcept;
 
   void Stop(bool wait = false) noexcept;
 
-protected:
+ protected:
   class TeemoImpl;
   TeemoImpl* impl_;
 };
-} // namespace teemo
+}  // namespace teemo
 
 #endif

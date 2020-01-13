@@ -23,16 +23,16 @@ void GlobalCurlInit();
 void GlobalCurlUnInit();
 
 class ScopedCurl {
-public:
+ public:
   ScopedCurl() { curl_ = curl_easy_init(); }
 
   ~ScopedCurl() { curl_easy_cleanup(curl_); }
 
-  CURL *GetCurl() { return curl_; }
+  CURL* GetCurl() { return curl_; }
 
-private:
-  CURL *curl_;
+ private:
+  CURL* curl_;
 };
-} // namespace teemo
+}  // namespace teemo
 
-#endif // !TEEMO_GLOBAL_ENV_H_
+#endif  // !TEEMO_GLOBAL_ENV_H_

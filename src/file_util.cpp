@@ -25,14 +25,14 @@ namespace teemo {
 #if defined(WIN32) || defined(_WIN32) || defined(__WIN32__) || defined(__NT__)
 #define PATH_SEPARATOR '\\'
 
-static std::wstring Utf8ToUnicode(const std::string &str) {
+static std::wstring Utf8ToUnicode(const std::string& str) {
   std::wstring strRes;
   int iSize = ::MultiByteToWideChar(CP_UTF8, 0, str.c_str(), -1, NULL, 0);
 
   if (iSize == 0)
     return strRes;
 
-  wchar_t *szBuf = new (std::nothrow) wchar_t[iSize];
+  wchar_t* szBuf = new (std::nothrow) wchar_t[iSize];
 
   if (!szBuf)
     return strRes;
@@ -49,7 +49,7 @@ static std::wstring Utf8ToUnicode(const std::string &str) {
 #define PATH_SEPARATOR '/'
 #endif
 
-long GetFileSize(FILE *f) {
+long GetFileSize(FILE* f) {
   if (!f)
     return 0;
   fseek(f, 0, SEEK_END);
@@ -57,12 +57,12 @@ long GetFileSize(FILE *f) {
   return fsize;
 }
 
-utf8string GetDirectory(const utf8string &path) {
+utf8string GetDirectory(const utf8string& path) {
   utf8string::size_type pos = path.find_last_of(PATH_SEPARATOR);
   return path.substr(0, pos);
 }
 
-utf8string GetFileName(const utf8string &path) {
+utf8string GetFileName(const utf8string& path) {
   utf8string::size_type pos = path.find_last_of(PATH_SEPARATOR);
   if (pos == utf8string::npos)
     pos = 0;
@@ -71,7 +71,7 @@ utf8string GetFileName(const utf8string &path) {
   return path.substr(pos);
 }
 
-utf8string AppendFileName(const utf8string &dir, const utf8string &filename) {
+utf8string AppendFileName(const utf8string& dir, const utf8string& filename) {
   utf8string result = dir;
   if (result.length() > 0) {
     if (result[result.length() - 1] != PATH_SEPARATOR)
@@ -82,7 +82,7 @@ utf8string AppendFileName(const utf8string &dir, const utf8string &filename) {
   return result;
 }
 
-bool FileIsExist(const utf8string &filepath) {
+bool FileIsExist(const utf8string& filepath) {
   if (filepath.length() == 0)
     return false;
 #if defined(WIN32) || defined(_WIN32) || defined(__WIN32__) || defined(__NT__)
@@ -93,7 +93,7 @@ bool FileIsExist(const utf8string &filepath) {
 #endif
 }
 
-bool FileIsRW(const utf8string &filepath) {
+bool FileIsRW(const utf8string& filepath) {
   if (filepath.length() == 0)
     return false;
 #if defined(WIN32) || defined(_WIN32) || defined(__WIN32__) || defined(__NT__)
@@ -104,7 +104,7 @@ bool FileIsRW(const utf8string &filepath) {
 #endif
 }
 
-bool RemoveFile(const utf8string &filepath) {
+bool RemoveFile(const utf8string& filepath) {
   if (filepath.length() == 0)
     return false;
 #if defined(WIN32) || defined(_WIN32) || defined(__WIN32__) || defined(__NT__)
@@ -115,8 +115,8 @@ bool RemoveFile(const utf8string &filepath) {
 #endif
 }
 
-FILE *OpenFile(const utf8string &path, const utf8string &mode) {
-  FILE *f = nullptr;
+FILE* OpenFile(const utf8string& path, const utf8string& mode) {
+  FILE* f = nullptr;
   if (path.length() == 0 || mode.length() == 0)
     return f;
 #if defined(WIN32) || defined(_WIN32) || defined(__WIN32__) || defined(__NT__)
@@ -129,4 +129,4 @@ FILE *OpenFile(const utf8string &path, const utf8string &mode) {
   return f;
 }
 
-} // namespace teemo
+}  // namespace teemo

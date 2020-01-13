@@ -18,8 +18,8 @@
 #include "slice_manage.h"
 
 namespace teemo {
-const char *GetResultString(int enumVal) {
-  static const char *EnumStrings[] = {u8"Successed",
+const char* GetResultString(int enumVal) {
+  static const char* EnumStrings[] = {u8"Successed",
                                       u8"UrlInvalid",
                                       u8"TargetFilePathInvalid",
                                       u8"ThreadNumInvalid",
@@ -37,10 +37,10 @@ const char *GetResultString(int enumVal) {
 }
 
 class Teemo::TeemoImpl {
-public:
+ public:
   TeemoImpl() {}
 
-public:
+ public:
   std::shared_ptr<SliceManage> slice_manager;
   pplx::task<Result> result;
 };
@@ -66,7 +66,9 @@ void Teemo::GlobalInit() {
   }
 }
 
-void Teemo::GlobalUnInit() { GlobalCurlInit(); }
+void Teemo::GlobalUnInit() {
+  GlobalCurlInit();
+}
 
 void Teemo::SetVerboseOutput(VerboseOuputFunctor verbose_functor) noexcept {
   impl_->slice_manager->SetVerboseOutput(verbose_functor);
@@ -84,9 +86,13 @@ Result Teemo::SetThreadNum(size_t thread_num) noexcept {
   return impl_->slice_manager->SetThreadNum(thread_num);
 }
 
-size_t Teemo::GetThreadNum() const noexcept { return impl_->slice_manager->GetThreadNum(); }
+size_t Teemo::GetThreadNum() const noexcept {
+  return impl_->slice_manager->GetThreadNum();
+}
 
-utf8string Teemo::GetUrl() const noexcept { return impl_->slice_manager->GetUrl(); }
+utf8string Teemo::GetUrl() const noexcept {
+  return impl_->slice_manager->GetUrl();
+}
 
 utf8string Teemo::GetTargetFilePath() const noexcept {
   return impl_->slice_manager->GetTargetFilePath();
@@ -124,7 +130,8 @@ size_t Teemo::GetMaxDownloadSpeed() const noexcept {
   return impl_->slice_manager->GetMaxDownloadSpeed();
 }
 
-pplx::task<Result> Teemo::Start(const utf8string url, const utf8string &target_file_path,
+pplx::task<Result> Teemo::Start(const utf8string url,
+                                const utf8string& target_file_path,
                                 ProgressFunctor progress_functor,
                                 RealtimeSpeedFunctor realtime_speed_functor) noexcept {
   if (impl_->result._GetImpl() && !impl_->result.is_done())
@@ -147,4 +154,4 @@ void Teemo::Stop(bool wait) noexcept {
     impl_->result.wait();
   }
 }
-} // namespace teemo
+}  // namespace teemo

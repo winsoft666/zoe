@@ -20,14 +20,14 @@
 #include "teemo.h"
 
 namespace teemo {
-long GetFileSize(FILE *f);
-utf8string GetDirectory(const utf8string &path);
-utf8string GetFileName(const utf8string &path);
-utf8string AppendFileName(const utf8string &dir, const utf8string &filename);
-bool FileIsExist(const utf8string &filepath);
-bool FileIsRW(const utf8string &filepath);
-bool RemoveFile(const utf8string &filepath);
-FILE *OpenFile(const utf8string &path, const utf8string &mode);
-} // namespace teemo
+long GetFileSize(FILE* f);
+utf8string GetDirectory(const utf8string& path);
+utf8string GetFileName(const utf8string& path);
+utf8string AppendFileName(const utf8string& dir, const utf8string& filename);
+bool FileIsExist(const utf8string& filepath);
+bool FileIsRW(const utf8string& filepath);
+bool RemoveFile(const utf8string& filepath);
+FILE* OpenFile(const utf8string& path, const utf8string& mode);
+}  // namespace teemo
 
 #endif

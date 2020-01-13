@@ -39,7 +39,7 @@ Slice::~Slice() {
   }
 }
 
-bool Slice::Init(const utf8string &slice_file_path, long begin, long end, long capacity) {
+bool Slice::Init(const utf8string& slice_file_path, long begin, long end, long capacity) {
   begin_ = begin;
   end_ = end;
   capacity_ = capacity;
@@ -50,7 +50,7 @@ bool Slice::Init(const utf8string &slice_file_path, long begin, long end, long c
       break;
     if (!FileIsRW(slice_file_path.c_str()))
       break;
-    FILE *f = OpenFile(slice_file_path, u8"a+b");
+    FILE* f = OpenFile(slice_file_path, u8"a+b");
     if (!f)
       break;
     if (GetFileSize(f) != capacity_) {
@@ -76,23 +76,33 @@ bool Slice::Init(const utf8string &slice_file_path, long begin, long end, long c
   return true;
 }
 
-long Slice::begin() const { return begin_; }
+long Slice::begin() const {
+  return begin_;
+}
 
-long Slice::end() const { return end_; }
+long Slice::end() const {
+  return end_;
+}
 
-long Slice::capacity() const { return capacity_; }
+long Slice::capacity() const {
+  return capacity_;
+}
 
-size_t Slice::index() const { return index_; }
+size_t Slice::index() const {
+  return index_;
+}
 
-utf8string Slice::filePath() const { return file_path_; }
+utf8string Slice::filePath() const {
+  return file_path_;
+}
 
-static size_t DownloadWriteCallback(char *buffer, size_t size, size_t nitems, void *outstream) {
-  Slice *pThis = (Slice *)outstream;
+static size_t DownloadWriteCallback(char* buffer, size_t size, size_t nitems, void* outstream) {
+  Slice* pThis = (Slice*)outstream;
 
   size_t write_size = size * nitems;
   size_t written = 0;
 
-  FILE *f = pThis->GetFile();
+  FILE* f = pThis->GetFile();
   if (f) {
     written = fwrite(buffer, 1, write_size, f);
     fflush(f);
@@ -105,7 +115,7 @@ static size_t DownloadWriteCallback(char *buffer, size_t size, size_t nitems, vo
   return write_size;
 }
 
-bool Slice::InitCURL(CURLM *multi, size_t max_download_speed /* = 0*/) {
+bool Slice::InitCURL(CURLM* multi, size_t max_download_speed /* = 0*/) {
   curl_ = curl_easy_init();
 
   curl_easy_setopt(curl_, CURLOPT_VERBOSE, 0);
@@ -150,7 +160,7 @@ bool Slice::InitCURL(CURLM *multi, size_t max_download_speed /* = 0*/) {
   return true;
 }
 
-void Slice::UnInitCURL(CURLM *multi) {
+void Slice::UnInitCURL(CURLM* multi) {
   if (curl_) {
     if (multi) {
       CURLMcode code = curl_multi_remove_handle(multi, curl_);
@@ -162,7 +172,7 @@ void Slice::UnInitCURL(CURLM *multi) {
   }
 }
 
-bool Slice::AppendSelfToFile(FILE *f) {
+bool Slice::AppendSelfToFile(FILE* f) {
   if (!f)
     return false;
   fflush(file_);
@@ -194,9 +204,13 @@ bool Slice::RemoveSliceFile() {
   return true;
 }
 
-FILE *Slice::GetFile() { return file_; }
+FILE* Slice::GetFile() {
+  return file_;
+}
 
-void Slice::IncreaseCapacity(long i) { capacity_ += i; }
+void Slice::IncreaseCapacity(long i) {
+  capacity_ += i;
+}
 
 bool Slice::IsDownloadCompleted() {
   if (end_ == -1)
@@ -205,7 +219,7 @@ bool Slice::IsDownloadCompleted() {
   return ((end_ - begin_ + 1) == capacity_);
 }
 
-utf8string Slice::GenerateSliceFilePath(size_t index, const utf8string &target_file_path) const {
+utf8string Slice::GenerateSliceFilePath(size_t index, const utf8string& target_file_path) const {
   utf8string target_dir;
   if (slice_manager_->IsSaveSliceFileToTempDir()) {
 #if defined(WIN32) || defined(_WIN32) || defined(__WIN32__) || defined(__NT__)
@@ -226,4 +240,4 @@ utf8string Slice::GenerateSliceFilePath(size_t index, const utf8string &target_f
   utf8string slice_filename = target_filename + ".edf" + std::to_string(index);
   return AppendFileName(target_dir, slice_filename);
 }
-} // namespace teemo
+}  // namespace teemo

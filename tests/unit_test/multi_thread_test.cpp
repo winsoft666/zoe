@@ -9,7 +9,6 @@ void DoTest(std::vector<TestData> test_datas, int thread_num, bool enable_save_s
   Teemo::GlobalInit();
 
   for (auto test_data : test_datas) {
-
     Teemo efd;
 
     if (thread_num != -1)
@@ -43,9 +42,13 @@ TEST(MultiThreadHttpTest, Http_DefaultThreadNum_SliceToTmp_Flase) {
   DoTest(http_test_datas, -1, false);
 }
 
-TEST(MultiThreadHttpTest, Http_ThreadNum_2_SliceToTmp_Flase) { DoTest(http_test_datas, 2, false); }
+TEST(MultiThreadHttpTest, Http_ThreadNum_2_SliceToTmp_Flase) {
+  DoTest(http_test_datas, 2, false);
+}
 
-TEST(MultiThreadHttpTest, Http_ThreadNum_3_SliceToTmp_Flase) { DoTest(http_test_datas, 3, false); }
+TEST(MultiThreadHttpTest, Http_ThreadNum_3_SliceToTmp_Flase) {
+  DoTest(http_test_datas, 3, false);
+}
 
 TEST(MultiThreadHttpTest, Http_ThreadNum_20_SliceToTmp_Flase) {
   DoTest(http_test_datas, 20, false);
@@ -55,9 +58,13 @@ TEST(MultiThreadHttpTest, Http_DefaultThreadNum_SliceToTmp_True) {
   DoTest(http_test_datas, -1, true);
 }
 
-TEST(MultiThreadHttpTest, Http_ThreadNum_2_SliceToTmp_True) { DoTest(http_test_datas, 2, true); }
+TEST(MultiThreadHttpTest, Http_ThreadNum_2_SliceToTmp_True) {
+  DoTest(http_test_datas, 2, true);
+}
 
-TEST(MultiThreadHttpTest, Http_ThreadNum_3_SliceToTmp_True) { DoTest(http_test_datas, 3, true); }
+TEST(MultiThreadHttpTest, Http_ThreadNum_3_SliceToTmp_True) {
+  DoTest(http_test_datas, 3, true);
+}
 
 // FTP
 
@@ -65,14 +72,26 @@ TEST(MultiThreadFTPTest, FTP_DefaultThreadNum_SliceToTmp_Flase) {
   DoTest(ftp_test_datas, -1, false);
 }
 
-TEST(MultiThreadFTPTest, FTP_ThreadNum_2_SliceToTmp_Flase) { DoTest(ftp_test_datas, 2, false); }
+TEST(MultiThreadFTPTest, FTP_ThreadNum_2_SliceToTmp_Flase) {
+  DoTest(ftp_test_datas, 2, false);
+}
 
-TEST(MultiThreadFTPTest, FTP_ThreadNum_3_SliceToTmp_Flase) { DoTest(ftp_test_datas, 3, false); }
+TEST(MultiThreadFTPTest, FTP_ThreadNum_3_SliceToTmp_Flase) {
+  DoTest(ftp_test_datas, 3, false);
+}
 
-TEST(MultiThreadFTPTest, FTP_ThreadNum_20_SliceToTmp_Flase) { DoTest(ftp_test_datas, 20, false); }
+TEST(MultiThreadFTPTest, FTP_ThreadNum_20_SliceToTmp_Flase) {
+  DoTest(ftp_test_datas, 20, false);
+}
 
-TEST(MultiThreadFTPTest, FTP_DefaultThreadNum_SliceToTmp_True) { DoTest(ftp_test_datas, -1, true); }
+TEST(MultiThreadFTPTest, FTP_DefaultThreadNum_SliceToTmp_True) {
+  DoTest(ftp_test_datas, -1, true);
+}
 
-TEST(MultiThreadFTPTest, FTP_ThreadNum_2_SliceToTmp_True) { DoTest(ftp_test_datas, 2, true); }
+TEST(MultiThreadFTPTest, FTP_ThreadNum_2_SliceToTmp_True) {
+  DoTest(ftp_test_datas, 2, true);
+}
 
-TEST(MultiThreadFTPTest, FTP_ThreadNum_3_SliceToTmp_True) { DoTest(ftp_test_datas, 3, true); }
+TEST(MultiThreadFTPTest, FTP_ThreadNum_3_SliceToTmp_True) {
+  DoTest(ftp_test_datas, 3, true);
+}

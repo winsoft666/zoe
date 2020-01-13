@@ -37,28 +37,30 @@ void PrintConsole(long total, long downloaded, long speed);
 #if (defined WIN32 || defined _WIN32)
 BOOL WINAPI ControlSignalHandler(DWORD fdwCtrlType) {
   switch (fdwCtrlType) {
-  case CTRL_C_EVENT:
-  case CTRL_CLOSE_EVENT:
-  case CTRL_BREAK_EVENT:
-  case CTRL_LOGOFF_EVENT:
-  case CTRL_SHUTDOWN_EVENT:
-    efd.Stop(true);
-    return TRUE;
+    case CTRL_C_EVENT:
+    case CTRL_CLOSE_EVENT:
+    case CTRL_BREAK_EVENT:
+    case CTRL_LOGOFF_EVENT:
+    case CTRL_SHUTDOWN_EVENT:
+      efd.Stop(true);
+      return TRUE;
 
-  default:
-    return FALSE;
+    default:
+      return FALSE;
   }
 }
 #else
 
-void ControlSignalHandler(int s) { efd.Stop(true); }
+void ControlSignalHandler(int s) {
+  efd.Stop(true);
+}
 #endif
 
 //
 // Usage:
 // easy_download_tool URL TargetFilePath [ThreadNum] [MD5] [EnableSaveSliceToTmp] [SliceCacheExpiredSeconds] [MaxSpeed]
 //
-int main(int argc, char **argv) {
+int main(int argc, char** argv) {
   if (argc < 3) {
     std::cout << "Argument Number Error\n";
     return 1;
@@ -77,9 +79,9 @@ int main(int argc, char **argv) {
   sigaction(SIGQUIT, &sigIntHandler, NULL);
 #endif
 
-  char *url = argv[1];
-  char *target_file_path = argv[2];
-  char *md5 = nullptr;
+  char* url = argv[1];
+  char* target_file_path = argv[2];
+  char* md5 = nullptr;
 
   if (argc >= 4)
     efd.SetThreadNum(atoi(argv[3]));
@@ -94,8 +96,8 @@ int main(int argc, char **argv) {
 
   int exit_code = 0;
   Teemo::GlobalInit();
-  FILE *f_verbose = fopen("teemo_tool_verbose.log", "wb");
-  efd.SetVerboseOutput([f_verbose](const utf8string &verbose) { 
+  FILE* f_verbose = fopen("teemo_tool_verbose.log", "wb");
+  efd.SetVerboseOutput([f_verbose](const utf8string& verbose) {
     fwrite(verbose.c_str(), 1, verbose.size(), f_verbose);
 #if defined(WIN32) || defined(_WIN32) || defined(__WIN32__) || defined(__NT__)
     OutputDebugStringA(verbose.c_str());
@@ -131,7 +133,7 @@ int main(int argc, char **argv) {
 }
 
 void PrintConsole(long total, long downloaded, long speed) {
-  const char *PBSTR = "============================================================";
+  const char* PBSTR = "============================================================";
   const int PBWIDTH = 60;
 
   std::lock_guard<std::mutex> lg(console_mutex);

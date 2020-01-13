@@ -1,6 +1,6 @@
 ---
 Language: Cpp
-BasedOnStyle:  LLVM
+BasedOnStyle:  Chromium
 SortIncludes: false
 SortUsingDeclarations: false
 BreakStringLiterals: false

@@ -26,11 +26,11 @@
 namespace teemo {
 class SliceManage;
 class Slice {
-public:
+ public:
   Slice(size_t index, std::shared_ptr<SliceManage> slice_manager);
   virtual ~Slice();
 
-  bool Init(const utf8string &slice_file_path, long begin, long end, long capacity);
+  bool Init(const utf8string& slice_file_path, long begin, long end, long capacity);
 
   long begin() const;
   long end() const;
@@ -38,32 +38,32 @@ public:
   size_t index() const;
   utf8string filePath() const;
 
-  bool InitCURL(CURLM *multi, size_t max_download_speed = 0); // bytes per seconds
-  void UnInitCURL(CURLM *multi);
+  bool InitCURL(CURLM* multi, size_t max_download_speed = 0);  // bytes per seconds
+  void UnInitCURL(CURLM* multi);
 
-  bool AppendSelfToFile(FILE *f);
+  bool AppendSelfToFile(FILE* f);
 
   bool RemoveSliceFile();
 
-  FILE *GetFile();
+  FILE* GetFile();
   void IncreaseCapacity(long i);
 
   bool IsDownloadCompleted();
 
-protected:
-  utf8string GenerateSliceFilePath(size_t index, const utf8string &target_file_path) const;
+ protected:
+  utf8string GenerateSliceFilePath(size_t index, const utf8string& target_file_path) const;
 
-protected:
+ protected:
   size_t index_;
   long begin_;
   long end_;
   long capacity_;
   long origin_capacity_;
   utf8string file_path_;
-  FILE *file_;
-  CURL *curl_;
+  FILE* file_;
+  CURL* curl_;
   std::shared_ptr<SliceManage> slice_manager_;
 };
-} // namespace teemo
+}  // namespace teemo
 
 #endif

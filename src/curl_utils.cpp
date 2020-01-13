@@ -36,19 +36,21 @@ int THREAD_cleanup(void);
 #define THREAD_ID pthread_self()
 #endif
 
-static MUTEX_TYPE *mutex_buf = NULL;
-static void locking_function(int mode, int n, const char *file, int line) {
+static MUTEX_TYPE* mutex_buf = NULL;
+static void locking_function(int mode, int n, const char* file, int line) {
   if (mode & CRYPTO_LOCK)
     MUTEX_LOCK(mutex_buf[n]);
   else
     MUTEX_UNLOCK(mutex_buf[n]);
 }
 
-static unsigned long id_function(void) { return ((unsigned long)THREAD_ID); }
+static unsigned long id_function(void) {
+  return ((unsigned long)THREAD_ID);
+}
 
 int THREAD_setup(void) {
   int i;
-  mutex_buf = (MUTEX_TYPE *)malloc(CRYPTO_num_locks() * sizeof(MUTEX_TYPE));
+  mutex_buf = (MUTEX_TYPE*)malloc(CRYPTO_num_locks() * sizeof(MUTEX_TYPE));
   if (!mutex_buf)
     return 0;
   for (i = 0; i < CRYPTO_num_locks(); i++)
@@ -70,7 +72,7 @@ int THREAD_cleanup(void) {
   mutex_buf = NULL;
   return 1;
 }
-} // namespace
+}  // namespace
 
 void GlobalCurlInit() {
   THREAD_setup();
@@ -81,4 +83,4 @@ void GlobalCurlUnInit() {
   curl_global_cleanup();
   THREAD_cleanup();
 }
-} // namespace teemo
+}  // namespace teemo

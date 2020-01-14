@@ -36,17 +36,6 @@ matrix:
         - cmake.exe --build . --config Debug
         - cmake.exe --build . --config Release
         
-    - os: osx
-      osx_image: xcode11.3
-      env:
-        - WITH_TEST=yes
-      install: 
-        - cmake --version
-        - g++ -v
-      script: 
-        - cmake . -DBUILD_SHARED_LIBS=ON -DBUILD_TESTS=ON -DCMAKE_TOOLCHAIN_FILE=~/vcpkg/scripts/buildsystems/vcpkg.cmake -DVCPKG_TARGET_TRIPLET=x64-osx
-        - make
-        
 before_script:
     - |
       if [ "$TRAVIS_OS_NAME" = linux ]; then
@@ -59,20 +48,6 @@ before_script:
           ./vcpkg install cpprestsdk:x64-linux
           if [ "$WITH_TEST" = "yes" ]; then
             ./vcpkg install gtest:x64-linux
-          fi
-        )
-      fi
-    - |
-      if [ "$TRAVIS_OS_NAME" = osx ]; then
-        (
-          cd $HOME &&
-          git clone --depth 1 -b master https://github.com/microsoft/vcpkg.git vcpkg &&
-          cd vcpkg &&
-          ./bootstrap-vcpkg.sh &&
-          ./vcpkg install curl[non-http]:x64-osx &&
-          ./vcpkg install cpprestsdk:x64-osx
-          if [ "$WITH_TEST" = "yes" ]; then
-            ./vcpkg install gtest:x64-osx
           fi
         )
       fi

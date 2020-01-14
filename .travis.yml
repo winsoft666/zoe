@@ -23,7 +23,8 @@ matrix:
         - cmake --version
         - sudo add-apt-repository ppa:ubuntu-toolchain-r/test -y
         - sudo apt-get update -y
-        - sudo apt-get install g++-7 -y
+        - sudo apt-get remove g++
+        - sudo apt-get install g++
         - g++ -v
       script: 
         - cmake . -DBUILD_SHARED_LIBS=ON -DBUILD_TESTS=ON

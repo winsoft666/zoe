@@ -38,14 +38,11 @@ matrix:
         
 before_script:
     - |
-      (
-        cd $HOME &&
-        git clone --depth 1 -b master https://github.com/microsoft/vcpkg.git vcpkg &&
-        cd vcpkg
-      )
-    - |
       if [ "$TRAVIS_OS_NAME" = linux ]; then
         (
+          cd $HOME &&
+          git clone --depth 1 -b master https://github.com/microsoft/vcpkg.git vcpkg &&
+          cd vcpkg &&
           ./bootstrap-vcpkg.sh &&
           ./vcpkg install curl[non-http]:x64-linux &&
           ./vcpkg install cpprestsdk:x64-linux
@@ -57,7 +54,10 @@ before_script:
     - |
       if [ "$TRAVIS_OS_NAME" = osx ]; then
         (
-        ./bootstrap-vcpkg.sh &&
+          cd $HOME &&
+          git clone --depth 1 -b master https://github.com/microsoft/vcpkg.git vcpkg &&
+          cd vcpkg &&
+          ./bootstrap-vcpkg.sh &&
           ./vcpkg install curl[non-http]:x64-osx &&
           ./vcpkg install cpprestsdk:x64-osx
           if [ "$WITH_TEST" = "yes" ]; then
@@ -68,7 +68,9 @@ before_script:
     - |
       if [ "$TRAVIS_OS_NAME" = windows ]; then
         (
-        .\bootstrap-vcpkg.bat &&
+          git clone --depth 1 -b master https://github.com/microsoft/vcpkg.git vcpkg &&
+          cd vcpkg &&
+          .\bootstrap-vcpkg.bat &&
           .\vcpkg.exe install curl[non-http]:x86-windows &&
           .\vcpkg.exe install cpprestsdk:x86-windows
           if [ "$WITH_TEST" = "yes" ]; then

@@ -114,7 +114,7 @@ int main(int argc, char** argv) {
 
         if (result.get() == Result::Successed) {
           if (md5) {
-            if (strcmp(md5, ppx::base::GetFileMd5(target_file_path).c_str()) == 0) {
+            if (strcmp(md5, base::GetFileMd5(target_file_path).c_str()) == 0) {
               std::cout << "MD5 checksum successful." << std::endl;
             }
             else {

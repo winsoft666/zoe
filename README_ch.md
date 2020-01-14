@@ -1,3 +1,5 @@
+[![Build Status](https://travis-ci.com/winsoft666/teemo.svg?branch=master)](https://travis-ci.com/winsoft666/teemo)
+
 [ >>> English Version](README.md)
 
 # 介绍

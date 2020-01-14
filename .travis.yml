@@ -1,0 +1,79 @@
+language: cpp
+sudo: required
+branches:
+  only:
+    - master
+
+matrix:
+  include:
+    - os: linux
+      compiler: gcc
+      env:
+        - WITH_TEST=yes
+      install: 
+        - cmake --version
+      script: 
+        - cmake . -DBUILD_SHARED_LIBS=ON -DBUILD_TESTS=ON
+        - make
+        
+    - os: windows
+      install: 
+        - cmake --version
+      env:
+        - WITH_TEST=yes
+      script: 
+        - cmake.exe -G "Visual Studio 15 2017" -DBUILD_SHARED_LIBS=ON -DBUILD_TESTS=ON -S .
+        - cmake.exe --build . --config Debug
+        - cmake.exe --build . --config Release
+        
+    - os: osx
+      osx_image: xcode11.3
+      env:
+        - WITH_TEST=yes
+      install: 
+        - cmake --version
+      script: 
+        - cmake . -DBUILD_SHARED_LIBS=ON -DBUILD_TESTS=ON
+        - make
+        
+before_script:
+    - |
+      cd $HOME &&
+      git clone --depth 1 -b master https://github.com/microsoft/vcpkg.git vcpkg &&
+      cd vcpkg
+    - |
+      if [ "$TRAVIS_OS_NAME" = linux ]; then
+        (
+          ./bootstrap-vcpkg.sh &&
+          ./vcpkg install curl[non-http]:x64-linux &&
+          ./vcpkg install cpprestsdk:x64-linux
+          if [ "$WITH_TEST" = "yes" ]; then
+            ./vcpkg install gtest:x64-linux
+          fi
+        )
+      fi
+    - |
+      if [ "$TRAVIS_OS_NAME" = osx ]; then
+        (
+        ./bootstrap-vcpkg.sh &&
+          ./vcpkg install curl[non-http]:x64-osx &&
+          ./vcpkg install cpprestsdk:x64-osx
+          if [ "$WITH_TEST" = "yes" ]; then
+            ./vcpkg install gtest:x64-osx
+          fi
+        )
+      fi
+    - |
+      if [ "$TRAVIS_OS_NAME" = windows ]; then
+        (
+        .\bootstrap-vcpkg.bat &&
+          .\vcpkg.exe install curl[non-http]:x86-windows &&
+          .\vcpkg.exe install cpprestsdk:x86-windows
+          if [ "$WITH_TEST" = "yes" ]; then
+            .\vcpkg.exe install gtest:x86-windows
+          fi
+        )
+      fi
+
+notifications:
+  email: false

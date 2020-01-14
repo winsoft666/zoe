@@ -38,9 +38,11 @@ matrix:
         
 before_script:
     - |
-      cd $HOME &&
-      git clone --depth 1 -b master https://github.com/microsoft/vcpkg.git vcpkg &&
-      cd vcpkg
+      (
+        cd $HOME &&
+        git clone --depth 1 -b master https://github.com/microsoft/vcpkg.git vcpkg &&
+        cd vcpkg
+      )
     - |
       if [ "$TRAVIS_OS_NAME" = linux ]; then
         (

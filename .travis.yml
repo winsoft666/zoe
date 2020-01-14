@@ -1,6 +1,5 @@
 language: cpp
 sudo: required
-dist: precise
 branches:
   only:
     - master
@@ -17,6 +16,9 @@ matrix:
       compiler: gcc
       env:
         - WITH_TEST=yes
+        - MATRIX_EVAL="CC=gcc-7 && CXX=g++-7"
+      before_install:
+        - eval "${MATRIX_EVAL}"
       install: 
         - cmake --version
         - g++ -v

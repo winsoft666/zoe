@@ -32,7 +32,7 @@ matrix:
       env:
         - WITH_TEST=yes
       script: 
-        - cmake.exe -G "Visual Studio 15 2017" -DBUILD_SHARED_LIBS=ON -DBUILD_TESTS=ON -DCMAKE_TOOLCHAIN_FILE=C:\vcpkg\scripts\buildsystems\vcpkg.cmake -DVCPKG_TARGET_TRIPLET=x86-windows -S .
+        - cmake.exe -G "Visual Studio 15 2017" -DBUILD_SHARED_LIBS=ON -DBUILD_TESTS=ON -DCMAKE_TOOLCHAIN_FILE=C:\\vcpkg\\scripts\\buildsystems\\vcpkg.cmake -DVCPKG_TARGET_TRIPLET=x86-windows -S .
         - cmake.exe --build . --config Debug
         - cmake.exe --build . --config Release
         
@@ -85,11 +85,11 @@ before_script:
           cd C: &&
           git clone --depth 1 -b master https://github.com/microsoft/vcpkg.git vcpkg &&
           cd vcpkg &&
-          .\bootstrap-vcpkg.bat &&
-          .\vcpkg.exe install curl[non-http]:x86-windows &&
-          .\vcpkg.exe install cpprestsdk:x86-windows
+          .\\bootstrap-vcpkg.bat &&
+          .\\vcpkg.exe install curl[non-http]:x86-windows &&
+          .\\vcpkg.exe install cpprestsdk:x86-windows
           if [ "$WITH_TEST" = "yes" ]; then
-            .\vcpkg.exe install gtest:x86-windows
+            .\\vcpkg.exe install gtest:x86-windows
           fi
         )
       fi

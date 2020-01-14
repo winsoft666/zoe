@@ -40,9 +40,6 @@ matrix:
       osx_image: xcode11.3
       env:
         - WITH_TEST=yes
-        - MATRIX_EVAL="brew install gcc && CC=gcc-7 && CXX=g++-7"
-      before_install:
-        - eval "${MATRIX_EVAL}"
       install: 
         - cmake --version
         - g++ -v

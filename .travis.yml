@@ -21,7 +21,7 @@ matrix:
         - WITH_TEST=yes
       install: 
         - cmake --version
-        - apt-get install g++-7 -y
+        - sudo apt-get install g++-7 -y
       script: 
         - cmake . -DBUILD_SHARED_LIBS=ON -DBUILD_TESTS=ON
         - make

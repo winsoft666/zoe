@@ -31,6 +31,7 @@ I prefer to use `vcpkg` to install dependencies, of course, this is not the only
     vcpkg install curl[non-http]:x86-windows
     ```
 - cpprestsdk
+
 `Teemo` depend on pplx that give you access to the Concurrency Runtime, a concurrent programming framework for C++, pplx is a part of `cpprestsdk` library.
 
     ```bash
@@ -38,6 +39,7 @@ I prefer to use `vcpkg` to install dependencies, of course, this is not the only
     ```
 
 - gtest
+
 unit test project depend on gtest.
 
     ```bash

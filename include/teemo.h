@@ -44,6 +44,7 @@ enum Result {
   ThreadNumInvalid,
   NetworkConnTimeoutInvalid,
   NetworkReadTimeoutInvalid,
+  QueryFileSizeRetryTimesInvalid,
   InternalNetworkError,
   GenerateTargetFileFailed,
   CleanupTmpFileFailed,
@@ -86,6 +87,9 @@ class TEEMO_API Teemo {
   Result SetNetworkReadTimeout(size_t milliseconds) noexcept;  // default is 3000ms
   size_t GetNetworkReadTimeout() const noexcept;
 
+  Result SetQueryFileSizeRetryTimes(size_t retry_times);
+  size_t GetQueryFileSizeRetryTimes() const;
+
   // default is -1 = forever, 0 = not use exist slice cache
   void SetSliceCacheExpiredTime(int seconds) noexcept;
 
@@ -97,7 +101,9 @@ class TEEMO_API Teemo {
   pplx::task<Result> Start(const utf8string url,
                            const utf8string& target_file_path,
                            ProgressFunctor progress_functor,
-                           RealtimeSpeedFunctor realtime_speed_functor) noexcept;
+                           RealtimeSpeedFunctor realtime_speed_functor,
+                           const Concurrency::cancellation_token_source& cancel_token =
+                               pplx::cancellation_token_source()) noexcept;
 
   void Stop(bool wait = false) noexcept;
 

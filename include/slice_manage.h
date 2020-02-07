@@ -41,6 +41,9 @@ class SliceManage : public std::enable_shared_from_this<SliceManage> {
   Result SetNetworkReadTimeout(size_t read_timeout_ms);
   size_t GetNetworkReadTimeout() const;
 
+  Result SetQueryFileSizeRetryTimes(size_t retry_times);
+  size_t GetQueryFileSizeRetryTimes() const;
+
   void SetSliceCacheExpiredTime(int seconds);
   int GetSliceCacheExpiredTime() const;
 
@@ -56,7 +59,8 @@ class SliceManage : public std::enable_shared_from_this<SliceManage> {
   Result Start(const utf8string& url,
                const utf8string& target_file_path,
                ProgressFunctor progress_functor,
-               RealtimeSpeedFunctor realtime_speed_functor);
+               RealtimeSpeedFunctor realtime_speed_functor,
+               const Concurrency::cancellation_token_source& cancel_token);
   void Stop();
 
   utf8string GetUrl() const;
@@ -82,12 +86,14 @@ class SliceManage : public std::enable_shared_from_this<SliceManage> {
   size_t network_conn_timeout_;
   size_t network_read_timeout_;
   size_t max_download_speed_;
+  size_t query_filesize_retry_times_;
   int slice_cache_expired_seconds_;
   long file_size_;
   CURLM* multi_;
   ProgressFunctor progress_functor_;
   RealtimeSpeedFunctor speed_functor_;
   VerboseOuputFunctor verbose_functor_;
+  Concurrency::cancellation_token_source cancel_token_;
   std::vector<std::shared_ptr<Slice>> slices_;
   std::future<void> progress_notify_thread_;
   std::future<void> speed_notify_thread_;

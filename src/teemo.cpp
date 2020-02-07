@@ -25,6 +25,7 @@ const char* GetResultString(int enumVal) {
                                       u8"ThreadNumInvalid",
                                       u8"NetworkConnTimeoutInvalid",
                                       u8"NetworkReadTimeoutInvalid",
+                                      u8"QueryFileSizeRetryTimesInvalid",
                                       u8"InternalNetworkError",
                                       u8"GenerateTargetFileFailed",
                                       u8"CleanupTmpFileFailed",
@@ -114,6 +115,14 @@ size_t Teemo::GetNetworkReadTimeout() const noexcept {
   return impl_->slice_manager->GetNetworkReadTimeout();
 }
 
+Result Teemo::SetQueryFileSizeRetryTimes(size_t retry_times) {
+  return impl_->slice_manager->SetQueryFileSizeRetryTimes(retry_times);
+}
+
+size_t Teemo::GetQueryFileSizeRetryTimes() const {
+  return impl_->slice_manager->GetQueryFileSizeRetryTimes();
+}
+
 void Teemo::SetSliceCacheExpiredTime(int seconds) noexcept {
   return impl_->slice_manager->SetSliceCacheExpiredTime(seconds);
 }
@@ -133,13 +142,15 @@ size_t Teemo::GetMaxDownloadSpeed() const noexcept {
 pplx::task<Result> Teemo::Start(const utf8string url,
                                 const utf8string& target_file_path,
                                 ProgressFunctor progress_functor,
-                                RealtimeSpeedFunctor realtime_speed_functor) noexcept {
+                                RealtimeSpeedFunctor realtime_speed_functor,
+                                const Concurrency::cancellation_token_source& cancel_token /*=
+                                    pplx::cancellation_token_source()*/) noexcept {
   if (impl_->result._GetImpl() && !impl_->result.is_done())
     return pplx::task_from_result(AlreadyDownloading);
 
   impl_->result = pplx::task<Result>([=]() {
     Result result = impl_->slice_manager->Start(url, target_file_path, progress_functor,
-                                                realtime_speed_functor);
+                                                realtime_speed_functor, cancel_token);
     return pplx::task_from_result(result);
   });
 

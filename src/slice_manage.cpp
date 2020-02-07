@@ -39,6 +39,7 @@ SliceManage::SliceManage()
     , network_conn_timeout_(3000)
     , network_read_timeout_(3000)
     , max_download_speed_(0)
+    , query_filesize_retry_times_(3)
     , stop_(true)
     , file_size_(-1) {}
 
@@ -74,6 +75,20 @@ Result SliceManage::SetNetworkReadTimeout(size_t read_timeout_ms) {
 
 size_t SliceManage::GetNetworkReadTimeout() const {
   return network_read_timeout_;
+}
+
+Result SliceManage::SetQueryFileSizeRetryTimes(size_t retry_times) {
+  if (!stop_)
+    return AlreadyDownloading;
+  if (retry_times == 0)
+    return QueryFileSizeRetryTimesInvalid;
+
+  query_filesize_retry_times_ = retry_times;
+  return Successed;
+}
+
+size_t SliceManage::GetQueryFileSizeRetryTimes() const {
+  return query_filesize_retry_times_;
 }
 
 void SliceManage::SetSliceCacheExpiredTime(int seconds) {
@@ -117,7 +132,8 @@ size_t SliceManage::GetMaxDownloadSpeed() const {
 Result SliceManage::Start(const utf8string& url,
                           const utf8string& target_file_path,
                           ProgressFunctor progress_functor,
-                          RealtimeSpeedFunctor realtime_speed_functor) {
+                          RealtimeSpeedFunctor realtime_speed_functor,
+                          const Concurrency::cancellation_token_source& cancel_token) {
   if (url.length() == 0)
     return Result::UrlInvalid;
 
@@ -130,6 +146,7 @@ Result SliceManage::Start(const utf8string& url,
   stop_ = false;
 
   url_ = url;
+  cancel_token_ = cancel_token;
   progress_functor_ = progress_functor;
   speed_functor_ = realtime_speed_functor;
   target_file_path_ = target_file_path;
@@ -167,8 +184,25 @@ Result SliceManage::Start(const utf8string& url,
 
   OutputVerboseInfo("valid resume download: " + bool_to_string(valid_resume) + "\r\n");
 
+  if (cancel_token_.get_token().is_cancelable() && cancel_token_.get_token().is_canceled()) {
+    Destory();
+    return Canceled;
+  }
+
   if (!valid_resume) {
-    file_size_ = QueryFileSize();
+    size_t try_times = 0;
+    do 
+    {
+      file_size_ = QueryFileSize();
+      if (cancel_token_.get_token().is_cancelable() && cancel_token_.get_token().is_canceled()) {
+        Destory();
+        return Canceled;
+      }
+
+      if(file_size_ != -1)
+        break;
+    } while (++try_times < query_filesize_retry_times_);
+
     OutputVerboseInfo("queried file size: " + std::to_string(file_size_) + "\r\n");
     slices_.clear();
 
@@ -212,6 +246,11 @@ Result SliceManage::Start(const utf8string& url,
                  << ": " << s->capacity() << "\r\n";
     }
     OutputVerboseInfo(ss_verbose.str());
+  }
+
+  if (cancel_token_.get_token().is_cancelable() && cancel_token_.get_token().is_canceled()) {
+    Destory();
+    return Canceled;
   }
 
   multi_ = curl_multi_init();
@@ -328,6 +367,10 @@ Result SliceManage::Start(const utf8string& url,
       if (stop_)
         break;
     }
+    if (cancel_token_.get_token().is_cancelable() && cancel_token_.get_token().is_canceled()) {
+      stop_ = true;
+      break;
+    }
 
     struct timeval timeout;
     timeout.tv_sec = 1;
@@ -403,7 +446,7 @@ Result SliceManage::Start(const utf8string& url,
   }
 
   OutputVerboseInfo("done thread num: " + std::to_string(done_thread) + "\r\n");
-  OutputVerboseInfo("stop: " + std::to_string(stop_) + "\r\n");
+  OutputVerboseInfo("stop: " + bool_to_string(stop_) + "\r\n");
 
   long total_capacity = 0;
   for (auto slice : slices_)

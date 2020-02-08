@@ -44,6 +44,7 @@ SliceManage::SliceManage()
     , verbose_functor_(nullptr)
     , speed_functor_(nullptr)
     , progress_functor_(nullptr)
+    , cancel_event_(nullptr)
     , file_size_(-1) {}
 
 SliceManage::~SliceManage() {}
@@ -136,7 +137,7 @@ Result SliceManage::Start(const utf8string& url,
                           const utf8string& target_file_path,
                           ProgressFunctor progress_functor,
                           RealtimeSpeedFunctor realtime_speed_functor,
-                          const Concurrency::cancellation_token_source& cancel_token) {
+                          CancelEvent* cancel_event) {
   if (url.length() == 0)
     return Result::UrlInvalid;
 
@@ -149,7 +150,7 @@ Result SliceManage::Start(const utf8string& url,
   stop_ = false;
 
   url_ = url;
-  cancel_token_ = cancel_token;
+  cancel_event_ = cancel_event;
   progress_functor_ = progress_functor;
   speed_functor_ = realtime_speed_functor;
   target_file_path_ = target_file_path;
@@ -190,7 +191,7 @@ Result SliceManage::Start(const utf8string& url,
 
   OutputVerboseInfo("valid resume download: " + bool_to_string(valid_resume) + "\r\n");
 
-  if (cancel_token_.get_token().is_cancelable() && cancel_token_.get_token().is_canceled()) {
+  if (cancel_event_ && cancel_event_->IsCanceled()) {
     Destory();
     return Canceled;
   }
@@ -199,7 +200,7 @@ Result SliceManage::Start(const utf8string& url,
     size_t try_times = 0;
     do {
       file_size_ = QueryFileSize();
-      if (cancel_token_.get_token().is_cancelable() && cancel_token_.get_token().is_canceled()) {
+      if (cancel_event_ && cancel_event_->IsCanceled()) {
         Destory();
         return Canceled;
       }
@@ -261,7 +262,7 @@ Result SliceManage::Start(const utf8string& url,
     OutputVerboseInfo(ss_verbose.str());
   }
 
-  if (cancel_token_.get_token().is_cancelable() && cancel_token_.get_token().is_canceled()) {
+  if (cancel_event_ && cancel_event_->IsCanceled()) {
     Destory();
     return Canceled;
   }
@@ -380,7 +381,8 @@ Result SliceManage::Start(const utf8string& url,
       if (stop_)
         break;
     }
-    if (cancel_token_.get_token().is_cancelable() && cancel_token_.get_token().is_canceled()) {
+
+    if (cancel_event_ && cancel_event_->IsCanceled()) {
       stop_ = true;
       break;
     }
@@ -628,8 +630,8 @@ bool SliceManage::LoadSlices(const utf8string url, ProgressFunctor functor) {
       return false;
     for (auto& it : j["slices"]) {
       std::shared_ptr<Slice> slice = std::make_shared<Slice>(9999, shared_from_this());
-      Result r = slice->Init(it["path"].get<utf8string>(), it["begin"].get<long>(), it["end"].get<long>(),
-                  it["capacity"].get<long>());
+      Result r = slice->Init(it["path"].get<utf8string>(), it["begin"].get<long>(),
+                             it["end"].get<long>(), it["capacity"].get<long>());
       if (r != Successed) {
         file_size_ = -1;
         slices_.clear();
@@ -722,7 +724,8 @@ void SliceManage::Destory() {
   }
 }
 
-Result SliceManage::GenerateIndexFilePath(const utf8string& target_file_path, utf8string &index_path) const {
+Result SliceManage::GenerateIndexFilePath(const utf8string& target_file_path,
+                                          utf8string& index_path) const {
   utf8string target_dir = GetDirectory(target_file_path);
   if (target_dir.length() > 0) {
     if (!CreateDirectories(target_dir))

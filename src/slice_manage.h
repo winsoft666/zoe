@@ -60,7 +60,7 @@ class SliceManage : public std::enable_shared_from_this<SliceManage> {
                const utf8string& target_file_path,
                ProgressFunctor progress_functor,
                RealtimeSpeedFunctor realtime_speed_functor,
-               const Concurrency::cancellation_token_source& cancel_token);
+               CancelEvent* cancel_event);
   void Stop();
 
   utf8string GetUrl() const;
@@ -93,7 +93,7 @@ class SliceManage : public std::enable_shared_from_this<SliceManage> {
   ProgressFunctor progress_functor_;
   RealtimeSpeedFunctor speed_functor_;
   VerboseOuputFunctor verbose_functor_;
-  Concurrency::cancellation_token_source cancel_token_;
+  CancelEvent* cancel_event_;
   std::vector<std::shared_ptr<Slice>> slices_;
   std::future<void> progress_notify_thread_;
   std::future<void> speed_notify_thread_;

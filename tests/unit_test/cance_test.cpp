@@ -11,11 +11,11 @@ void DoCancelTest(std::vector<TestData> test_datas, int thread_num) {
     Teemo efd;
     efd.SetThreadNum(thread_num);
     efd.SetSaveSliceFileToTempDir(true);
-    Concurrency::cancellation_token_source cts;
+    CancelEvent cancel_event;
 
-    std::thread t = std::thread([cts]() {
+    std::thread t = std::thread([&cancel_event]() {
       std::this_thread::sleep_for(std::chrono::milliseconds(2500));
-      cts.cancel();
+      cancel_event.Cancel();
     });
     t.detach();
 
@@ -25,7 +25,7 @@ void DoCancelTest(std::vector<TestData> test_datas, int thread_num) {
              if (total > 0)
                printf("%3d%%\b\b\b\b", (int)((double)downloaded * 100.f / (double)total));
            },
-           nullptr, cts)
+           nullptr, &cancel_event)
         .then([=](pplx::task<Result> result) {
           printf("\nResult: %s\n", GetResultString(result.get()));
           EXPECT_TRUE(result.get() == Successed || result.get() == Canceled);

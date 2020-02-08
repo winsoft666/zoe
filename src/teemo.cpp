@@ -119,11 +119,11 @@ size_t Teemo::GetNetworkReadTimeout() const noexcept {
   return impl_->slice_manager->GetNetworkReadTimeout();
 }
 
-Result Teemo::SetQueryFileSizeRetryTimes(size_t retry_times) {
+Result Teemo::SetQueryFileSizeRetryTimes(size_t retry_times) noexcept {
   return impl_->slice_manager->SetQueryFileSizeRetryTimes(retry_times);
 }
 
-size_t Teemo::GetQueryFileSizeRetryTimes() const {
+size_t Teemo::GetQueryFileSizeRetryTimes() const noexcept {
   return impl_->slice_manager->GetQueryFileSizeRetryTimes();
 }
 
@@ -147,14 +147,13 @@ pplx::task<Result> Teemo::Start(const utf8string url,
                                 const utf8string& target_file_path,
                                 ProgressFunctor progress_functor,
                                 RealtimeSpeedFunctor realtime_speed_functor,
-                                const Concurrency::cancellation_token_source& cancel_token /*=
-                                    pplx::cancellation_token_source()*/) noexcept {
+                                CancelEvent* cancel_event) noexcept {
   if (impl_->result._GetImpl() && !impl_->result.is_done())
     return pplx::task_from_result(AlreadyDownloading);
 
   impl_->result = pplx::task<Result>([=]() {
     Result result = impl_->slice_manager->Start(url, target_file_path, progress_functor,
-                                                realtime_speed_functor, cancel_token);
+                                                realtime_speed_functor, cancel_event);
     return pplx::task_from_result(result);
   });
 
@@ -169,4 +168,23 @@ void Teemo::Stop(bool wait) noexcept {
     impl_->result.wait();
   }
 }
+
+CancelEvent::CancelEvent() {
+  canceled_.store(false);
+}
+
+CancelEvent::~CancelEvent() {}
+
+void CancelEvent::Cancel() noexcept {
+  canceled_.store(true);
+}
+
+void CancelEvent::UnCancel() noexcept {
+  canceled_.store(false);
+}
+
+bool CancelEvent::IsCanceled() noexcept {
+  return canceled_.load();
+}
+
 }  // namespace teemo

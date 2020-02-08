@@ -16,6 +16,7 @@
 #pragma once
 #include <string>
 #include <memory>
+#include <atomic>
 #include "pplx/pplxtasks.h"
 
 #ifdef TEEMO_STATIC
@@ -61,6 +62,21 @@ enum Result {
 
 TEEMO_API const char* GetResultString(int enumVal);
 
+class TEEMO_API CancelEvent {
+ public:
+  CancelEvent();
+  ~CancelEvent();
+
+  void Cancel() noexcept;
+  void UnCancel() noexcept;
+  bool IsCanceled() noexcept;
+
+ protected:
+  CancelEvent(const CancelEvent&) = delete;
+  CancelEvent& operator=(const CancelEvent&) = delete;
+  std::atomic<bool> canceled_;
+};
+
 typedef std::string utf8string;
 typedef std::function<void(long total, long downloaded)> ProgressFunctor;
 typedef std::function<void(long byte_per_sec)> RealtimeSpeedFunctor;
@@ -91,8 +107,8 @@ class TEEMO_API Teemo {
   Result SetNetworkReadTimeout(size_t milliseconds) noexcept;  // default is 3000ms
   size_t GetNetworkReadTimeout() const noexcept;
 
-  Result SetQueryFileSizeRetryTimes(size_t retry_times);
-  size_t GetQueryFileSizeRetryTimes() const;
+  Result SetQueryFileSizeRetryTimes(size_t retry_times) noexcept;
+  size_t GetQueryFileSizeRetryTimes() const noexcept;
 
   // default is -1 = forever, 0 = not use exist slice cache
   void SetSliceCacheExpiredTime(int seconds) noexcept;
@@ -106,8 +122,7 @@ class TEEMO_API Teemo {
                            const utf8string& target_file_path,
                            ProgressFunctor progress_functor,
                            RealtimeSpeedFunctor realtime_speed_functor,
-                           const Concurrency::cancellation_token_source& cancel_token =
-                               pplx::cancellation_token_source()) noexcept;
+                           CancelEvent* cancel_event = nullptr) noexcept;
 
   void Stop(bool wait = false) noexcept;
 

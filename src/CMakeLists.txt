@@ -39,8 +39,8 @@ endif()
 
 
 
-file(GLOB HEADER_FILES 		../include/*.h ../include/*.hpp)
-file(GLOB SOURCE_FILES 		./*.cpp)
+file(GLOB HEADER_FILES 		../include/teemo/*.h ../include/teemo/*.hpp)
+file(GLOB SOURCE_FILES 		./*.cpp ./*.h ./*.hpp)
 
 source_group("Source Files" 			FILES ${SOURCE_FILES})
 source_group("Header Files" 			FILES ${HEADER_FILES})
@@ -117,7 +117,7 @@ install(TARGETS ${LIB_NAME}
 	ARCHIVE DESTINATION lib)
 
 
-install(FILES ${HEADER_FILES} 			DESTINATION include)
+install(FILES ${HEADER_FILES} 			DESTINATION include/teemo)
 
 
 install(FILES ${CMAKE_CURRENT_SOURCE_DIR}/../CMake/teemo-config.cmake 

@@ -21,7 +21,7 @@
 #include <memory>
 #include "slice_manage.h"
 #include "curl/curl.h"
-#include "teemo.h"
+#include "teemo/teemo.h"
 
 namespace teemo {
 class SliceManage;
@@ -30,7 +30,7 @@ class Slice {
   Slice(size_t index, std::shared_ptr<SliceManage> slice_manager);
   virtual ~Slice();
 
-  bool Init(const utf8string& slice_file_path, long begin, long end, long capacity);
+  Result Init(const utf8string& slice_file_path, long begin, long end, long capacity);
 
   long begin() const;
   long end() const;
@@ -51,7 +51,7 @@ class Slice {
   bool IsDownloadCompleted();
 
  protected:
-  utf8string GenerateSliceFilePath(size_t index, const utf8string& target_file_path) const;
+  Result GenerateSliceFilePath(size_t index, const utf8string& target_file_path, utf8string& slice_path) const;
 
  protected:
   size_t index_;

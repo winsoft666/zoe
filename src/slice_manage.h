@@ -24,7 +24,7 @@
 #include <condition_variable>
 #include "slice.h"
 #include "curl/curl.h"
-#include "teemo.h"
+#include "teemo/teemo.h"
 
 namespace teemo {
 class Slice;
@@ -75,7 +75,7 @@ class SliceManage : public std::enable_shared_from_this<SliceManage> {
   bool CleanupTmpFiles();
   bool UpdateIndexFile();
   void Destory();
-  utf8string GenerateIndexFilePath(const utf8string& target_file_path) const;
+  Result GenerateIndexFilePath(const utf8string& target_file_path, utf8string& index_path) const;
 
  protected:
   utf8string url_;

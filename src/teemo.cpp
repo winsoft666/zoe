@@ -12,7 +12,7 @@
 * file.
 *******************************************************************************/
 
-#include "teemo.h"
+#include "teemo/teemo.h"
 #include "file_util.h"
 #include "curl_utils.h"
 #include "slice_manage.h"
@@ -33,7 +33,11 @@ const char* GetResultString(int enumVal) {
                                       u8"Canceled",
                                       u8"CanceledAndUpdateIndexFailed",
                                       u8"Failed",
-                                      u8"FailedAndUpdateIndexFailed"};
+                                      u8"FailedAndUpdateIndexFailed",
+                                      u8"GetSliceDirectoryFailed",
+                                      u8"CreateSliceDirectoryFailed",
+                                      u8"OpenSliceFileFailed",
+                                      u8"CreateSliceIndexDirectoryFailed"};
   return EnumStrings[enumVal];
 }
 
@@ -68,7 +72,7 @@ void Teemo::GlobalInit() {
 }
 
 void Teemo::GlobalUnInit() {
-  GlobalCurlInit();
+  GlobalCurlUnInit();
 }
 
 void Teemo::SetVerboseOutput(VerboseOuputFunctor verbose_functor) noexcept {

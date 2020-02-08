@@ -1,5 +1,5 @@
 #include "gtest/gtest.h"
-#include "teemo.h"
+#include "teemo/teemo.h"
 #include "../md5.h"
 #include "test_data.h"
 #include <future>
@@ -48,6 +48,7 @@ void DoBreakpointTest(std::vector<TestData> test_datas,
                  },
                  nullptr)
               .then([=](pplx::task<Result> result) {
+                printf("\nResult: %s\n", GetResultString(result.get()));
                 EXPECT_TRUE(result.get() == Successed);
                 if (result.get() == Result::Successed) {
                   if (test_data.md5.length()) {

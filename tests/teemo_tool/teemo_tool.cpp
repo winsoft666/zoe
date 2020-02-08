@@ -16,7 +16,7 @@
 #include <string.h>
 #include <sstream>
 #include <iomanip>
-#include "teemo.h"
+#include "teemo/teemo.h"
 #include "../md5.h"
 #include <mutex>
 #if defined(WIN32) || defined(_WIN32) || defined(__WIN32__) || defined(__NT__)

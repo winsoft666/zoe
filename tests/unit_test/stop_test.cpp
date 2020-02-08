@@ -1,5 +1,5 @@
 #include "gtest/gtest.h"
-#include "teemo.h"
+#include "teemo/teemo.h"
 #include "../md5.h"
 #include "test_data.h"
 #include <future>

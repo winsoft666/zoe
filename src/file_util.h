@@ -17,10 +17,12 @@
 #pragma once
 
 #include <stdio.h>
-#include "teemo.h"
+#include "teemo/teemo.h"
 
 namespace teemo {
 long GetFileSize(FILE* f);
+utf8string GetSystemTmpDirectory();
+bool CreateDirectories(const utf8string& path);
 utf8string GetDirectory(const utf8string& path);
 utf8string GetFileName(const utf8string& path);
 utf8string AppendFileName(const utf8string& dir, const utf8string& filename);

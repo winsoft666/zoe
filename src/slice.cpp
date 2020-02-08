@@ -39,7 +39,7 @@ Slice::~Slice() {
   }
 }
 
-bool Slice::Init(const utf8string& slice_file_path, long begin, long end, long capacity) {
+Result Slice::Init(const utf8string& slice_file_path, long begin, long end, long capacity) {
   begin_ = begin;
   end_ = end;
   capacity_ = capacity;
@@ -63,7 +63,9 @@ bool Slice::Init(const utf8string& slice_file_path, long begin, long end, long c
 
   if (need_generate_new_slice) {
     RemoveFile(slice_file_path);
-    file_path_ = GenerateSliceFilePath(index_, slice_manager_->GetTargetFilePath());
+    Result ret = GenerateSliceFilePath(index_, slice_manager_->GetTargetFilePath(), file_path_);
+    if (ret != Successed)
+      return ret;
     RemoveFile(file_path_);
   }
   else {
@@ -73,7 +75,10 @@ bool Slice::Init(const utf8string& slice_file_path, long begin, long end, long c
   file_ = OpenFile(file_path_, u8"a+b");
   fseek(file_, 0, SEEK_END);
 
-  return true;
+  if (file_ == nullptr)
+    return OpenSliceFileFailed;
+
+  return Successed;
 }
 
 long Slice::begin() const {
@@ -219,25 +224,30 @@ bool Slice::IsDownloadCompleted() {
   return ((end_ - begin_ + 1) == capacity_);
 }
 
-utf8string Slice::GenerateSliceFilePath(size_t index, const utf8string& target_file_path) const {
+Result Slice::GenerateSliceFilePath(size_t index, const utf8string& target_file_path, utf8string &slice_path) const {
   utf8string target_dir;
   if (slice_manager_->IsSaveSliceFileToTempDir()) {
-#if defined(WIN32) || defined(_WIN32) || defined(__WIN32__) || defined(__NT__)
-    char buf[MAX_PATH] = {0};
-    DWORD ret_val = GetTempPathA(MAX_PATH, buf);
-    if (ret_val > 0 && ret_val < MAX_PATH) {
-      target_dir = buf;
+    target_dir = GetSystemTmpDirectory();
+    if (target_dir.length() == 0) {
+      slice_path.clear();
+      return GetSliceDirectoryFailed;
     }
-#else
-    target_dir = "/var/tmp/";
-#endif
   }
-  if (target_dir.length() == 0)
+  else {
     target_dir = GetDirectory(target_file_path);
+  }
+
+  if (target_dir.length() > 0) {
+    if (!CreateDirectories(target_dir)) {
+      slice_path.clear();
+      return CreateSliceDirectoryFailed;
+    }
+  }
 
   utf8string target_filename = GetFileName(target_file_path);
 
   utf8string slice_filename = target_filename + ".edf" + std::to_string(index);
-  return AppendFileName(target_dir, slice_filename);
+  slice_path = AppendFileName(target_dir, slice_filename);
+  return Successed;
 }
 }  // namespace teemo

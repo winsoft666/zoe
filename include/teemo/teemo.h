@@ -53,6 +53,10 @@ enum Result {
   CanceledAndUpdateIndexFailed,
   Failed,
   FailedAndUpdateIndexFailed,
+  GetSliceDirectoryFailed,
+  CreateSliceDirectoryFailed,
+  OpenSliceFileFailed,
+  CreateSliceIndexDirectoryFailed
 };
 
 TEEMO_API const char* GetResultString(int enumVal);
@@ -110,6 +114,9 @@ class TEEMO_API Teemo {
  protected:
   class TeemoImpl;
   TeemoImpl* impl_;
+
+  Teemo(const Teemo&) = delete;
+  Teemo& operator=(const Teemo&) = delete;
 };
 }  // namespace teemo
 

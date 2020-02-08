@@ -20,6 +20,10 @@
 #include <unistd.h>
 #endif
 
+#ifndef GHC_USE_STD_FS
+#include "filesystem.hpp"
+#endif
+
 namespace teemo {
 
 #if defined(WIN32) || defined(_WIN32) || defined(__WIN32__) || defined(__NT__)
@@ -45,6 +49,29 @@ static std::wstring Utf8ToUnicode(const std::string& str) {
 
   return strRes;
 }
+
+static std::string UnicodeToUtf8(const std::wstring& str) {
+  std::string strRes;
+
+  int iSize = ::WideCharToMultiByte(CP_UTF8, 0, str.c_str(), -1, NULL, 0, NULL, NULL);
+
+  if (iSize == 0)
+    return strRes;
+
+  char* szBuf = new (std::nothrow) char[iSize];
+
+  if (!szBuf)
+    return strRes;
+
+  memset(szBuf, 0, iSize);
+
+  ::WideCharToMultiByte(CP_UTF8, 0, str.c_str(), -1, szBuf, iSize, NULL, NULL);
+
+  strRes = szBuf;
+  delete[] szBuf;
+
+  return strRes;
+}
 #else
 #define PATH_SEPARATOR '/'
 #endif
@@ -55,6 +82,32 @@ long GetFileSize(FILE* f) {
   fseek(f, 0, SEEK_END);
   long fsize = ftell(f);
   return fsize;
+}
+
+utf8string GetSystemTmpDirectory() {
+  utf8string target_dir;
+#if defined(WIN32) || defined(_WIN32) || defined(__WIN32__) || defined(__NT__)
+  wchar_t buf[MAX_PATH] = {0};
+  DWORD ret_val = GetTempPathW(MAX_PATH, buf);
+  if (ret_val > 0 && ret_val < MAX_PATH) {
+    target_dir = UnicodeToUtf8(buf);
+  }
+
+  if (target_dir.length() > 0) {
+    if (!FileIsExist(target_dir)) {
+      target_dir.clear();
+    }
+  }
+#else
+  target_dir = "/var/tmp/";
+#endif
+
+  return target_dir;
+}
+
+bool CreateDirectories(const utf8string& path) {
+  std::error_code ec;
+  return ghc::filesystem::create_directories(path, ec);
 }
 
 utf8string GetDirectory(const utf8string& path) {

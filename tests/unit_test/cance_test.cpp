@@ -1,7 +1,7 @@
 #include "gtest/gtest.h"
 #include "test_data.h"
 #include "../md5.h"
-#include "teemo.h"
+#include "teemo/teemo.h"
 #include "test_data.h"
 #include <future>
 using namespace teemo;
@@ -10,7 +10,7 @@ void DoCancelTest(std::vector<TestData> test_datas, int thread_num) {
   for (auto test_data : test_datas) {
     Teemo efd;
     efd.SetThreadNum(thread_num);
-    efd.SetSaveSliceFileToTempDir(false);
+    efd.SetSaveSliceFileToTempDir(true);
     Concurrency::cancellation_token_source cts;
 
     std::thread t = std::thread([cts]() {

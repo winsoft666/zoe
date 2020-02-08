@@ -17,7 +17,7 @@
 #include <algorithm>
 #include <sstream>
 #include <iostream>
-#include "nlohmann/json.hpp"
+#include "json.hpp"
 #include "file_util.h"
 #include "curl_utils.h"
 
@@ -41,6 +41,9 @@ SliceManage::SliceManage()
     , max_download_speed_(0)
     , query_filesize_retry_times_(3)
     , stop_(true)
+    , verbose_functor_(nullptr)
+    , speed_functor_(nullptr)
+    , progress_functor_(nullptr)
     , file_size_(-1) {}
 
 SliceManage::~SliceManage() {}
@@ -150,7 +153,10 @@ Result SliceManage::Start(const utf8string& url,
   progress_functor_ = progress_functor;
   speed_functor_ = realtime_speed_functor;
   target_file_path_ = target_file_path;
-  index_file_path_ = GenerateIndexFilePath(target_file_path);
+  Result r = GenerateIndexFilePath(target_file_path, index_file_path_);
+  if (r != Successed) {
+    return r;
+  }
 
   OutputVerboseInfo("max download speed: " + std::to_string(max_download_speed_) + "\r\n");
   OutputVerboseInfo("network conn timeout: " + std::to_string(network_conn_timeout_) + "\r\n");
@@ -191,15 +197,14 @@ Result SliceManage::Start(const utf8string& url,
 
   if (!valid_resume) {
     size_t try_times = 0;
-    do 
-    {
+    do {
       file_size_ = QueryFileSize();
       if (cancel_token_.get_token().is_cancelable() && cancel_token_.get_token().is_canceled()) {
         Destory();
         return Canceled;
       }
 
-      if(file_size_ != -1)
+      if (file_size_ != -1)
         break;
     } while (++try_times < query_filesize_retry_times_);
 
@@ -216,7 +221,11 @@ Result SliceManage::Start(const utf8string& url,
       for (size_t i = 0; i < thread_num_; i++) {
         long end = (i == thread_num_ - 1) ? file_size_ - 1 : ((i + 1) * each_slice_size) - 1;
         std::shared_ptr<Slice> slice = std::make_shared<Slice>(i, shared_from_this());
-        slice->Init("", i * each_slice_size, end, 0);
+        Result r = slice->Init("", i * each_slice_size, end, 0);
+        if (r != Successed) {
+          Destory();
+          return r;
+        }
         slices_.push_back(slice);
       }
     }
@@ -233,7 +242,11 @@ Result SliceManage::Start(const utf8string& url,
       OutputVerboseInfo("thread num: " + std::to_string(thread_num_) + "\r\n");
 
       std::shared_ptr<Slice> slice = std::make_shared<Slice>(0, shared_from_this());
-      slice->Init("", 0, -1, 0);
+      Result r = slice->Init("", 0, -1, 0);
+      if (r != Successed) {
+        Destory();
+        return r;
+      }
       slices_.push_back(slice);
     }
   }
@@ -600,7 +613,7 @@ bool SliceManage::LoadSlices(const utf8string url, ProgressFunctor functor) {
     if (str_sign != INDEX_FILE_SIGN_STRING)
       return false;
 
-    utf8string str_json(file_content.data() + 18);
+    utf8string str_json(file_content.data() + strlen(INDEX_FILE_SIGN_STRING));
     json j = json::parse(str_json);
 
     time_t last_update_time = j["update_time"].get<time_t>();
@@ -615,8 +628,13 @@ bool SliceManage::LoadSlices(const utf8string url, ProgressFunctor functor) {
       return false;
     for (auto& it : j["slices"]) {
       std::shared_ptr<Slice> slice = std::make_shared<Slice>(9999, shared_from_this());
-      slice->Init(it["path"].get<utf8string>(), it["begin"].get<long>(), it["end"].get<long>(),
+      Result r = slice->Init(it["path"].get<utf8string>(), it["begin"].get<long>(), it["end"].get<long>(),
                   it["capacity"].get<long>());
+      if (r != Successed) {
+        file_size_ = -1;
+        slices_.clear();
+        return false;
+      }
       slices_.push_back(slice);
     }
   } catch (const std::exception& e) {
@@ -704,11 +722,16 @@ void SliceManage::Destory() {
   }
 }
 
-utf8string SliceManage::GenerateIndexFilePath(const utf8string& target_file_path) const {
+Result SliceManage::GenerateIndexFilePath(const utf8string& target_file_path, utf8string &index_path) const {
   utf8string target_dir = GetDirectory(target_file_path);
+  if (target_dir.length() > 0) {
+    if (!CreateDirectories(target_dir))
+      return CreateSliceIndexDirectoryFailed;
+  }
   utf8string target_filename = GetFileName(target_file_path);
 
   utf8string indexfilename = target_filename + ".efdindex";
-  return AppendFileName(target_dir, indexfilename);
+  index_path = AppendFileName(target_dir, indexfilename);
+  return Successed;
 }
 }  // namespace teemo

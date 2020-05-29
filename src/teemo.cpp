@@ -45,9 +45,14 @@ class Teemo::TeemoImpl {
  public:
   TeemoImpl() {}
 
+  bool IsDownloading() {
+    if (!async_task_.valid() || async_task_.wait_for(std::chrono::milliseconds(0)) == std::future_status::ready)
+      return false;
+    return true;
+  }
  public:
   std::shared_ptr<SliceManage> slice_manager;
-  pplx::task<Result> result;
+  std::shared_future<Result> async_task_;
 };
 
 Teemo::Teemo() {
@@ -143,29 +148,38 @@ size_t Teemo::GetMaxDownloadSpeed() const noexcept {
   return impl_->slice_manager->GetMaxDownloadSpeed();
 }
 
-pplx::task<Result> Teemo::Start(const utf8string url,
+std::shared_future<Result> Teemo::Start(const utf8string url,
                                 const utf8string& target_file_path,
+                                ResultFunctor result_functor,
                                 ProgressFunctor progress_functor,
                                 RealtimeSpeedFunctor realtime_speed_functor,
                                 CancelEvent* cancel_event) noexcept {
-  if (impl_->result._GetImpl() && !impl_->result.is_done())
-    return pplx::task_from_result(AlreadyDownloading);
-
-  impl_->result = pplx::task<Result>([=]() {
-    Result result = impl_->slice_manager->Start(url, target_file_path, progress_functor,
-                                                realtime_speed_functor, cancel_event);
-    return pplx::task_from_result(result);
+  if (impl_->IsDownloading())
+    return std::async(std::launch::async, [=]() {
+    if (result_functor) {
+      result_functor(Result::AlreadyDownloading);
+    }
+    return Result::AlreadyDownloading;
   });
 
-  return impl_->result;
+  impl_->async_task_ = std::async(std::launch::async, [=]() {
+    Result result = impl_->slice_manager->Start(url, target_file_path, progress_functor,
+                                                realtime_speed_functor, cancel_event);
+    if (result_functor) {
+      result_functor(result);
+    }
+    return result;
+  });
+
+  return impl_->async_task_;
 }
 
 void Teemo::Stop(bool wait) noexcept {
   if (impl_->slice_manager)
     impl_->slice_manager->Stop();
 
-  if (wait && impl_->result._GetImpl() && !impl_->result.is_done()) {
-    impl_->result.wait();
+  if (impl_->IsDownloading()) {
+    impl_->async_task_.wait();
   }
 }
 

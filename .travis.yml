@@ -34,8 +34,7 @@ before_script:
           git clone --depth 1 -b master https://github.com/microsoft/vcpkg.git vcpkg &&
           cd vcpkg &&
           ./bootstrap-vcpkg.sh &&
-          ./vcpkg install curl[non-http]:x64-linux &&
-          ./vcpkg install cpprestsdk:x64-linux
+          ./vcpkg install curl[non-http]:x64-linux
           if [ "$WITH_TEST" = "yes" ]; then
             ./vcpkg install gtest:x64-linux
           fi

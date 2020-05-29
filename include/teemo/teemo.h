@@ -17,7 +17,7 @@
 #include <string>
 #include <memory>
 #include <atomic>
-#include "pplx/pplxtasks.h"
+#include <future>
 
 #ifdef TEEMO_STATIC
 #define TEEMO_API
@@ -78,6 +78,7 @@ class TEEMO_API CancelEvent {
 };
 
 typedef std::string utf8string;
+typedef std::function<void(Result ret)> ResultFunctor;
 typedef std::function<void(long total, long downloaded)> ProgressFunctor;
 typedef std::function<void(long byte_per_sec)> RealtimeSpeedFunctor;
 typedef std::function<void(const utf8string& verbose)> VerboseOuputFunctor;
@@ -118,8 +119,9 @@ class TEEMO_API Teemo {
   void SetMaxDownloadSpeed(size_t byte_per_seconds) noexcept;  // default is 0 = not limit
   size_t GetMaxDownloadSpeed() const noexcept;
 
-  pplx::task<Result> Start(const utf8string url,
+  std::shared_future<Result> Start(const utf8string url,
                            const utf8string& target_file_path,
+                           ResultFunctor result_functor,
                            ProgressFunctor progress_functor,
                            RealtimeSpeedFunctor realtime_speed_functor,
                            CancelEvent* cancel_event = nullptr) noexcept;

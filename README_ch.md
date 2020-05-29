@@ -5,7 +5,7 @@
 [ >>> English Version](README.md)
 
 # 介绍
-目前虽然有很多成熟且功能强大的下载工具，如Free Download Manager, Aria2等等，但当我想找一个支持多种协议(如http， ftp)、多线程下载、断点续传、跨平台的开源库时，发现很难找到满意的，特别是使用C++开发的。于是我基于libcurl开发了这个名为`"teemo"`下载库，它可以支持如下特性：
+目前虽然有很多成熟且功能强大的下载工具，如`Free Download Manager`, `Aria2`等等，但当我想找一个支持多种协议(如http， ftp)、多线程下载、断点续传、跨平台的开源库时，发现很难找到满意的，特别是使用C++开发的。于是我基于libcurl开发了这个名为`"teemo"`下载库，它可以支持如下特性：
 
 1. 多协议支持，由于是基于libcurl的，所以支持libcurl所支持的所有协议，如http, https, ftp等。
 2. 支持多线程下载
@@ -22,13 +22,6 @@
     ```bash
     # 如果需要支持非http协议，如ftp等，需要指定[non-http]选项
     vcpkg install curl[non-http]:x86-windows
-    ```
-
-- cpprestsdk
-仅仅使用了cpprestsdk库中的pplx并行开发库。
-
-    ```bash
-    vcpkg install cpprestsdk:x86-windows
     ```
 
 - gtest
@@ -64,8 +57,11 @@ int main(int argc, char **argv) {
     Teemo::GlobalInit();
 
     Teemo efd;
-    efd.Start(u8"http://xxx.xxx.com/test.exe",
+    std::shared_future<Result> async_task = efd.Start(u8"http://xxx.xxx.com/test.exe",
               u8"D:\\test.exe",
+    [](Result result) {
+        // result callback
+    },
     [](long total, long downloaded) {
         // progress callback
     }, 
@@ -77,7 +73,9 @@ int main(int argc, char **argv) {
         if (result.get() == Result::Successed) {
 			// Successed
         }
-    }).wait();
+    });
+    
+    async_task.wait();
 	
     Teemo::GlobalUnInit();
 	

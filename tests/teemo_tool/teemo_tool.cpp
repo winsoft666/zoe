@@ -104,15 +104,13 @@ int main(int argc, char** argv) {
 #endif
   });
 
-  efd.Start(
-         url, target_file_path,
-         [](long total, long downloaded) { PrintConsole(total, downloaded, -1); },
-         [](long byte_per_secs) { PrintConsole(-1, -1, byte_per_secs / 1000); })
-      .then([=, &exit_code](pplx::task<Result> result) {
-        std::cout << std::endl << GetResultString(result.get()) << std::endl;
-        exit_code = result.get();
+  std::shared_future<Result> aysnc_task = efd.Start(
+      url, target_file_path,
+      [=, &exit_code](Result result) {
+        std::cout << std::endl << GetResultString(result) << std::endl;
+        exit_code = result;
 
-        if (result.get() == Result::Successed) {
+        if (result == Result::Successed) {
           if (md5) {
             if (strcmp(md5, base::GetFileMd5(target_file_path).c_str()) == 0) {
               std::cout << "MD5 checksum successful." << std::endl;
@@ -123,8 +121,11 @@ int main(int argc, char** argv) {
             }
           }
         }
-      })
-      .wait();
+      },
+      [](long total, long downloaded) { PrintConsole(total, downloaded, -1); },
+      [](long byte_per_secs) { PrintConsole(-1, -1, byte_per_secs / 1000); });
+
+  aysnc_task.wait();
 
   fclose(f_verbose);
   Teemo::GlobalUnInit();

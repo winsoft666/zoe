@@ -30,13 +30,6 @@ I prefer to use `vcpkg` to install dependencies, of course, this is not the only
     # if you want support non-http protocol, such as ftp, the [non-http] option must be specified.
     vcpkg install curl[non-http]:x86-windows
     ```
-- cpprestsdk
-
-`Teemo` depend on pplx that give you access to the Concurrency Runtime, a concurrent programming framework for C++, pplx is a part of `cpprestsdk` library.
-
-    ```bash
-    vcpkg install cpprestsdk:x86-windows
-    ```
 
 - gtest
 
@@ -72,8 +65,11 @@ int main(int argc, char **argv) {
     Teemo::GlobalInit();
 
     Teemo efd;
-    efd.Start(u8"http://xxx.xxx.com/test.exe",
+    std::shared_future<Result> async_task = efd.Start(u8"http://xxx.xxx.com/test.exe",
               u8"D:\\test.exe",
+    [](Result result) {
+        // result callback
+    },
     [](long total, long downloaded) {
         // progress callback
     }, 
@@ -85,7 +81,9 @@ int main(int argc, char **argv) {
         if (result.get() == Result::Successed) {
 			// Successed
         }
-    }).wait();
+    });
+    
+    async_task.wait();
 	
     Teemo::GlobalUnInit();
 	

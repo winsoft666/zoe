@@ -26,18 +26,18 @@ I prefer to use `vcpkg` to install dependencies, of course, this is not the only
 
 - libcurl
 
-    ```bash
-    # if you want support non-http protocol, such as ftp, the [non-http] option must be specified.
-    vcpkg install curl[non-http]:x86-windows
-    ```
+```bash
+# if you want support non-http protocol, such as ftp, the [non-http] option must be specified.
+vcpkg install curl[non-http]:x86-windows
+```
 
 - gtest
 
 unit test project depend on gtest.
 
-    ```bash
-    vcpkg install gtest:x86-windows
-    ```
+```bash
+vcpkg install gtest:x86-windows
+```
 
 # Build
 Firstly using CMake to generate project or makefile, then comiple.

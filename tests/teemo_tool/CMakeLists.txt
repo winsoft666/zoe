@@ -41,10 +41,6 @@ add_executable(
 	${SOURCE_FILES}
 	)
 
-# cpprestsdk
-find_package(cpprestsdk REQUIRED)
-target_link_libraries(${EXE_NAME} cpprestsdk::cpprest)
-
 # CURL
 find_package(CURL REQUIRED)
 target_link_libraries(${EXE_NAME} ${CURL_LIBRARIES})

@@ -90,10 +90,6 @@ target_include_directories(${LIB_NAME} PUBLIC
 find_package(OpenSSL REQUIRED)
 target_link_libraries(${LIB_NAME} PUBLIC OpenSSL::SSL OpenSSL::Crypto)
 
-# cpprestsdk
-find_package(cpprestsdk REQUIRED)
-target_link_libraries(${LIB_NAME} PUBLIC cpprestsdk::cpprest)
-
 
 if (WIN32 OR _WIN32)
 	target_link_libraries(${LIB_NAME} PUBLIC 

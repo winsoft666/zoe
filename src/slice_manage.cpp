@@ -159,14 +159,16 @@ Result SliceManage::Start(const utf8string& url,
     return r;
   }
 
-  OutputVerboseInfo("max download speed: " + std::to_string(max_download_speed_) + "\r\n");
-  OutputVerboseInfo("network conn timeout: " + std::to_string(network_conn_timeout_) + "\r\n");
-  OutputVerboseInfo("network read timeout: " + std::to_string(network_read_timeout_) + "\r\n");
-  OutputVerboseInfo("slice cache expired seconds: " + std::to_string(slice_cache_expired_seconds_) +
-                    "\r\n");
-  OutputVerboseInfo("save slice to tmp dir: " + bool_to_string(save_slice_to_tmp_dir_) + "\r\n");
-  OutputVerboseInfo("target file path: " + target_file_path_ + "\r\n");
-  OutputVerboseInfo("index file path: " + index_file_path_ + "\r\n");
+  if (verbose_functor_) {
+    OutputVerboseInfo("max download speed: " + std::to_string(max_download_speed_) + "\r\n");
+    OutputVerboseInfo("network conn timeout: " + std::to_string(network_conn_timeout_) + "\r\n");
+    OutputVerboseInfo("network read timeout: " + std::to_string(network_read_timeout_) + "\r\n");
+    OutputVerboseInfo("slice cache expired seconds: " + std::to_string(slice_cache_expired_seconds_) +
+      "\r\n");
+    OutputVerboseInfo("save slice to tmp dir: " + bool_to_string(save_slice_to_tmp_dir_) + "\r\n");
+    OutputVerboseInfo("target file path: " + target_file_path_ + "\r\n");
+    OutputVerboseInfo("index file path: " + index_file_path_ + "\r\n");
+  }
 
   bool valid_resume = false;
   do {
@@ -189,7 +191,9 @@ Result SliceManage::Start(const utf8string& url,
     valid_resume = true;
   } while (false);
 
-  OutputVerboseInfo("valid resume download: " + bool_to_string(valid_resume) + "\r\n");
+  if (verbose_functor_) {
+    OutputVerboseInfo("valid resume download: " + bool_to_string(valid_resume) + "\r\n");
+  }
 
   if (cancel_event_ && cancel_event_->IsCanceled()) {
     Destory();
@@ -209,15 +213,21 @@ Result SliceManage::Start(const utf8string& url,
         break;
     } while (++try_times < query_filesize_retry_times_);
 
-    OutputVerboseInfo("queried file size: " + std::to_string(file_size_) + "\r\n");
+    if (verbose_functor_) {
+      OutputVerboseInfo("queried file size: " + std::to_string(file_size_) + "\r\n");
+    }
     slices_.clear();
 
     if (file_size_ > 0) {
       thread_num_ = std::min(file_size_, (long)thread_num_);
-      OutputVerboseInfo("thread num: " + std::to_string(thread_num_) + "\r\n");
+      if (verbose_functor_) {
+        OutputVerboseInfo("thread num: " + std::to_string(thread_num_) + "\r\n");
+      }
 
       long each_slice_size = file_size_ / thread_num_;
-      OutputVerboseInfo("each slice size: " + std::to_string(each_slice_size) + "\r\n");
+      if (verbose_functor_) {
+        OutputVerboseInfo("each slice size: " + std::to_string(each_slice_size) + "\r\n");
+      }
 
       for (size_t i = 0; i < thread_num_; i++) {
         long end = (i == thread_num_ - 1) ? file_size_ - 1 : ((i + 1) * each_slice_size) - 1;
@@ -240,7 +250,9 @@ Result SliceManage::Start(const utf8string& url,
     }
     else {
       thread_num_ = 1;
-      OutputVerboseInfo("thread num: " + std::to_string(thread_num_) + "\r\n");
+      if (verbose_functor_) {
+        OutputVerboseInfo("thread num: " + std::to_string(thread_num_) + "\r\n");
+      }
 
       std::shared_ptr<Slice> slice = std::make_shared<Slice>(0, shared_from_this());
       Result r = slice->Init("", 0, -1, 0);
@@ -252,7 +264,7 @@ Result SliceManage::Start(const utf8string& url,
     }
   }
 
-  {
+  if (verbose_functor_) {
     std::stringstream ss_verbose;
     ss_verbose << "slices: \r\n";
     for (auto& s : slices_) {
@@ -267,19 +279,14 @@ Result SliceManage::Start(const utf8string& url,
     return Canceled;
   }
 
-  multi_ = curl_multi_init();
-  if (!multi_) {
-    OutputVerboseInfo("curl_multi_init failed\r\n");
-    Destory();
-    return Result::InternalNetworkError;
-  }
-
   size_t uncomplete_slice_num = 0;
   for (auto& slice : slices_) {
     if (!slice->IsDownloadCompleted())
       uncomplete_slice_num++;
   }
-  OutputVerboseInfo("uncompleted slice num: " + std::to_string(uncomplete_slice_num) + "\r\n");
+  if (verbose_functor_) {
+    OutputVerboseInfo("uncompleted slice num: " + std::to_string(uncomplete_slice_num) + "\r\n");
+  }
 
   if (uncomplete_slice_num == 0) {
     Result ret;
@@ -301,12 +308,23 @@ Result SliceManage::Start(const utf8string& url,
     return ret;
   }
 
+  multi_ = curl_multi_init();
+  if (!multi_) {
+    OutputVerboseInfo("curl_multi_init failed\r\n");
+    Destory();
+    return Result::InternalNetworkError;
+  }
+
   thread_num_ = uncomplete_slice_num;
-  OutputVerboseInfo("thread num: " + std::to_string(thread_num_) + "\r\n");
+  if (verbose_functor_) {
+    OutputVerboseInfo("thread num: " + std::to_string(thread_num_) + "\r\n");
+  }
 
   size_t each_slice_download_speed = max_download_speed_ / uncomplete_slice_num;
-  OutputVerboseInfo("each slice max download speed: " + std::to_string(each_slice_download_speed) +
-                    "\r\n");
+  if (verbose_functor_) {
+    OutputVerboseInfo("each slice max download speed: " + std::to_string(each_slice_download_speed) +
+      "\r\n");
+  }
 
   bool init_curl_ret = true;
   for (auto& slice : slices_) {
@@ -319,34 +337,40 @@ Result SliceManage::Start(const utf8string& url,
   }
 
   if (!init_curl_ret) {
-    OutputVerboseInfo("init curl failed\r\n");
+    if (verbose_functor_) {
+      OutputVerboseInfo("init curl failed\r\n");
+    }
     Destory();
     return Result::InternalNetworkError;
   }
 
-  progress_notify_thread_ = std::async(std::launch::async, [this]() {
-    while (true) {
-      {
-        std::unique_lock<std::mutex> ul(stop_mutex_);
-        stop_cond_var_.wait_for(ul, std::chrono::milliseconds(500), [this] { return stop_; });
-        if (stop_)
-          return;
-      }
+  if (progress_functor_) {
+    progress_notify_thread_ = std::async(std::launch::async, [this]() {
+      while (true) {
+        {
+          std::unique_lock<std::mutex> ul(stop_mutex_);
+          stop_cond_var_.wait_for(ul, std::chrono::milliseconds(500), [this] { return stop_; });
+          if (stop_)
+            return;
+        }
 
-      long downloaded = 0;
-      for (const auto& s : slices_) {
-        downloaded += s->capacity();
-      }
+        long downloaded = 0;
+        for (const auto& s : slices_) {
+          downloaded += s->capacity();
+        }
 
-      if (progress_functor_)
-        progress_functor_(file_size_, downloaded);
-    }
-  });
+        if (progress_functor_)
+          progress_functor_(file_size_, downloaded);
+      }
+    });
+  }
 
   long init_total_capacity = 0;
   for (const auto& s : slices_)
     init_total_capacity += s->capacity();
-  OutputVerboseInfo("init total capacity: " + std::to_string(init_total_capacity) + "\r\n");
+  if (verbose_functor_) {
+    OutputVerboseInfo("init total capacity: " + std::to_string(init_total_capacity) + "\r\n");
+  }
 
   speed_notify_thread_ = std::async(std::launch::async, [this, init_total_capacity]() {
     while (true) {
@@ -417,7 +441,9 @@ Result SliceManage::Start(const utf8string& url,
 
     CURLMcode code = curl_multi_fdset(multi_, &fdread, &fdwrite, &fdexcep, &maxfd);
     if (code != CURLM_CALL_MULTI_PERFORM && code != CURLM_OK) {
-      OutputVerboseInfo("\r\ncurl_multi_fdset failed, code: " + std::to_string((int)code) + "\r\n");
+      if (verbose_functor_) {
+        OutputVerboseInfo("\r\ncurl_multi_fdset failed, code: " + std::to_string((int)code) + "\r\n");
+      }
       break;
     }
 
@@ -446,7 +472,9 @@ Result SliceManage::Start(const utf8string& url,
 
   } while (still_running);
 
-  OutputVerboseInfo("\r\nstill running handles: " + std::to_string(still_running) + "\r\n");
+  if (verbose_functor_) {
+    OutputVerboseInfo("\r\nstill running handles: " + std::to_string(still_running) + "\r\n");
+  }
 
   /* See how the transfers went */
   size_t done_thread = 0;
@@ -460,28 +488,33 @@ Result SliceManage::Start(const utf8string& url,
     }
   }
 
-  OutputVerboseInfo("done thread num: " + std::to_string(done_thread) + "\r\n");
-  OutputVerboseInfo("stop: " + bool_to_string(stop_) + "\r\n");
+  if (verbose_functor_) {
+    OutputVerboseInfo("done thread num: " + std::to_string(done_thread) + "\r\n");
+    OutputVerboseInfo("stop: " + bool_to_string(stop_) + "\r\n");
+  }
 
   long total_capacity = 0;
   for (auto slice : slices_)
     total_capacity += slice->capacity();
-  OutputVerboseInfo("total capacity: " + std::to_string(total_capacity) + "\r\n");
-
+  if (verbose_functor_) {
+    OutputVerboseInfo("total capacity: " + std::to_string(total_capacity) + "\r\n");
+  }
   Result ret;
   do {
     if (done_thread == thread_num_copy) {
       if (file_size_ == -1 || (file_size_ > 0 && total_capacity == file_size_)) {
         if (!CombineSlice()) {
-          OutputVerboseInfo("combine slice files failed\r\n");
-
+          if (verbose_functor_) {
+            OutputVerboseInfo("combine slice files failed\r\n");
+          }
           ret = GenerateTargetFileFailed;
           break;
         }
 
         if (!CleanupTmpFiles()) {
-          OutputVerboseInfo("cleanup temp files failed\r\n");
-
+          if (verbose_functor_) {
+            OutputVerboseInfo("cleanup temp files failed\r\n");
+          }
           ret = CleanupTmpFileFailed;
           break;
         }
@@ -500,7 +533,9 @@ Result SliceManage::Start(const utf8string& url,
       }
       else {
         ret = CanceledAndUpdateIndexFailed;
-        OutputVerboseInfo("update index file failed\r\n");
+        if (verbose_functor_) {
+          OutputVerboseInfo("update index file failed\r\n");
+        }
       }
       break;
     }
@@ -510,7 +545,9 @@ Result SliceManage::Start(const utf8string& url,
     }
     else {
       ret = FailedAndUpdateIndexFailed;
-      OutputVerboseInfo("update index file failed\r\n");
+      if (verbose_functor_) {
+        OutputVerboseInfo("update index file failed\r\n");
+      }
     }
   } while (false);
 
@@ -597,7 +634,7 @@ long SliceManage::QueryFileSize() const {
   if (ret_code != CURLE_OK) {
     return -1;
   }
-  return file_size;
+  return (long)file_size;
 }
 
 bool SliceManage::LoadSlices(const utf8string url, ProgressFunctor functor) {

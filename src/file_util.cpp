@@ -106,12 +106,16 @@ utf8string GetSystemTmpDirectory() {
 }
 
 bool CreateDirectories(const utf8string& path) {
+  if (path.length() == 0)
+    return true;
   std::error_code ec;
   return ghc::filesystem::create_directories(path, ec);
 }
 
 utf8string GetDirectory(const utf8string& path) {
   utf8string::size_type pos = path.find_last_of(PATH_SEPARATOR);
+  if (pos == utf8string::npos)
+    return "";
   return path.substr(0, pos);
 }
 

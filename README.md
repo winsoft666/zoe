@@ -9,15 +9,15 @@ Although there are many mature and powerful download tools at present, such as `
 
 So I developed this download library named `"teemo"` based on libcurl, which can support the following features:
 
-1. Support Multi-protocol. Since it is based on libcurl, so it supports all protocols that supported by libcurl, such as http, https, ftp, etc.
+✅ Support Multi-protocol. Since it is based on libcurl, so it supports all protocols that supported by libcurl, such as http, https, ftp, etc.
 
-2. Support multi-threaded download.
+✅ Support multi-threaded download.
 
-3. Support breakpoint resume.
+✅ Support breakpoint resume.
 
-4. Support for obtaining real-time download rate.
+✅ Support for obtaining real-time download rate.
 
-5. Support download speed limit.
+✅ Support download speed limit.
 
 ---
 

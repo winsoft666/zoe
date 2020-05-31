@@ -19,6 +19,8 @@ So I developed this download library named `"teemo"` based on libcurl, which can
 
 ✅ Support download speed limit.
 
+✅ Support disk cache.
+
 ---
 
 # Dependencies

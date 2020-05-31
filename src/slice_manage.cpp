@@ -35,7 +35,7 @@ SliceManage::SliceManage()
     : multi_(nullptr)
     , save_slice_to_tmp_dir_(false)
     , thread_num_(1)
-    , slice_cache_expired_seconds_(-1)
+    , slice_expired_seconds_(-1)
     , network_conn_timeout_(3000)
     , network_read_timeout_(3000)
     , max_download_speed_(0)
@@ -45,6 +45,7 @@ SliceManage::SliceManage()
     , speed_functor_(nullptr)
     , progress_functor_(nullptr)
     , cancel_event_(nullptr)
+    , disk_cache_total_size_(0)
     , file_size_(-1) {}
 
 SliceManage::~SliceManage() {}
@@ -95,12 +96,12 @@ size_t SliceManage::GetQueryFileSizeRetryTimes() const {
   return query_filesize_retry_times_;
 }
 
-void SliceManage::SetSliceCacheExpiredTime(int seconds) {
-  slice_cache_expired_seconds_ = seconds;
+void SliceManage::SetSliceExpiredTime(int seconds) {
+  slice_expired_seconds_ = seconds;
 }
 
-int SliceManage::GetSliceCacheExpiredTime() const {
-  return slice_cache_expired_seconds_;
+int SliceManage::GetSliceExpiredTime() const {
+  return slice_expired_seconds_;
 }
 
 Result SliceManage::SetThreadNum(size_t thread_num) {
@@ -133,6 +134,14 @@ size_t SliceManage::GetMaxDownloadSpeed() const {
   return max_download_speed_;
 }
 
+void SliceManage::SetDiskCacheSize(size_t cache_size) noexcept {
+  disk_cache_total_size_ = cache_size;
+}
+
+size_t SliceManage::GetDiskCacheSize() const noexcept {
+  return disk_cache_total_size_;
+}
+
 Result SliceManage::Start(const utf8string& url,
                           const utf8string& target_file_path,
                           ProgressFunctor progress_functor,
@@ -163,7 +172,7 @@ Result SliceManage::Start(const utf8string& url,
     OutputVerboseInfo("max download speed: " + std::to_string(max_download_speed_) + "\r\n");
     OutputVerboseInfo("network conn timeout: " + std::to_string(network_conn_timeout_) + "\r\n");
     OutputVerboseInfo("network read timeout: " + std::to_string(network_read_timeout_) + "\r\n");
-    OutputVerboseInfo("slice cache expired seconds: " + std::to_string(slice_cache_expired_seconds_) +
+    OutputVerboseInfo("slice expired seconds: " + std::to_string(slice_expired_seconds_) +
       "\r\n");
     OutputVerboseInfo("save slice to tmp dir: " + bool_to_string(save_slice_to_tmp_dir_) + "\r\n");
     OutputVerboseInfo("target file path: " + target_file_path_ + "\r\n");
@@ -224,15 +233,22 @@ Result SliceManage::Start(const utf8string& url,
         OutputVerboseInfo("thread num: " + std::to_string(thread_num_) + "\r\n");
       }
 
-      long each_slice_size = file_size_ / thread_num_;
+      long each_slice_size = 0L;
+      long each_slice_disk_cache_size = 0L;
+
+      if (thread_num_ > 0) {
+        each_slice_size = file_size_ / thread_num_;
+        each_slice_disk_cache_size = disk_cache_total_size_ / thread_num_;
+      }
       if (verbose_functor_) {
         OutputVerboseInfo("each slice size: " + std::to_string(each_slice_size) + "\r\n");
+        OutputVerboseInfo("each slice disk cache size: " + std::to_string(each_slice_disk_cache_size) + "\r\n");
       }
 
       for (size_t i = 0; i < thread_num_; i++) {
         long end = (i == thread_num_ - 1) ? file_size_ - 1 : ((i + 1) * each_slice_size) - 1;
         std::shared_ptr<Slice> slice = std::make_shared<Slice>(i, shared_from_this());
-        Result r = slice->Init("", i * each_slice_size, end, 0);
+        Result r = slice->Init("", i * each_slice_size, end, 0, each_slice_disk_cache_size);
         if (r != Successed) {
           Destory();
           return r;
@@ -255,7 +271,7 @@ Result SliceManage::Start(const utf8string& url,
       }
 
       std::shared_ptr<Slice> slice = std::make_shared<Slice>(0, shared_from_this());
-      Result r = slice->Init("", 0, -1, 0);
+      Result r = slice->Init("", 0, -1, 0, disk_cache_total_size_);
       if (r != Successed) {
         Destory();
         return r;
@@ -344,6 +360,14 @@ Result SliceManage::Start(const utf8string& url,
     return Result::InternalNetworkError;
   }
 
+  long init_total_capacity = 0;
+  for (const auto& s : slices_)
+    init_total_capacity += s->capacity();
+
+  if (verbose_functor_) {
+    OutputVerboseInfo("init total capacity: " + std::to_string(init_total_capacity) + "\r\n");
+  }
+
   if (progress_functor_) {
     progress_notify_thread_ = std::async(std::launch::async, [this]() {
       while (true) {
@@ -355,9 +379,13 @@ Result SliceManage::Start(const utf8string& url,
         }
 
         long downloaded = 0;
-        for (const auto& s : slices_) {
-          downloaded += s->capacity();
-        }
+        do 
+        {
+          std::lock_guard<std::recursive_mutex> lg(slices_mutex_);
+          for (const auto& s : slices_) {
+            downloaded += (s->capacity() + s->diskCacheCapacity());
+          }
+        } while (false);
 
         if (progress_functor_)
           progress_functor_(file_size_, downloaded);
@@ -365,35 +393,34 @@ Result SliceManage::Start(const utf8string& url,
     });
   }
 
-  long init_total_capacity = 0;
-  for (const auto& s : slices_)
-    init_total_capacity += s->capacity();
-  if (verbose_functor_) {
-    OutputVerboseInfo("init total capacity: " + std::to_string(init_total_capacity) + "\r\n");
+  if (speed_functor_) {
+    speed_notify_thread_ = std::async(std::launch::async, [this, init_total_capacity]() {
+      while (true) {
+        {
+          std::unique_lock<std::mutex> ul(stop_mutex_);
+          stop_cond_var_.wait_for(ul, std::chrono::milliseconds(1000), [this] { return stop_; });
+          if (stop_)
+            return;
+        }
+
+        long now = 0;
+        do 
+        {
+          std::lock_guard<std::recursive_mutex> lg(slices_mutex_);
+          for (const auto& s : slices_)
+            now += (s->capacity() + s->diskCacheCapacity());
+        } while (false);
+
+        static long last = init_total_capacity;
+        if (now >= last) {
+          long downloaded = now - last;
+          last = now;
+          if (speed_functor_)
+            speed_functor_(downloaded);
+        }
+      }
+    });
   }
-
-  speed_notify_thread_ = std::async(std::launch::async, [this, init_total_capacity]() {
-    while (true) {
-      {
-        std::unique_lock<std::mutex> ul(stop_mutex_);
-        stop_cond_var_.wait_for(ul, std::chrono::milliseconds(1000), [this] { return stop_; });
-        if (stop_)
-          return;
-      }
-
-      long now = 0;
-      for (const auto& s : slices_)
-        now += s->capacity();
-
-      static long last = init_total_capacity;
-      if (now >= last) {
-        long downloaded = now - last;
-        last = now;
-        if (speed_functor_)
-          speed_functor_(downloaded);
-      }
-    }
-  });
 
   int still_running = 0;
   CURLMcode m_code = curl_multi_perform(multi_, &still_running);
@@ -494,8 +521,17 @@ Result SliceManage::Start(const utf8string& url,
   }
 
   long total_capacity = 0;
-  for (auto slice : slices_)
-    total_capacity += slice->capacity();
+  do 
+  {
+    std::lock_guard< std::recursive_mutex> lg(slices_mutex_);
+    for (auto slice : slices_) {
+      if (!slice->FlushDiskCache()) {
+        // TODO
+      }
+      total_capacity += slice->capacity();
+    }
+  } while (false);
+
   if (verbose_functor_) {
     OutputVerboseInfo("total capacity: " + std::to_string(total_capacity) + "\r\n");
   }
@@ -647,6 +683,8 @@ bool SliceManage::LoadSlices(const utf8string url, ProgressFunctor functor) {
   fread(file_content.data(), 1, file_size, file);
   fclose(file);
 
+  std::lock_guard<std::recursive_mutex> lg(slices_mutex_);
+
   try {
     utf8string str_sign(file_content.data(), strlen(INDEX_FILE_SIGN_STRING));
     if (str_sign != INDEX_FILE_SIGN_STRING)
@@ -656,19 +694,23 @@ bool SliceManage::LoadSlices(const utf8string url, ProgressFunctor functor) {
     json j = json::parse(str_json);
 
     time_t last_update_time = j["update_time"].get<time_t>();
-    if (slice_cache_expired_seconds_ >= 0) {
+    if (slice_expired_seconds_ >= 0) {
       time_t now = time(nullptr);
-      if (now - last_update_time > slice_cache_expired_seconds_)
+      if (now - last_update_time > slice_expired_seconds_)
         return false;
     }
 
     file_size_ = j["file_size"];
     if (j["url"].get<utf8string>() != url)
       return false;
+    long each_slice_disk_cache_size = 0L;
+    if(j["slices"].size() > 0)
+      each_slice_disk_cache_size = disk_cache_total_size_ / j["slices"].size();
+
     for (auto& it : j["slices"]) {
       std::shared_ptr<Slice> slice = std::make_shared<Slice>(9999, shared_from_this());
       Result r = slice->Init(it["path"].get<utf8string>(), it["begin"].get<long>(),
-                             it["end"].get<long>(), it["capacity"].get<long>());
+                             it["end"].get<long>(), it["capacity"].get<long>(), each_slice_disk_cache_size);
       if (r != Successed) {
         file_size_ = -1;
         slices_.clear();
@@ -691,6 +733,7 @@ bool sliceLessBegin(const std::shared_ptr<Slice>& s1, const std::shared_ptr<Slic
 }
 
 bool SliceManage::CombineSlice() {
+  std::lock_guard< std::recursive_mutex> lg(slices_mutex_);
   std::sort(slices_.begin(), slices_.end(), sliceLessBegin);
 
   FILE* f = OpenFile(target_file_path_, u8"wb");
@@ -712,6 +755,7 @@ bool SliceManage::CleanupTmpFiles() {
     std::cerr << "remove file failed: " << index_file_path_ << std::endl;
     ret = false;
   }
+  std::lock_guard<std::recursive_mutex> lg(slices_mutex_);
   for (auto slice : slices_) {
     if (!slice->RemoveSliceFile()) {
       ret = false;
@@ -729,6 +773,7 @@ bool SliceManage::UpdateIndexFile() {
   j["file_size"] = file_size_;
   j["url"] = url_;
   json s;
+  std::lock_guard<std::recursive_mutex> lg(slices_mutex_);
   for (auto slice : slices_) {
     s.push_back({{"path", slice->filePath()},
                  {"begin", slice->begin()},
@@ -745,6 +790,7 @@ bool SliceManage::UpdateIndexFile() {
 }
 
 void SliceManage::Destory() {
+  std::lock_guard< std::recursive_mutex> lg(slices_mutex_);
   for (auto s : slices_)
     s->UnInitCURL(multi_);
 
@@ -774,4 +820,5 @@ Result SliceManage::GenerateIndexFilePath(const utf8string& target_file_path,
   index_path = AppendFileName(target_dir, indexfilename);
   return Successed;
 }
+
 }  // namespace teemo

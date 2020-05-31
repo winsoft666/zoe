@@ -93,7 +93,7 @@ int main(int argc, char **argv) {
 `teemo_tool`是一个基于`teemo`库开发的命令行下载工具，用法如下：
 
 ```bash
-teemo_tool URL TargetFilePath [ThreadNum] [MD5] [EnableSaveSliceToTmp] [SliceCacheExpiredSeconds] [MaxSpeed]
+teemo_tool URL TargetFilePath [ThreadNum] [MD5] [EnableSaveSliceToTmp] [SliceCacheExpiredSeconds] [MaxSpeed] [DiskCacheMb]
 ```
 
 - URL: 下载链接
@@ -103,3 +103,4 @@ teemo_tool URL TargetFilePath [ThreadNum] [MD5] [EnableSaveSliceToTmp] [SliceCac
 - EnableSaveSliceToTmp: 0或1，可选，是否保存分片文件到系统临时目录，Windows平台为`GetTempPath`API返回的路径，Linux平台为`/var/tmp/`
 - SliceCacheExpiredSeconds: 秒数，可选，分片缓存文件经过多少秒之后过期
 - MaxSpeed: 最高下载速度(byte/s)
+- DiskCacheMb: 磁盘缓存大小，单位Mb

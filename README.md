@@ -97,7 +97,7 @@ int main(int argc, char **argv) {
 `teemo` is command line download tool based on `teemo` library. Usage:
 
 ```bash
-teemo_tool URL TargetFilePath [ThreadNum] [MD5] [EnableSaveSliceToTmp] [SliceCacheExpiredSeconds] [MaxSpeed]
+teemo_tool URL TargetFilePath [ThreadNum] [MD5] [EnableSaveSliceToTmp] [SliceCacheExpiredSeconds] [MaxSpeed] [DiskCacheMb]
 ```
 
 - URL: Download URL.
@@ -107,3 +107,4 @@ teemo_tool URL TargetFilePath [ThreadNum] [MD5] [EnableSaveSliceToTmp] [SliceCac
 - EnableSaveSliceToTmp: 0 or 1, optional, whether save slice file to system temp directory or not, Windows system is the path returned by `GetTempPath` API, Linux is `/var/tmp/`.
 - SliceCacheExpiredSeconds: seconds, optional, slice cache file expired after these senconds.
 - MaxSpeed: max download speed(byte/s).
+- DiskCacheMb: Disk cache size(Mb).

@@ -132,12 +132,12 @@ size_t Teemo::GetQueryFileSizeRetryTimes() const noexcept {
   return impl_->slice_manager->GetQueryFileSizeRetryTimes();
 }
 
-void Teemo::SetSliceCacheExpiredTime(int seconds) noexcept {
-  return impl_->slice_manager->SetSliceCacheExpiredTime(seconds);
+void Teemo::SetSliceExpiredTime(int seconds) noexcept {
+  return impl_->slice_manager->SetSliceExpiredTime(seconds);
 }
 
-int Teemo::GetSliceCacheExpiredTime() const noexcept {
-  return impl_->slice_manager->GetSliceCacheExpiredTime();
+int Teemo::GetSliceExpiredTime() const noexcept {
+  return impl_->slice_manager->GetSliceExpiredTime();
 }
 
 void Teemo::SetMaxDownloadSpeed(size_t byte_per_seconds) noexcept {
@@ -146,6 +146,14 @@ void Teemo::SetMaxDownloadSpeed(size_t byte_per_seconds) noexcept {
 
 size_t Teemo::GetMaxDownloadSpeed() const noexcept {
   return impl_->slice_manager->GetMaxDownloadSpeed();
+}
+
+void Teemo::SetDiskCacheSize(size_t cache_size) noexcept {
+  impl_->slice_manager->SetDiskCacheSize(cache_size);
+}
+
+size_t Teemo::GetDiskCacheSize() const noexcept {
+  return impl_->slice_manager->GetDiskCacheSize();
 }
 
 std::shared_future<Result> Teemo::Start(const utf8string url,

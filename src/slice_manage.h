@@ -44,8 +44,8 @@ class SliceManage : public std::enable_shared_from_this<SliceManage> {
   Result SetQueryFileSizeRetryTimes(size_t retry_times);
   size_t GetQueryFileSizeRetryTimes() const;
 
-  void SetSliceCacheExpiredTime(int seconds);
-  int GetSliceCacheExpiredTime() const;
+  void SetSliceExpiredTime(int seconds);
+  int GetSliceExpiredTime() const;
 
   Result SetThreadNum(size_t thread_num);
   size_t GetThreadNum() const;
@@ -55,6 +55,9 @@ class SliceManage : public std::enable_shared_from_this<SliceManage> {
 
   void SetMaxDownloadSpeed(size_t byte_per_seconds);
   size_t GetMaxDownloadSpeed() const;
+
+  void SetDiskCacheSize(size_t cache_size) noexcept;  // byte
+  size_t GetDiskCacheSize() const noexcept;           // byte
 
   Result Start(const utf8string& url,
                const utf8string& target_file_path,
@@ -76,7 +79,6 @@ class SliceManage : public std::enable_shared_from_this<SliceManage> {
   bool UpdateIndexFile();
   void Destory();
   Result GenerateIndexFilePath(const utf8string& target_file_path, utf8string& index_path) const;
-
  protected:
   utf8string url_;
   utf8string target_file_path_;
@@ -87,7 +89,8 @@ class SliceManage : public std::enable_shared_from_this<SliceManage> {
   size_t network_read_timeout_;
   size_t max_download_speed_;
   size_t query_filesize_retry_times_;
-  int slice_cache_expired_seconds_;
+  size_t disk_cache_total_size_; // byte
+  int slice_expired_seconds_;
   long file_size_;
   CURLM* multi_;
   ProgressFunctor progress_functor_;
@@ -97,6 +100,8 @@ class SliceManage : public std::enable_shared_from_this<SliceManage> {
   std::vector<std::shared_ptr<Slice>> slices_;
   std::future<void> progress_notify_thread_;
   std::future<void> speed_notify_thread_;
+
+  std::recursive_mutex slices_mutex_;
 
   bool stop_;
   std::mutex stop_mutex_;

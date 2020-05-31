@@ -112,12 +112,14 @@ class TEEMO_API Teemo {
   size_t GetQueryFileSizeRetryTimes() const noexcept;
 
   // default is -1 = forever, 0 = not use exist slice cache
-  void SetSliceCacheExpiredTime(int seconds) noexcept;
-
-  int GetSliceCacheExpiredTime() const noexcept;
+  void SetSliceExpiredTime(int seconds) noexcept;
+  int GetSliceExpiredTime() const noexcept;
 
   void SetMaxDownloadSpeed(size_t byte_per_seconds) noexcept;  // default is 0 = not limit
   size_t GetMaxDownloadSpeed() const noexcept;
+
+  void SetDiskCacheSize(size_t cache_size) noexcept;  // byte
+  size_t GetDiskCacheSize() const noexcept; // byte
 
   std::shared_future<Result> Start(const utf8string url,
                            const utf8string& target_file_path,

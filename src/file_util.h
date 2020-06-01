@@ -25,11 +25,14 @@ utf8string GetSystemTmpDirectory();
 bool CreateDirectories(const utf8string& path);
 utf8string GetDirectory(const utf8string& path);
 utf8string GetFileName(const utf8string& path);
+utf8string GenerateTmpFilePath(const utf8string& path);
 utf8string AppendFileName(const utf8string& dir, const utf8string& filename);
 bool FileIsExist(const utf8string& filepath);
 bool FileIsRW(const utf8string& filepath);
 bool RemoveFile(const utf8string& filepath);
+bool RenameTargetFile(const utf8string& from, const utf8string &to, bool allow_remove_old);
 FILE* OpenFile(const utf8string& path, const utf8string& mode);
+bool CreateFixedSizeFile(const utf8string& path, size_t fixed_size);
 }  // namespace teemo
 
 #endif

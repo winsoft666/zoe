@@ -28,16 +28,14 @@ const char* GetResultString(int enumVal) {
                                       u8"QueryFileSizeRetryTimesInvalid",
                                       u8"InternalNetworkError",
                                       u8"GenerateTargetFileFailed",
-                                      u8"CleanupTmpFileFailed",
                                       u8"AlreadyDownloading",
                                       u8"Canceled",
                                       u8"CanceledAndUpdateIndexFailed",
                                       u8"Failed",
                                       u8"FailedAndUpdateIndexFailed",
-                                      u8"GetSliceDirectoryFailed",
-                                      u8"CreateSliceDirectoryFailed",
-                                      u8"OpenSliceFileFailed",
-                                      u8"CreateSliceIndexDirectoryFailed"};
+                                      u8"CreateSliceIndexDirectoryFailed",
+                                      u8"CreateTmpFileFailed",
+                                      u8"RenameTargetFileFailed"};
   return EnumStrings[enumVal];
 }
 
@@ -46,10 +44,12 @@ class Teemo::TeemoImpl {
   TeemoImpl() {}
 
   bool IsDownloading() {
-    if (!async_task_.valid() || async_task_.wait_for(std::chrono::milliseconds(0)) == std::future_status::ready)
+    if (!async_task_.valid() ||
+        async_task_.wait_for(std::chrono::milliseconds(0)) == std::future_status::ready)
       return false;
     return true;
   }
+
  public:
   std::shared_ptr<SliceManage> slice_manager;
   std::shared_future<Result> async_task_;
@@ -82,14 +82,6 @@ void Teemo::GlobalUnInit() {
 
 void Teemo::SetVerboseOutput(VerboseOuputFunctor verbose_functor) noexcept {
   impl_->slice_manager->SetVerboseOutput(verbose_functor);
-}
-
-void Teemo::SetSaveSliceFileToTempDir(bool enabled) noexcept {
-  impl_->slice_manager->SetSaveSliceFileToTempDir(enabled);
-}
-
-bool Teemo::IsSaveSliceFileToTempDir() const noexcept {
-  return impl_->slice_manager->IsSaveSliceFileToTempDir();
 }
 
 Result Teemo::SetThreadNum(size_t thread_num) noexcept {
@@ -157,27 +149,31 @@ size_t Teemo::GetDiskCacheSize() const noexcept {
 }
 
 std::shared_future<Result> Teemo::Start(const utf8string url,
-                                const utf8string& target_file_path,
-                                ResultFunctor result_functor,
-                                ProgressFunctor progress_functor,
-                                RealtimeSpeedFunctor realtime_speed_functor,
-                                CancelEvent* cancel_event) noexcept {
+                                        const utf8string& target_file_path,
+                                        ResultFunctor result_functor,
+                                        ProgressFunctor progress_functor,
+                                        RealtimeSpeedFunctor realtime_speed_functor,
+                                        CancelEvent* cancel_event) noexcept {
   if (impl_->IsDownloading())
     return std::async(std::launch::async, [=]() {
-    if (result_functor) {
-      result_functor(Result::AlreadyDownloading);
-    }
-    return Result::AlreadyDownloading;
-  });
+      if (result_functor) {
+        result_functor(Result::AlreadyDownloading);
+      }
+      return Result::AlreadyDownloading;
+    });
 
-  impl_->async_task_ = std::async(std::launch::async, [=]() {
-    Result result = impl_->slice_manager->Start(url, target_file_path, progress_functor,
-                                                realtime_speed_functor, cancel_event);
-    if (result_functor) {
-      result_functor(result);
-    }
-    return result;
-  });
+  try {
+    impl_->async_task_ = std::async(std::launch::async, [=]() {
+      Result result = impl_->slice_manager->Start(url, target_file_path, progress_functor,
+                                                  realtime_speed_functor, cancel_event);
+      if (result_functor) {
+        result_functor(result);
+      }
+      return result;
+    });
+  } catch (std::exception& e) {
+    e;
+  }
 
   return impl_->async_task_;
 }

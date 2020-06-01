@@ -26,6 +26,7 @@
 
 namespace teemo {
 
+#define TMP_FILE_EXTENSION ".teemo"
 #if defined(WIN32) || defined(_WIN32) || defined(__WIN32__) || defined(__NT__)
 #define PATH_SEPARATOR '\\'
 
@@ -128,6 +129,14 @@ utf8string GetFileName(const utf8string& path) {
   return path.substr(pos);
 }
 
+utf8string GenerateTmpFilePath(const utf8string& path) {
+  if (path.length() == 0)
+    return "";
+  utf8string tmp_path = path;
+  tmp_path += utf8string(TMP_FILE_EXTENSION);
+  return tmp_path;
+}
+
 utf8string AppendFileName(const utf8string& dir, const utf8string& filename) {
   utf8string result = dir;
   if (result.length() > 0) {
@@ -172,6 +181,24 @@ bool RemoveFile(const utf8string& filepath) {
 #endif
 }
 
+bool RenameTargetFile(const utf8string& from, const utf8string &to, bool allow_remove_old) {
+  if (FileIsExist(to)) {
+    if (allow_remove_old && !RemoveFile(to)) {
+      return false;
+    }
+  }
+
+#if defined(WIN32) || defined(_WIN32) || defined(__WIN32__) || defined(__NT__)
+  std::wstring unicode_from = Utf8ToUnicode(from);
+  std::wstring unicode_to = Utf8ToUnicode(to);
+
+  return (_wrename(unicode_from.c_str(), unicode_to.c_str()) == 0);
+#else
+  return (rename(from.c_str(), to.c_str()) == 0);
+#endif
+
+}
+
 FILE* OpenFile(const utf8string& path, const utf8string& mode) {
   FILE* f = nullptr;
   if (path.length() == 0 || mode.length() == 0)
@@ -184,6 +211,35 @@ FILE* OpenFile(const utf8string& path, const utf8string& mode) {
   f = fopen(path.c_str(), mode.c_str());
 #endif
   return f;
+}
+
+bool CreateFixedSizeFile(const utf8string& path, size_t fixed_size) {
+  FILE* f = OpenFile(path, "wb");
+  if (!f)
+    return false;
+  if (fixed_size == 0) {
+    fclose(f);
+    return true;
+  }
+
+  if (fseek(f, fixed_size - 1, SEEK_SET) != 0) {
+    fclose(f);
+    return false;
+  }
+  if (fwrite("", 1, 1, f) != 1) {
+    fclose(f);
+    return false;
+  }
+  fclose(f);
+  f = nullptr;
+
+  // check
+  f = OpenFile(path, "rb");
+  if (!f)
+    return false;
+  long size = GetFileSize(f);
+  fclose(f);
+  return (fixed_size == size);
 }
 
 }  // namespace teemo

@@ -14,7 +14,7 @@ void DoTest(std::vector<TestData> test_datas, int thread_num, bool enable_save_s
     if (thread_num != -1)
       efd.SetThreadNum(thread_num);
 
-    efd.SetSaveSliceFileToTempDir(enable_save_slice_to_tmp);
+    efd.SetDiskCacheSize(thread_num * 1 * 1024 * 1024);
 
     Result ret = efd.Start(
         test_data.url, test_data.target_file_path,

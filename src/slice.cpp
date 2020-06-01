@@ -24,70 +24,38 @@ namespace teemo {
 Slice::Slice(size_t index, std::shared_ptr<SliceManage> slice_manager)
     : index_(index)
     , slice_manager_(slice_manager)
-    , file_(nullptr)
     , begin_(0L)
     , end_(0L)
     , disk_cache_size_(0L)
     , disk_cache_buffer_(nullptr)
     , curl_(nullptr) {
-  capacity_.store(0);
-  disk_cache_buffer_capacity_.store(0);
+  capacity_ = 0;
+  disk_cache_buffer_capacity_ = 0;
 }
 
 Slice::~Slice() {
-  if (file_) {
-    fflush(file_);
-    fclose(file_);
-    file_ = nullptr;
-  }
-
   if (disk_cache_buffer_) {
     free(disk_cache_buffer_);
     disk_cache_buffer_ = nullptr;
   }
   disk_cache_size_ = 0L;
-  disk_cache_buffer_capacity_.store(0);
+  disk_cache_buffer_capacity_ = 0L;
 }
 
-Result Slice::Init(const utf8string& slice_file_path, long begin, long end, long capacity, long disk_cache) {
+Result Slice::Init(std::shared_ptr<TargetFile> target_file,
+                   long begin,
+                   long end,
+                   long capacity,
+                   long disk_cache) {
   begin_ = begin;
   end_ = end;
-  capacity_.store(capacity);
+  capacity_ = capacity;
   disk_cache_size_ = disk_cache;
+  target_file_ = target_file;
 
-  bool need_generate_new_slice = true;
-  do {
-    if (slice_file_path.length() == 0)
-      break;
-    if (!FileIsRW(slice_file_path.c_str()))
-      break;
-    FILE* f = OpenFile(slice_file_path, u8"a+b");
-    if (!f)
-      break;
-    if (GetFileSize(f) != capacity_.load()) {
-      fclose(f);
-      break;
-    }
-    fclose(f);
-    need_generate_new_slice = false;
-  } while (false);
-
-  if (need_generate_new_slice) {
-    RemoveFile(slice_file_path);
-    Result ret = GenerateSliceFilePath(index_, slice_manager_->GetTargetFilePath(), file_path_);
-    if (ret != Successed)
-      return ret;
-    RemoveFile(file_path_);
+  if (!target_file_) {
+    return CreateTmpFileFailed;
   }
-  else {
-    file_path_ = slice_file_path;
-  }
-
-  file_ = OpenFile(file_path_, u8"a+b");
-  if (file_ == nullptr)
-    return OpenSliceFileFailed;
-
-  fseek(file_, 0, SEEK_END);
 
   if (disk_cache_size_ > 0) {
     disk_cache_buffer_ = (char*)malloc(disk_cache_size_);
@@ -108,7 +76,7 @@ long Slice::end() const {
 }
 
 long Slice::capacity() const {
-  return capacity_.load();
+  return capacity_;
 }
 
 long Slice::diskCacheSize() const {
@@ -116,25 +84,19 @@ long Slice::diskCacheSize() const {
 }
 
 long Slice::diskCacheCapacity() const {
-  return disk_cache_buffer_capacity_.load();
+  return disk_cache_buffer_capacity_;
 }
 
 size_t Slice::index() const {
   return index_;
 }
 
-utf8string Slice::filePath() const {
-  return file_path_;
-}
-
 static size_t DownloadWriteCallback(char* buffer, size_t size, size_t nitems, void* outstream) {
   Slice* pThis = (Slice*)outstream;
 
   size_t write_size = size * nitems;
-  size_t written = 0;
-
   if (pThis->OnNewData(buffer, write_size)) {
-
+    // TODO
   }
 
   return write_size;
@@ -163,8 +125,8 @@ bool Slice::InitCURL(CURLM* multi, size_t max_download_speed /* = 0*/) {
   curl_easy_setopt(curl_, CURLOPT_WRITEFUNCTION, DownloadWriteCallback);
   curl_easy_setopt(curl_, CURLOPT_WRITEDATA, this);
   char range[64] = {0};
-  if (begin_ + capacity_.load() >= 0 && end_ > 0 && end_ >= begin_ + capacity_.load())
-    snprintf(range, sizeof(range), "%ld-%ld", begin_ + capacity_.load(), end_);
+  if (begin_ + capacity_ >= 0 && end_ > 0 && end_ >= begin_ + capacity_)
+    snprintf(range, sizeof(range), "%ld-%ld", begin_ + capacity_, end_);
   if (strlen(range) > 0) {
     CURLcode err = curl_easy_setopt(curl_, CURLOPT_RANGE, range);
     if (err != CURLE_OK) {
@@ -197,55 +159,23 @@ void Slice::UnInitCURL(CURLM* multi) {
   }
 }
 
-bool Slice::AppendSelfToFile(FILE* f) {
-  if (!f)
-    return false;
-  fflush(file_);
-  fseek(file_, 0, SEEK_SET);
-  char buf[1024];
-  size_t read = 0;
-
-  while ((read = fread(buf, 1, 1024, file_)) > 0) {
-    size_t written = fwrite(buf, 1, read, f);
-    assert(written == read);
-    if (written != read)
-      return false;
-    read = 0;
-  }
-
-  return true;
-}
-
-bool Slice::RemoveSliceFile() {
-  if (file_) {
-    fclose(file_);
-    file_ = nullptr;
-  }
-
-  if (!RemoveFile(file_path_)) {
-    std::cerr << "remove file failed: " << file_path_ << std::endl;
-    return false;
-  }
-  return true;
-}
-
 bool Slice::IsDownloadCompleted() {
   if (end_ == -1)
     return false;
 
-  return ((end_ - begin_ + 1) == capacity_.load());
+  return ((end_ - begin_ + 1) == capacity_);
 }
 
 bool Slice::FlushDiskCache() {
   bool bret = true;
   if (disk_cache_buffer_) {
     size_t written = 0;
-    size_t need_write = disk_cache_buffer_capacity_.load();
-    disk_cache_buffer_capacity_.store(0);
-    if (file_) {
-      written = fwrite(disk_cache_buffer_, 1, need_write, file_);
+    size_t need_write = disk_cache_buffer_capacity_;
+    disk_cache_buffer_capacity_ = 0L;
+    if (target_file_) {
+      written = target_file_->Write(begin_ + capacity_, disk_cache_buffer_, need_write);
     }
-    addCapacity(written);
+    capacity_ += written;
     bret = (written == need_write);
   }
   return bret;
@@ -253,52 +183,50 @@ bool Slice::FlushDiskCache() {
 
 bool Slice::OnNewData(const char* p, long size) {
   bool bret = false;
-  do 
-  {
+  do {
     if (!p || size <= 0) {
       bret = true;
       break;
     }
 
-    if (!file_) {
+    if (!target_file_) {
       break;
     }
 
     if (!disk_cache_buffer_) {
-      size_t written = fwrite(p, 1, size, file_);
-      fflush(file_);
-      addCapacity(size);
+      size_t written = target_file_->Write(begin_ + capacity_, p, size);
+      capacity_ += written;
 
       bret = (written == size);
       break;
     }
 
-    if (disk_cache_size_ - disk_cache_buffer_capacity_.load() >= size) {
-      memcpy((char*)(disk_cache_buffer_ + disk_cache_buffer_capacity_.load()), p, size);
-      addDiskCacheCapacity(size);
+    if (disk_cache_size_ - disk_cache_buffer_capacity_ >= size) {
+      memcpy((char*)(disk_cache_buffer_ + disk_cache_buffer_capacity_), p, size);
+      disk_cache_buffer_capacity_ += size;
       bret = true;
       break;
     }
 
-    size_t need_write = disk_cache_buffer_capacity_.load();
-    disk_cache_buffer_capacity_.store(0);
-    size_t written = fwrite(disk_cache_buffer_, 1, need_write, file_);
-    fflush(file_);
-    addCapacity(written);
+    size_t need_write = disk_cache_buffer_capacity_;
+
+    disk_cache_buffer_capacity_ = 0L;
+
+    size_t written = target_file_->Write(begin_ + capacity_, disk_cache_buffer_, need_write);
+    capacity_ += written;
     if (written != need_write) {
       break;
     }
 
-    if (disk_cache_size_ - disk_cache_buffer_capacity_.load() >= size) {
-      memcpy((char*)(disk_cache_buffer_ + disk_cache_buffer_capacity_.load()), p, size);
-      addDiskCacheCapacity(size);
+    if (disk_cache_size_ - disk_cache_buffer_capacity_ >= size) {
+      memcpy((char*)(disk_cache_buffer_ + disk_cache_buffer_capacity_), p, size);
+      disk_cache_buffer_capacity_ += size;
       bret = true;
       break;
     }
 
-    written = fwrite(p, 1, size, file_);
-    fflush(file_);
-    addCapacity(written);
+    written = target_file_->Write(begin_ + capacity_, p, size);
+    capacity_ += written;
 
     bret = (written == size);
     break;
@@ -306,42 +234,4 @@ bool Slice::OnNewData(const char* p, long size) {
 
   return bret;
 }
-
-Result Slice::GenerateSliceFilePath(size_t index, const utf8string& target_file_path, utf8string &slice_path) const {
-  utf8string target_dir;
-  if (slice_manager_->IsSaveSliceFileToTempDir()) {
-    target_dir = GetSystemTmpDirectory();
-    if (target_dir.length() == 0) {
-      slice_path.clear();
-      return GetSliceDirectoryFailed;
-    }
-  }
-  else {
-    target_dir = GetDirectory(target_file_path);
-  }
-
-  if (target_dir.length() > 0) {
-    if (!CreateDirectories(target_dir)) {
-      slice_path.clear();
-      return CreateSliceDirectoryFailed;
-    }
-  }
-
-  utf8string target_filename = GetFileName(target_file_path);
-
-  utf8string slice_filename = target_filename + ".edf" + std::to_string(index);
-  slice_path = AppendFileName(target_dir, slice_filename);
-  return Successed;
-}
-
-void Slice::addCapacity(long add) {
-  long old_c = capacity_.load();
-  capacity_.store(old_c + add);
-}
-
-void Slice::addDiskCacheCapacity(long add) {
-  long old_c = disk_cache_buffer_capacity_.load();
-  disk_cache_buffer_capacity_.store(old_c + add);
-}
-
 }  // namespace teemo

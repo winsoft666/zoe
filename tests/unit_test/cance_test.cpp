@@ -10,7 +10,6 @@ void DoCancelTest(std::vector<TestData> test_datas, int thread_num) {
   for (auto test_data : test_datas) {
     Teemo efd;
     efd.SetThreadNum(thread_num);
-    efd.SetSaveSliceFileToTempDir(true);
     CancelEvent cancel_event;
 
     std::thread t = std::thread([&cancel_event]() {

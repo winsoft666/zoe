@@ -18,7 +18,6 @@ void DoTest(std::vector<TestData> test_datas,
     if (thread_num != -1)
       efd.SetThreadNum(thread_num);
 
-    efd.SetSaveSliceFileToTempDir(enable_save_slice_to_tmp);
     efd.SetDiskCacheSize(disk_cache);
 
     Result ret =

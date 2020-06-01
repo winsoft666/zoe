@@ -15,6 +15,7 @@
 #include <iostream>
 #include <string.h>
 #include <sstream>
+#include <chrono>
 #include <iomanip>
 #include "teemo/teemo.h"
 #include "../md5.h"
@@ -58,7 +59,7 @@ void ControlSignalHandler(int s) {
 
 //
 // Usage:
-// easy_download_tool URL TargetFilePath [ThreadNum] [MD5] [EnableSaveSliceToTmp] [SliceExpiredSeconds] [MaxSpeed] [DiskCacheMb]
+// teemo_tool URL TargetFilePath [ThreadNum] [DiskCacheMb] [MD5] [SliceExpiredSeconds] [MaxSpeed]
 //
 int main(int argc, char** argv) {
   if (argc < 3) {
@@ -86,15 +87,13 @@ int main(int argc, char** argv) {
   if (argc >= 4)
     efd.SetThreadNum(atoi(argv[3]));
   if (argc >= 5)
-    md5 = argv[4];
+    efd.SetDiskCacheSize(atoi(argv[4]) * 1024 * 1024);
   if (argc >= 6)
-    efd.SetSaveSliceFileToTempDir((atoi(argv[5]) == 1));
+    md5 = argv[5];
   if (argc >= 7)
     efd.SetSliceExpiredTime(atoi(argv[6]));
   if (argc >= 8)
     efd.SetMaxDownloadSpeed(atoi(argv[7]));
-  if (argc >= 9)
-    efd.SetDiskCacheSize(atoi(argv[8]) * 1024 * 1024);
 
   int exit_code = 0;
   Teemo::GlobalInit();
@@ -106,6 +105,7 @@ int main(int argc, char** argv) {
 #endif
   });
 
+  auto start_time = std::chrono::high_resolution_clock::now();
   std::shared_future<Result> aysnc_task = efd.Start(
       url, target_file_path,
       [=, &exit_code](Result result) {
@@ -114,7 +114,7 @@ int main(int argc, char** argv) {
 
         if (result == Result::Successed) {
           if (md5) {
-            if (strcmp(md5, base::GetFileMd5(target_file_path).c_str()) == 0) {
+            if (stricmp(md5, base::GetFileMd5(target_file_path).c_str()) == 0) {
               std::cout << "MD5 checksum successful." << std::endl;
             }
             else {
@@ -129,6 +129,11 @@ int main(int argc, char** argv) {
 
   aysnc_task.wait();
 
+  auto end_time = std::chrono::high_resolution_clock::now();
+
+  std::chrono::milliseconds mill = std::chrono::duration_cast<std::chrono::milliseconds>(end_time - start_time);
+  std::cout << "Total: " << mill.count() << "ms" << std::endl;
+
   fclose(f_verbose);
   Teemo::GlobalUnInit();
   std::cout << "Global UnInit." << std::endl;
@@ -136,6 +141,7 @@ int main(int argc, char** argv) {
 }
 
 void PrintConsole(long total, long downloaded, long speed) {
+  return;
   const char* PBSTR = "============================================================";
   const int PBWIDTH = 60;
 

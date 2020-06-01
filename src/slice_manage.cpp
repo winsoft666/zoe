@@ -23,7 +23,7 @@
 
 using json = nlohmann::json;
 
-#define INDEX_FILE_SIGN_STRING "TEEMO:EASY-FILE-DOWNLOAD"
+#define INDEX_FILE_SIGN_STRING "TEEMO:EASY-FILE-DOWNLOAD(2.0)"
 
 namespace teemo {
 
@@ -33,7 +33,6 @@ utf8string bool_to_string(bool b) {
 
 SliceManage::SliceManage()
     : multi_(nullptr)
-    , save_slice_to_tmp_dir_(false)
     , thread_num_(1)
     , slice_expired_seconds_(-1)
     , network_conn_timeout_(3000)
@@ -45,10 +44,14 @@ SliceManage::SliceManage()
     , speed_functor_(nullptr)
     , progress_functor_(nullptr)
     , cancel_event_(nullptr)
-    , disk_cache_total_size_(0)
-    , file_size_(-1) {}
+    , disk_cache_total_size_(20 * (2 << (20 - 1)))
+    , file_size_(-1) {
+  target_file_ = std::make_shared<TargetFile>();
+}
 
-SliceManage::~SliceManage() {}
+SliceManage::~SliceManage() {
+  target_file_.reset();
+}
 
 void SliceManage::SetVerboseOutput(VerboseOuputFunctor verbose_functor) {
   verbose_functor_ = verbose_functor;
@@ -118,14 +121,6 @@ size_t SliceManage::GetThreadNum() const {
   return thread_num_;
 }
 
-void SliceManage::SetSaveSliceFileToTempDir(bool enabled) {
-  save_slice_to_tmp_dir_ = enabled;
-}
-
-bool SliceManage::IsSaveSliceFileToTempDir() const {
-  return save_slice_to_tmp_dir_;
-}
-
 void SliceManage::SetMaxDownloadSpeed(size_t byte_per_seconds) {
   max_download_speed_ = byte_per_seconds;
 }
@@ -156,6 +151,9 @@ Result SliceManage::Start(const utf8string& url,
   if (speed_notify_thread_.valid())
     speed_notify_thread_.wait();
 
+  if (target_file_->IsOpened())
+    target_file_->Close();
+
   stop_ = false;
 
   url_ = url;
@@ -172,9 +170,7 @@ Result SliceManage::Start(const utf8string& url,
     OutputVerboseInfo("max download speed: " + std::to_string(max_download_speed_) + "\r\n");
     OutputVerboseInfo("network conn timeout: " + std::to_string(network_conn_timeout_) + "\r\n");
     OutputVerboseInfo("network read timeout: " + std::to_string(network_read_timeout_) + "\r\n");
-    OutputVerboseInfo("slice expired seconds: " + std::to_string(slice_expired_seconds_) +
-      "\r\n");
-    OutputVerboseInfo("save slice to tmp dir: " + bool_to_string(save_slice_to_tmp_dir_) + "\r\n");
+    OutputVerboseInfo("slice expired seconds: " + std::to_string(slice_expired_seconds_) + "\r\n");
     OutputVerboseInfo("target file path: " + target_file_path_ + "\r\n");
     OutputVerboseInfo("index file path: " + index_file_path_ + "\r\n");
   }
@@ -186,7 +182,7 @@ Result SliceManage::Start(const utf8string& url,
     if (!bret)
       break;
 
-    bret = LoadSlices(url_, progress_functor);
+    bret = LoadSlices(index_file_path_, url_, progress_functor);
     OutputVerboseInfo("load slices: " + bool_to_string(bret) + "\r\n");
     if (!bret) {
       bool remove_ret = RemoveFile(index_file_path_);
@@ -227,6 +223,11 @@ Result SliceManage::Start(const utf8string& url,
     }
     slices_.clear();
 
+    target_tmp_file_path_ = GenerateTmpFilePath(target_file_path_);
+    if (!target_file_->Create(target_tmp_file_path_, file_size_ < 0 ? 0 : file_size_)) {
+      return CreateTmpFileFailed;
+    }
+
     if (file_size_ > 0) {
       thread_num_ = std::min(file_size_, (long)thread_num_);
       if (verbose_functor_) {
@@ -242,13 +243,15 @@ Result SliceManage::Start(const utf8string& url,
       }
       if (verbose_functor_) {
         OutputVerboseInfo("each slice size: " + std::to_string(each_slice_size) + "\r\n");
-        OutputVerboseInfo("each slice disk cache size: " + std::to_string(each_slice_disk_cache_size) + "\r\n");
+        OutputVerboseInfo(
+            "each slice disk cache size: " + std::to_string(each_slice_disk_cache_size) + "\r\n");
       }
 
       for (size_t i = 0; i < thread_num_; i++) {
         long end = (i == thread_num_ - 1) ? file_size_ - 1 : ((i + 1) * each_slice_size) - 1;
         std::shared_ptr<Slice> slice = std::make_shared<Slice>(i, shared_from_this());
-        Result r = slice->Init("", i * each_slice_size, end, 0, each_slice_disk_cache_size);
+        Result r =
+            slice->Init(target_file_, i * each_slice_size, end, 0, each_slice_disk_cache_size);
         if (r != Successed) {
           Destory();
           return r;
@@ -271,7 +274,7 @@ Result SliceManage::Start(const utf8string& url,
       }
 
       std::shared_ptr<Slice> slice = std::make_shared<Slice>(0, shared_from_this());
-      Result r = slice->Init("", 0, -1, 0, disk_cache_total_size_);
+      Result r = slice->Init(target_file_, 0, -1, 0, disk_cache_total_size_);
       if (r != Successed) {
         Destory();
         return r;
@@ -284,8 +287,8 @@ Result SliceManage::Start(const utf8string& url,
     std::stringstream ss_verbose;
     ss_verbose << "slices: \r\n";
     for (auto& s : slices_) {
-      ss_verbose << s->index() << ": " << s->filePath() << ": " << s->begin() << " ~ " << s->end()
-                 << ": " << s->capacity() << "\r\n";
+      ss_verbose << s->index() << ": " << s->begin() << " ~ " << s->end() << ": " << s->capacity()
+                 << "\r\n";
     }
     OutputVerboseInfo(ss_verbose.str());
   }
@@ -307,13 +310,18 @@ Result SliceManage::Start(const utf8string& url,
   if (uncomplete_slice_num == 0) {
     Result ret;
     do {
-      if (!CombineSlice()) {
-        ret = GenerateTargetFileFailed;
+      if (!RenameTargetFile(target_tmp_file_path_, target_file_path_, true)) {
+        if (verbose_functor_) {
+          OutputVerboseInfo("rename target file failed\r\n");
+        }
+        ret = RenameTargetFileFailed;
         break;
       }
-      if (!CleanupTmpFiles()) {
-        ret = CleanupTmpFileFailed;
-        break;
+
+      if (!RemoveFile(index_file_path_)) {
+        if (verbose_functor_) {
+          OutputVerboseInfo("remove index file failed\r\n");
+        }
       }
       ret = Successed;
     } while (false);
@@ -338,8 +346,8 @@ Result SliceManage::Start(const utf8string& url,
 
   size_t each_slice_download_speed = max_download_speed_ / uncomplete_slice_num;
   if (verbose_functor_) {
-    OutputVerboseInfo("each slice max download speed: " + std::to_string(each_slice_download_speed) +
-      "\r\n");
+    OutputVerboseInfo(
+        "each slice max download speed: " + std::to_string(each_slice_download_speed) + "\r\n");
   }
 
   bool init_curl_ret = true;
@@ -369,57 +377,14 @@ Result SliceManage::Start(const utf8string& url,
   }
 
   if (progress_functor_) {
-    progress_notify_thread_ = std::async(std::launch::async, [this]() {
-      while (true) {
-        {
-          std::unique_lock<std::mutex> ul(stop_mutex_);
-          stop_cond_var_.wait_for(ul, std::chrono::milliseconds(500), [this] { return stop_; });
-          if (stop_)
-            return;
-        }
-
-        long downloaded = 0;
-        do 
-        {
-          std::lock_guard<std::recursive_mutex> lg(slices_mutex_);
-          for (const auto& s : slices_) {
-            downloaded += (s->capacity() + s->diskCacheCapacity());
-          }
-        } while (false);
-
-        if (progress_functor_)
-          progress_functor_(file_size_, downloaded);
-      }
-    });
+    progress_notify_thread_ =
+        std::async(std::launch::async, std::bind(&SliceManage::ProgressNotifyThreadProc, this));
   }
 
   if (speed_functor_) {
-    speed_notify_thread_ = std::async(std::launch::async, [this, init_total_capacity]() {
-      while (true) {
-        {
-          std::unique_lock<std::mutex> ul(stop_mutex_);
-          stop_cond_var_.wait_for(ul, std::chrono::milliseconds(1000), [this] { return stop_; });
-          if (stop_)
-            return;
-        }
-
-        long now = 0;
-        do 
-        {
-          std::lock_guard<std::recursive_mutex> lg(slices_mutex_);
-          for (const auto& s : slices_)
-            now += (s->capacity() + s->diskCacheCapacity());
-        } while (false);
-
-        static long last = init_total_capacity;
-        if (now >= last) {
-          long downloaded = now - last;
-          last = now;
-          if (speed_functor_)
-            speed_functor_(downloaded);
-        }
-      }
-    });
+    speed_notify_thread_ =
+        std::async(std::launch::async,
+                   std::bind(&SliceManage::SpeedNotifyThreadProc, this, init_total_capacity));
   }
 
   int still_running = 0;
@@ -469,7 +434,8 @@ Result SliceManage::Start(const utf8string& url,
     CURLMcode code = curl_multi_fdset(multi_, &fdread, &fdwrite, &fdexcep, &maxfd);
     if (code != CURLM_CALL_MULTI_PERFORM && code != CURLM_OK) {
       if (verbose_functor_) {
-        OutputVerboseInfo("\r\ncurl_multi_fdset failed, code: " + std::to_string((int)code) + "\r\n");
+        OutputVerboseInfo("\r\ncurl_multi_fdset failed, code: " + std::to_string((int)code) +
+                          "\r\n");
       }
       break;
     }
@@ -521,9 +487,8 @@ Result SliceManage::Start(const utf8string& url,
   }
 
   long total_capacity = 0;
-  do 
-  {
-    std::lock_guard< std::recursive_mutex> lg(slices_mutex_);
+  do {
+    std::lock_guard<std::recursive_mutex> lg(slices_mutex_);
     for (auto slice : slices_) {
       if (!slice->FlushDiskCache()) {
         // TODO
@@ -532,27 +497,28 @@ Result SliceManage::Start(const utf8string& url,
     }
   } while (false);
 
+  target_file_->Close();
+
   if (verbose_functor_) {
     OutputVerboseInfo("total capacity: " + std::to_string(total_capacity) + "\r\n");
   }
+
   Result ret;
   do {
     if (done_thread == thread_num_copy) {
       if (file_size_ == -1 || (file_size_ > 0 && total_capacity == file_size_)) {
-        if (!CombineSlice()) {
+        if (!RenameTargetFile(target_tmp_file_path_, target_file_path_, true)) {
           if (verbose_functor_) {
-            OutputVerboseInfo("combine slice files failed\r\n");
+            OutputVerboseInfo("rename target file failed\r\n");
           }
-          ret = GenerateTargetFileFailed;
+          ret = RenameTargetFileFailed;
           break;
         }
 
-        if (!CleanupTmpFiles()) {
+        if (!RemoveFile(index_file_path_)) {
           if (verbose_functor_) {
-            OutputVerboseInfo("cleanup temp files failed\r\n");
+            OutputVerboseInfo("remove index file failed\r\n");
           }
-          ret = CleanupTmpFileFailed;
-          break;
         }
 
         if (progress_functor_)
@@ -564,7 +530,7 @@ Result SliceManage::Start(const utf8string& url,
     }
 
     if (stop_) {
-      if (UpdateIndexFile()) {
+      if (UpdateIndexFile(index_file_path_)) {
         ret = Canceled;
       }
       else {
@@ -576,7 +542,7 @@ Result SliceManage::Start(const utf8string& url,
       break;
     }
 
-    if (UpdateIndexFile()) {
+    if (UpdateIndexFile(index_file_path_)) {
       ret = Failed;
     }
     else {
@@ -673,8 +639,10 @@ long SliceManage::QueryFileSize() const {
   return (long)file_size;
 }
 
-bool SliceManage::LoadSlices(const utf8string url, ProgressFunctor functor) {
-  FILE* file = OpenFile(index_file_path_, u8"rb");
+bool SliceManage::LoadSlices(const utf8string& index_file_path,
+                             const utf8string url,
+                             ProgressFunctor functor) {
+  FILE* file = OpenFile(index_file_path, u8"rb");
   if (!file)
     return false;
   long file_size = GetFileSize(file);
@@ -701,16 +669,25 @@ bool SliceManage::LoadSlices(const utf8string url, ProgressFunctor functor) {
     }
 
     file_size_ = j["file_size"];
+    target_tmp_file_path_ = j["target_tmp_file_path"].get<utf8string>();
+
+    if (!target_file_->Open(target_tmp_file_path_)) {
+      target_tmp_file_path_.clear();
+      return false;
+    }
+
+    // TODO: Support url change
+    //
     if (j["url"].get<utf8string>() != url)
       return false;
     long each_slice_disk_cache_size = 0L;
-    if(j["slices"].size() > 0)
+    if (j["slices"].size() > 0)
       each_slice_disk_cache_size = disk_cache_total_size_ / j["slices"].size();
 
     for (auto& it : j["slices"]) {
       std::shared_ptr<Slice> slice = std::make_shared<Slice>(9999, shared_from_this());
-      Result r = slice->Init(it["path"].get<utf8string>(), it["begin"].get<long>(),
-                             it["end"].get<long>(), it["capacity"].get<long>(), each_slice_disk_cache_size);
+      Result r = slice->Init(target_file_, it["begin"].get<long>(), it["end"].get<long>(),
+                             it["capacity"].get<long>(), each_slice_disk_cache_size);
       if (r != Successed) {
         file_size_ = -1;
         slices_.clear();
@@ -728,57 +705,21 @@ bool SliceManage::LoadSlices(const utf8string url, ProgressFunctor functor) {
   return true;
 }
 
-bool sliceLessBegin(const std::shared_ptr<Slice>& s1, const std::shared_ptr<Slice>& s2) {
-  return s1->begin() < s2->begin();
-}
-
-bool SliceManage::CombineSlice() {
-  std::lock_guard< std::recursive_mutex> lg(slices_mutex_);
-  std::sort(slices_.begin(), slices_.end(), sliceLessBegin);
-
-  FILE* f = OpenFile(target_file_path_, u8"wb");
-  if (!f)
-    return false;
-  for (auto slice : slices_) {
-    if (!slice->AppendSelfToFile(f)) {
-      fclose(f);
-      return false;
-    }
-  }
-  fclose(f);
-  return true;
-}
-
-bool SliceManage::CleanupTmpFiles() {
-  bool ret = true;
-  if (FileIsExist(index_file_path_.c_str()) && !RemoveFile(index_file_path_)) {
-    std::cerr << "remove file failed: " << index_file_path_ << std::endl;
-    ret = false;
-  }
-  std::lock_guard<std::recursive_mutex> lg(slices_mutex_);
-  for (auto slice : slices_) {
-    if (!slice->RemoveSliceFile()) {
-      ret = false;
-    }
-  }
-  return ret;
-}
-
-bool SliceManage::UpdateIndexFile() {
-  FILE* f = OpenFile(index_file_path_, u8"wb");
+bool SliceManage::UpdateIndexFile(const utf8string& index_file_path) {
+  FILE* f = OpenFile(index_file_path, u8"wb");
   if (!f)
     return false;
   json j;
   j["update_time"] = time(nullptr);
   j["file_size"] = file_size_;
   j["url"] = url_;
+  j["target_tmp_file_path"] = target_tmp_file_path_;
+
   json s;
   std::lock_guard<std::recursive_mutex> lg(slices_mutex_);
   for (auto slice : slices_) {
-    s.push_back({{"path", slice->filePath()},
-                 {"begin", slice->begin()},
-                 {"end", slice->end()},
-                 {"capacity", slice->capacity()}});
+    s.push_back(
+        {{"begin", slice->begin()}, {"end", slice->end()}, {"capacity", slice->capacity()}});
   }
   j["slices"] = s;
   utf8string str_json = j.dump();
@@ -790,7 +731,7 @@ bool SliceManage::UpdateIndexFile() {
 }
 
 void SliceManage::Destory() {
-  std::lock_guard< std::recursive_mutex> lg(slices_mutex_);
+  std::lock_guard<std::recursive_mutex> lg(slices_mutex_);
   for (auto s : slices_)
     s->UnInitCURL(multi_);
 
@@ -819,6 +760,54 @@ Result SliceManage::GenerateIndexFilePath(const utf8string& target_file_path,
   utf8string indexfilename = target_filename + ".efdindex";
   index_path = AppendFileName(target_dir, indexfilename);
   return Successed;
+}
+
+void SliceManage::ProgressNotifyThreadProc() {
+  while (true) {
+    {
+      std::unique_lock<std::mutex> ul(stop_mutex_);
+      stop_cond_var_.wait_for(ul, std::chrono::milliseconds(500), [this] { return stop_; });
+      if (stop_)
+        return;
+    }
+
+    long downloaded = 0;
+    do {
+      std::lock_guard<std::recursive_mutex> lg(slices_mutex_);
+      for (const auto& s : slices_) {
+        downloaded += (s->capacity() + s->diskCacheCapacity());
+      }
+    } while (false);
+
+    if (progress_functor_)
+      progress_functor_(file_size_, downloaded);
+  }
+}
+
+void SliceManage::SpeedNotifyThreadProc(long init_total_capacity) {
+  while (true) {
+    {
+      std::unique_lock<std::mutex> ul(stop_mutex_);
+      stop_cond_var_.wait_for(ul, std::chrono::milliseconds(1000), [this] { return stop_; });
+      if (stop_)
+        return;
+    }
+
+    long now = 0;
+    do {
+      std::lock_guard<std::recursive_mutex> lg(slices_mutex_);
+      for (const auto& s : slices_)
+        now += (s->capacity() + s->diskCacheCapacity());
+    } while (false);
+
+    static long last = init_total_capacity;
+    if (now >= last) {
+      long downloaded = now - last;
+      last = now;
+      if (speed_functor_)
+        speed_functor_(downloaded);
+    }
+  }
 }
 
 }  // namespace teemo

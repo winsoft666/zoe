@@ -25,6 +25,7 @@
 #include "slice.h"
 #include "curl/curl.h"
 #include "teemo/teemo.h"
+#include "target_file.h"
 
 namespace teemo {
 class Slice;
@@ -50,9 +51,6 @@ class SliceManage : public std::enable_shared_from_this<SliceManage> {
   Result SetThreadNum(size_t thread_num);
   size_t GetThreadNum() const;
 
-  void SetSaveSliceFileToTempDir(bool enabled);
-  bool IsSaveSliceFileToTempDir() const;
-
   void SetMaxDownloadSpeed(size_t byte_per_seconds);
   size_t GetMaxDownloadSpeed() const;
 
@@ -73,17 +71,17 @@ class SliceManage : public std::enable_shared_from_this<SliceManage> {
 
  protected:
   long QueryFileSize() const;
-  bool LoadSlices(const utf8string url, ProgressFunctor functor);
-  bool CombineSlice();
-  bool CleanupTmpFiles();
-  bool UpdateIndexFile();
+  bool LoadSlices(const utf8string &index_file_path, const utf8string url, ProgressFunctor functor);
+  bool UpdateIndexFile(const utf8string &index_file_path);
   void Destory();
   Result GenerateIndexFilePath(const utf8string& target_file_path, utf8string& index_path) const;
+  void ProgressNotifyThreadProc();
+  void SpeedNotifyThreadProc(long init_total_capacity);
  protected:
   utf8string url_;
+  utf8string target_tmp_file_path_;
   utf8string target_file_path_;
   utf8string index_file_path_;
-  bool save_slice_to_tmp_dir_;
   size_t thread_num_;
   size_t network_conn_timeout_;
   size_t network_read_timeout_;
@@ -106,6 +104,8 @@ class SliceManage : public std::enable_shared_from_this<SliceManage> {
   bool stop_;
   std::mutex stop_mutex_;
   std::condition_variable stop_cond_var_;
+
+  std::shared_ptr<TargetFile> target_file_;
 };
 }  // namespace teemo
 

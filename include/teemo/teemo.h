@@ -48,16 +48,14 @@ enum Result {
   QueryFileSizeRetryTimesInvalid,
   InternalNetworkError,
   GenerateTargetFileFailed,
-  CleanupTmpFileFailed,
   AlreadyDownloading,
   Canceled,
   CanceledAndUpdateIndexFailed,
   Failed,
   FailedAndUpdateIndexFailed,
-  GetSliceDirectoryFailed,
-  CreateSliceDirectoryFailed,
-  OpenSliceFileFailed,
-  CreateSliceIndexDirectoryFailed
+  CreateSliceIndexDirectoryFailed,
+  CreateTmpFileFailed,
+  RenameTargetFileFailed
 };
 
 TEEMO_API const char* GetResultString(int enumVal);
@@ -93,9 +91,6 @@ class TEEMO_API Teemo {
 
   void SetVerboseOutput(VerboseOuputFunctor verbose_functor) noexcept;
 
-  void SetSaveSliceFileToTempDir(bool enabled) noexcept;
-  bool IsSaveSliceFileToTempDir() const noexcept;
-
   Result SetThreadNum(size_t thread_num) noexcept;
   size_t GetThreadNum() const noexcept;
 
@@ -118,7 +113,7 @@ class TEEMO_API Teemo {
   void SetMaxDownloadSpeed(size_t byte_per_seconds) noexcept;  // default is 0 = not limit
   size_t GetMaxDownloadSpeed() const noexcept;
 
-  void SetDiskCacheSize(size_t cache_size) noexcept;  // byte
+  void SetDiskCacheSize(size_t cache_size) noexcept;  // byte, default is 20Mb
   size_t GetDiskCacheSize() const noexcept; // byte
 
   std::shared_future<Result> Start(const utf8string url,

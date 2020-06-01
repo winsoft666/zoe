@@ -52,11 +52,11 @@ class Slice {
   size_t index_;
   long begin_;
   long end_;
-  long capacity_; // data size in disk file
+  std::atomic<long> capacity_; // data size in disk file
   CURL* curl_;
 
   long disk_cache_size_; // byte
-  long disk_cache_buffer_capacity_;
+  std::atomic<long> disk_cache_buffer_capacity_;
   char* disk_cache_buffer_;
 
   std::shared_ptr<TargetFile> target_file_;

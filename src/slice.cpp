@@ -76,7 +76,7 @@ long Slice::end() const {
 }
 
 long Slice::capacity() const {
-  return capacity_;
+  return capacity_.load();
 }
 
 long Slice::diskCacheSize() const {
@@ -84,7 +84,7 @@ long Slice::diskCacheSize() const {
 }
 
 long Slice::diskCacheCapacity() const {
-  return disk_cache_buffer_capacity_;
+  return disk_cache_buffer_capacity_.load();
 }
 
 size_t Slice::index() const {
@@ -170,16 +170,17 @@ bool Slice::FlushDiskCache() {
   bool bret = true;
   if (disk_cache_buffer_) {
     size_t written = 0;
-    size_t need_write = disk_cache_buffer_capacity_;
+    size_t need_write = disk_cache_buffer_capacity_.load();
     disk_cache_buffer_capacity_ = 0L;
     if (target_file_) {
-      written = target_file_->Write(begin_ + capacity_, disk_cache_buffer_, need_write);
+      written = target_file_->Write(begin_ + capacity_.load(), disk_cache_buffer_, need_write);
     }
-    capacity_ += written;
+    std::atomic_fetch_add(&capacity_, written);
     bret = (written == need_write);
   }
   return bret;
 }
+
 
 bool Slice::OnNewData(const char* p, long size) {
   bool bret = false;
@@ -194,39 +195,39 @@ bool Slice::OnNewData(const char* p, long size) {
     }
 
     if (!disk_cache_buffer_) {
-      size_t written = target_file_->Write(begin_ + capacity_, p, size);
-      capacity_ += written;
+      size_t written = target_file_->Write(begin_ + capacity_.load(), p, size);
+      std::atomic_fetch_add(&capacity_, written);
 
       bret = (written == size);
       break;
     }
 
     if (disk_cache_size_ - disk_cache_buffer_capacity_ >= size) {
-      memcpy((char*)(disk_cache_buffer_ + disk_cache_buffer_capacity_), p, size);
+      memcpy((char*)(disk_cache_buffer_ + disk_cache_buffer_capacity_.load()), p, size);
       disk_cache_buffer_capacity_ += size;
       bret = true;
       break;
     }
 
-    size_t need_write = disk_cache_buffer_capacity_;
+    size_t need_write = disk_cache_buffer_capacity_.load();
 
-    disk_cache_buffer_capacity_ = 0L;
+    disk_cache_buffer_capacity_.store(0L);
 
     size_t written = target_file_->Write(begin_ + capacity_, disk_cache_buffer_, need_write);
-    capacity_ += written;
+    std::atomic_fetch_add(&capacity_, written);
     if (written != need_write) {
       break;
     }
 
     if (disk_cache_size_ - disk_cache_buffer_capacity_ >= size) {
-      memcpy((char*)(disk_cache_buffer_ + disk_cache_buffer_capacity_), p, size);
-      disk_cache_buffer_capacity_ += size;
+      memcpy((char*)(disk_cache_buffer_ + disk_cache_buffer_capacity_.load()), p, size);
+      std::atomic_fetch_add(&disk_cache_buffer_capacity_, size);
       bret = true;
       break;
     }
 
-    written = target_file_->Write(begin_ + capacity_, p, size);
-    capacity_ += written;
+    written = target_file_->Write(begin_ + capacity_.load(), p, size);
+    std::atomic_fetch_add(&capacity_, written);
 
     bret = (written == size);
     break;

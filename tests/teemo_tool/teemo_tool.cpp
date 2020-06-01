@@ -141,7 +141,6 @@ int main(int argc, char** argv) {
 }
 
 void PrintConsole(long total, long downloaded, long speed) {
-  return;
   const char* PBSTR = "============================================================";
   const int PBWIDTH = 60;
 

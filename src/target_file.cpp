@@ -41,6 +41,7 @@ bool TargetFile::Create(const utf8string& file_path, long fixed_size) {
     file_seek_pos_ = 0L;
     fseek(f_, file_seek_pos_, SEEK_SET);
   }
+
   return (f_ != nullptr);
 }
 

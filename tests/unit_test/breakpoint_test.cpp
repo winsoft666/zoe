@@ -64,48 +64,48 @@ TEST(BreakPointHttpTest, Http_ThreadNum_1_SliceToTmp_True_Breakpoint) {
   DoBreakpointTest(http_test_datas, 1, true);
 }
 
-//TEST(BreakPointHttpTest, Http_ThreadNum_3_SliceToTmp_True_Breakpoint) {
-//  DoBreakpointTest(http_test_datas, 3, true);
-//}
-//
-//TEST(BreakPointHttpTest, Http_ThreadNum_10_SliceToTmp_True_Breakpoint) {
-//  DoBreakpointTest(http_test_datas, 10, true);
-//}
-//
-//TEST(BreakPointHttpTest, Http_ThreadNum_1_SliceToTmp_False_Breakpoint) {
-//  DoBreakpointTest(http_test_datas, 1, false);
-//}
-//
-//TEST(BreakPointHttpTest, Http_ThreadNum_3_SliceToTmp_False_Breakpoint) {
-//  DoBreakpointTest(http_test_datas, 3, false);
-//}
-//
-//TEST(BreakPointHttpTest, Http_ThreadNum_10_SliceToTmp_False_Breakpoint) {
-//  DoBreakpointTest(http_test_datas, 10, false);
-//}
+TEST(BreakPointHttpTest, Http_ThreadNum_3_SliceToTmp_True_Breakpoint) {
+  DoBreakpointTest(http_test_datas, 3, true);
+}
+
+TEST(BreakPointHttpTest, Http_ThreadNum_10_SliceToTmp_True_Breakpoint) {
+  DoBreakpointTest(http_test_datas, 10, true);
+}
+
+TEST(BreakPointHttpTest, Http_ThreadNum_1_SliceToTmp_False_Breakpoint) {
+  DoBreakpointTest(http_test_datas, 1, false);
+}
+
+TEST(BreakPointHttpTest, Http_ThreadNum_3_SliceToTmp_False_Breakpoint) {
+  DoBreakpointTest(http_test_datas, 3, false);
+}
+
+TEST(BreakPointHttpTest, Http_ThreadNum_10_SliceToTmp_False_Breakpoint) {
+  DoBreakpointTest(http_test_datas, 10, false);
+}
 
 // FTP
-//
-//TEST(BreakPointFTPTest, FTP_ThreadNum_1_SliceToTmp_True_Breakpoint) {
-//  DoBreakpointTest(ftp_test_datas, 1, true);
-//}
-//
-//TEST(BreakPointFTPTest, FTP_ThreadNum_3_SliceToTmp_True_Breakpoint) {
-//  DoBreakpointTest(ftp_test_datas, 3, true);
-//}
-//
-//TEST(BreakPointFTPTest, FTP_ThreadNum_10_SliceToTmp_True_Breakpoint) {
-//  DoBreakpointTest(ftp_test_datas, 10, true);
-//}
-//
-//TEST(BreakPointFTPTest, FTP_ThreadNum_1_SliceToTmp_False_Breakpoint) {
-//  DoBreakpointTest(ftp_test_datas, 1, false);
-//}
-//
-//TEST(BreakPointFTPTest, FTP_ThreadNum_3_SliceToTmp_False_Breakpoint) {
-//  DoBreakpointTest(ftp_test_datas, 3, false);
-//}
-//
-//TEST(BreakPointFTPTest, FTP_ThreadNum_10_SliceToTmp_False_Breakpoint) {
-//  DoBreakpointTest(ftp_test_datas, 10, false);
-//}
+
+TEST(BreakPointFTPTest, FTP_ThreadNum_1_SliceToTmp_True_Breakpoint) {
+  DoBreakpointTest(ftp_test_datas, 1, true);
+}
+
+TEST(BreakPointFTPTest, FTP_ThreadNum_3_SliceToTmp_True_Breakpoint) {
+  DoBreakpointTest(ftp_test_datas, 3, true);
+}
+
+TEST(BreakPointFTPTest, FTP_ThreadNum_10_SliceToTmp_True_Breakpoint) {
+  DoBreakpointTest(ftp_test_datas, 10, true);
+}
+
+TEST(BreakPointFTPTest, FTP_ThreadNum_1_SliceToTmp_False_Breakpoint) {
+  DoBreakpointTest(ftp_test_datas, 1, false);
+}
+
+TEST(BreakPointFTPTest, FTP_ThreadNum_3_SliceToTmp_False_Breakpoint) {
+  DoBreakpointTest(ftp_test_datas, 3, false);
+}
+
+TEST(BreakPointFTPTest, FTP_ThreadNum_10_SliceToTmp_False_Breakpoint) {
+  DoBreakpointTest(ftp_test_datas, 10, false);
+}

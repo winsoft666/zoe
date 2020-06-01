@@ -114,14 +114,15 @@ class TEEMO_API Teemo {
   size_t GetMaxDownloadSpeed() const noexcept;
 
   void SetDiskCacheSize(size_t cache_size) noexcept;  // byte, default is 20Mb
-  size_t GetDiskCacheSize() const noexcept; // byte
+  size_t GetDiskCacheSize() const noexcept;           // byte
 
-  std::shared_future<Result> Start(const utf8string url,
-                           const utf8string& target_file_path,
-                           ResultFunctor result_functor,
-                           ProgressFunctor progress_functor,
-                           RealtimeSpeedFunctor realtime_speed_functor,
-                           CancelEvent* cancel_event = nullptr) noexcept;
+  std::shared_future<Result> Start(const utf8string& url,
+                                   const utf8string& target_file_path,
+                                   ResultFunctor result_functor,
+                                   ProgressFunctor progress_functor,
+                                   RealtimeSpeedFunctor realtime_speed_functor,
+                                   CancelEvent* cancel_event = nullptr,
+                                   bool can_update_url = false) noexcept;
 
   void Stop(bool wait = false) noexcept;
 

@@ -61,7 +61,8 @@ class SliceManage : public std::enable_shared_from_this<SliceManage> {
                const utf8string& target_file_path,
                ProgressFunctor progress_functor,
                RealtimeSpeedFunctor realtime_speed_functor,
-               CancelEvent* cancel_event);
+               CancelEvent* cancel_event,
+               bool can_update_url);
   void Stop();
 
   utf8string GetUrl() const;
@@ -71,12 +72,16 @@ class SliceManage : public std::enable_shared_from_this<SliceManage> {
 
  protected:
   long QueryFileSize() const;
-  bool LoadSlices(const utf8string &index_file_path, const utf8string url, ProgressFunctor functor);
-  bool UpdateIndexFile(const utf8string &index_file_path);
+  bool LoadSlices(const utf8string& index_file_path,
+                  const utf8string& url,
+                  bool can_update_url,
+                  ProgressFunctor functor);
+  bool UpdateIndexFile(const utf8string& index_file_path);
   void Destory();
   Result GenerateIndexFilePath(const utf8string& target_file_path, utf8string& index_path) const;
   void ProgressNotifyThreadProc();
   void SpeedNotifyThreadProc(long init_total_capacity);
+
  protected:
   utf8string url_;
   utf8string target_tmp_file_path_;
@@ -87,7 +92,7 @@ class SliceManage : public std::enable_shared_from_this<SliceManage> {
   size_t network_read_timeout_;
   size_t max_download_speed_;
   size_t query_filesize_retry_times_;
-  size_t disk_cache_total_size_; // byte
+  size_t disk_cache_total_size_;  // byte
   int slice_expired_seconds_;
   long file_size_;
   CURLM* multi_;

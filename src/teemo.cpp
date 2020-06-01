@@ -148,12 +148,13 @@ size_t Teemo::GetDiskCacheSize() const noexcept {
   return impl_->slice_manager->GetDiskCacheSize();
 }
 
-std::shared_future<Result> Teemo::Start(const utf8string url,
+std::shared_future<Result> Teemo::Start(const utf8string& url,
                                         const utf8string& target_file_path,
                                         ResultFunctor result_functor,
                                         ProgressFunctor progress_functor,
                                         RealtimeSpeedFunctor realtime_speed_functor,
-                                        CancelEvent* cancel_event) noexcept {
+                                        CancelEvent* cancel_event,
+                                        bool can_update_url) noexcept {
   if (impl_->IsDownloading())
     return std::async(std::launch::async, [=]() {
       if (result_functor) {
@@ -164,8 +165,9 @@ std::shared_future<Result> Teemo::Start(const utf8string url,
 
   try {
     impl_->async_task_ = std::async(std::launch::async, [=]() {
-      Result result = impl_->slice_manager->Start(url, target_file_path, progress_functor,
-                                                  realtime_speed_functor, cancel_event);
+      Result result =
+          impl_->slice_manager->Start(url, target_file_path, progress_functor,
+                                      realtime_speed_functor, cancel_event, can_update_url);
       if (result_functor) {
         result_functor(result);
       }

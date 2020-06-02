@@ -20,19 +20,22 @@
 #include "teemo/teemo.h"
 
 namespace teemo {
-long GetFileSize(FILE* f);
-utf8string GetSystemTmpDirectory();
-bool CreateDirectories(const utf8string& path);
-utf8string GetDirectory(const utf8string& path);
-utf8string GetFileName(const utf8string& path);
-utf8string GenerateTmpFilePath(const utf8string& path);
-utf8string AppendFileName(const utf8string& dir, const utf8string& filename);
-bool FileIsExist(const utf8string& filepath);
-bool FileIsRW(const utf8string& filepath);
-bool RemoveFile(const utf8string& filepath);
-bool RenameTargetFile(const utf8string& from, const utf8string &to, bool allow_remove_old);
-FILE* OpenFile(const utf8string& path, const utf8string& mode);
-bool CreateFixedSizeFile(const utf8string& path, size_t fixed_size);
+  class FileUtil {
+  public:
+    static int64_t GetFileSize(FILE* f);
+    static int64_t GetFileSize(const utf8string &path);
+    static utf8string GetSystemTmpDirectory();
+    static bool CreateDirectories(const utf8string& path);
+    static utf8string GetDirectory(const utf8string& path);
+    static utf8string GetFileName(const utf8string& path);
+    static utf8string AppendFileName(const utf8string& dir, const utf8string& filename);
+    static bool FileIsExist(const utf8string& filepath);
+    static bool FileIsRW(const utf8string& filepath);
+    static bool RemoveFile(const utf8string& filepath);
+    static bool RenameFile(const utf8string& from, const utf8string &to, bool allow_remove_old);
+    static FILE* OpenFile(const utf8string& path, const utf8string& mode);
+    static bool CreateFixedSizeFile(const utf8string& path, int64_t fixed_size);
+  };
 }  // namespace teemo
 
 #endif

@@ -20,47 +20,65 @@
 #include <mutex>
 #include <memory>
 #include <atomic>
-#include "slice_manage.h"
-#include "curl/curl.h"
-#include "teemo/teemo.h"
+#include "slice_manager.h"
 #include "target_file.h"
 
 namespace teemo {
-class SliceManage;
+class SliceManager;
 class Slice {
  public:
-  Slice(size_t index, std::shared_ptr<SliceManage> slice_manager);
+   enum Status {
+     UNFETCH = 0,
+     FETCHED,
+     DOWNLOADING,
+     DOWNLOAD_FAILED
+   };
+  Slice(int32_t index,
+        int64_t begin,
+        int64_t end,
+        int64_t init_capacity,
+        std::shared_ptr<SliceManager> slice_manager);
   virtual ~Slice();
 
-  Result Init(std::shared_ptr<TargetFile> target_file, long begin, long end, long capacity, long disk_cache);
+  int64_t begin() const;
+  int64_t end() const;
+  int64_t size() const;
+  int64_t capacity() const;
 
-  long begin() const;
-  long end() const;
-  long capacity() const;
-  long diskCacheSize() const;
-  long diskCacheCapacity() const;
-  size_t index() const;
+  int64_t diskCacheSize() const;
+  int64_t diskCacheCapacity() const;
 
-  bool InitCURL(CURLM* multi, size_t max_download_speed = 0);  // bytes per seconds
-  void UnInitCURL(CURLM* multi);
+  int32_t index() const;
 
-  bool IsDownloadCompleted();
+  Result start(void* multi, int64_t disk_cache_size, int32_t max_speed);
+  void stop(void* multi);
 
-  bool OnNewData(const char* p, long size);
-  bool FlushDiskCache();
+  void setFetched();
+  Status status() const;
+
+  bool isCompleted();
+
+  bool onNewData(const char* p, long size);
+  bool flushToDisk();
+
  protected:
-  size_t index_;
-  long begin_;
-  long end_;
-  std::atomic<long> capacity_; // data size in disk file
-  CURL* curl_;
+  void tryFreeDiskCacheBuffer();
 
-  long disk_cache_size_; // byte
-  std::atomic<long> disk_cache_buffer_capacity_;
+ protected:
+  int32_t index_;
+  int64_t begin_;
+  int64_t end_;
+  std::atomic<int64_t> capacity_;  // data size in disk file
+
+  void* curl_;
+
+  int64_t disk_cache_size_;  // byte
+  std::atomic<int64_t> disk_cache_capacity_;
   char* disk_cache_buffer_;
 
-  std::shared_ptr<TargetFile> target_file_;
-  std::shared_ptr<SliceManage> slice_manager_;
+  Status status_;
+
+  std::shared_ptr<SliceManager> slice_manager_;
 };
 }  // namespace teemo
 

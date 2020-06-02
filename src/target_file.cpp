@@ -13,33 +13,33 @@
 *******************************************************************************/
 #include "target_file.h"
 #include "file_util.h"
+#include <assert.h>
 
 namespace teemo {
 
 TargetFile::TargetFile() : f_(nullptr), file_opened_(false), fixed_size_(0L), file_seek_pos_(0L) {}
 
-TargetFile::~TargetFile() {}
+TargetFile::~TargetFile() {
+  assert(f_ == nullptr && file_opened_ == false);
+}
 
-bool TargetFile::Create(const utf8string& file_path, long fixed_size) {
+bool TargetFile::Create(const utf8string& file_path, int64_t fixed_size) {
   std::lock_guard<std::recursive_mutex> lg(file_mutex_);
+
+  assert(f_ == nullptr && file_opened_ == false);
 
   if (fixed_size < 0)
     return false;
 
-  if (f_) {
-    fclose(f_);
-    f_ = nullptr;
-  }
-
-  if (!CreateFixedSizeFile(file_path, fixed_size))
+  if (!FileUtil::CreateFixedSizeFile(file_path, fixed_size))
     return false;
 
-  f_ = OpenFile(file_path, "r+b");
+  f_ = FileUtil::OpenFile(file_path, "r+b");
   if (f_) {
     file_path_ = file_path;
     file_opened_ = true;
     file_seek_pos_ = 0L;
-    fseek(f_, file_seek_pos_, SEEK_SET);
+    fseek(f_, (long)file_seek_pos_, SEEK_SET);
   }
 
   return (f_ != nullptr);
@@ -48,21 +48,18 @@ bool TargetFile::Create(const utf8string& file_path, long fixed_size) {
 bool TargetFile::Open(const utf8string& file_path) {
   std::lock_guard<std::recursive_mutex> lg(file_mutex_);
 
-  if (!FileIsExist(file_path)) {
+  if (!FileUtil::FileIsExist(file_path)) {
     return false;
   }
 
-  if (f_) {
-    fclose(f_);
-    f_ = nullptr;
-  }
+  assert(f_ == nullptr && file_opened_ == false);
 
-  f_ = OpenFile(file_path, "r+b");
+  f_ = FileUtil::OpenFile(file_path, "r+b");
   if (f_) {
     file_path_ = file_path;
     file_opened_ = true;
     file_seek_pos_ = 0L;
-    fseek(f_, file_seek_pos_, SEEK_SET);
+    fseek(f_, (long)file_seek_pos_, SEEK_SET);
   }
   return (f_ != nullptr);
 }
@@ -77,9 +74,10 @@ void TargetFile::Close() {
   }
 }
 
-long TargetFile::Write(long pos, const void* data, long data_size) {
+int64_t TargetFile::Write(int64_t pos, const void* data, int64_t data_size) {
   std::lock_guard<std::recursive_mutex> lg(file_mutex_);
-  long written = 0L;
+  assert(f_  && file_opened_);
+  int64_t written = 0L;
   do {
     if (!f_)
       break;
@@ -88,13 +86,13 @@ long TargetFile::Write(long pos, const void* data, long data_size) {
     if (pos < 0)
       break;
     if (file_seek_pos_ != pos) {
-      if (fseek(f_, pos, SEEK_SET) != 0) {
+      if (fseek(f_, (long)pos, SEEK_SET) != 0) {
         break;
       }
       file_seek_pos_ = pos;
     }
 
-    written = fwrite(data, 1, data_size, f_);
+    written = fwrite(data, 1, (long)data_size, f_);
     fflush(f_);
     file_seek_pos_ += written;
   } while (false);
@@ -106,7 +104,7 @@ utf8string TargetFile::filePath() const {
   return file_path_;
 }
 
-long TargetFile::fixedSize() const {
+int64_t TargetFile::fixedSize() const {
   return fixed_size_;
 }
 

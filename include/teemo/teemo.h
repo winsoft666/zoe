@@ -39,46 +39,60 @@
 
 namespace teemo {
 enum Result {
-  Successed = 0,
-  UrlInvalid,
-  TargetFilePathInvalid,
-  ThreadNumInvalid,
-  NetworkConnTimeoutInvalid,
-  NetworkReadTimeoutInvalid,
-  QueryFileSizeRetryTimesInvalid,
-  InternalNetworkError,
-  GenerateTargetFileFailed,
-  AlreadyDownloading,
-  Canceled,
-  CanceledAndUpdateIndexFailed,
-  Failed,
-  FailedAndUpdateIndexFailed,
-  CreateSliceIndexDirectoryFailed,
-  CreateTmpFileFailed,
-  RenameTargetFileFailed
+  SUCCESSED = 0,
+  UNKNOWN_ERROR,
+  INVALID_URL,
+  INVALID_INDEX_FORMAT,
+  INVALID_TARGET_FILE_PATH,
+  INVALID_THREAD_NUM,
+  INVALID_NETWORK_CONN_TIMEOUT,
+  INVALID_NETWORK_READ_TIMEOUT,
+  INVALID_FETCH_FILE_INFO_RETRY_TIMES,
+  ALREADY_DOWNLOADING,
+  CANCELED,
+  RENAME_TMP_FILE_FAILED,
+  OPEN_INDEX_FILE_FAILED,
+  TMP_FILE_EXPIRED,
+  INIT_CURL_FAILED,
+  INIT_CURL_MULTI_FAILED,
+  SET_CURL_OPTION_FAILED,
+  ADD_CURL_HANDLE_FAILED,
+  CREATE_TARGET_FILE_FAILED,
+  CREATE_TMP_FILE_FAILED,
+  OPEN_TMP_FILE_FAILED,
+  URL_DIFFERENT,
+  TMP_FILE_SIZE_ERROR,
+  TMP_FILE_CANNOT_RW,
+  FLUSH_TMP_FILE_FAILED,
+  UPDATE_INDEX_FILE_FAILED,
+  SLICE_DOWNLOAD_FAILED
 };
+
 
 TEEMO_API const char* GetResultString(int enumVal);
 
-class TEEMO_API CancelEvent {
+class TEEMO_API Event {
  public:
-  CancelEvent();
-  ~CancelEvent();
+  Event(bool setted = false);
+  ~Event();
 
-  void Cancel() noexcept;
-  void UnCancel() noexcept;
-  bool IsCanceled() noexcept;
+  void set() noexcept;
+  void unSet() noexcept;
+  bool isSetted() noexcept;
+  bool wait(int32_t millseconds) noexcept;
 
  protected:
-  CancelEvent(const CancelEvent&) = delete;
-  CancelEvent& operator=(const CancelEvent&) = delete;
-  std::atomic<bool> canceled_;
+  Event(const Event&) = delete;
+  Event& operator=(const Event&) = delete;
+  bool setted_;
+  std::mutex setted_mutex_;
+  std::condition_variable setted_cond_var_;
 };
 
 typedef std::string utf8string;
 typedef std::function<void(Result ret)> ResultFunctor;
-typedef std::function<void(long total, long downloaded)> ProgressFunctor;
-typedef std::function<void(long byte_per_sec)> RealtimeSpeedFunctor;
+typedef std::function<void(int64_t total, int64_t downloaded)> ProgressFunctor;
+typedef std::function<void(int64_t byte_per_sec)> RealtimeSpeedFunctor;
 typedef std::function<void(const utf8string& verbose)> VerboseOuputFunctor;
 
 class TEEMO_API Teemo {
@@ -89,42 +103,43 @@ class TEEMO_API Teemo {
   static void GlobalInit();
   static void GlobalUnInit();
 
-  void SetVerboseOutput(VerboseOuputFunctor verbose_functor) noexcept;
+  void setVerboseOutput(VerboseOuputFunctor verbose_functor) noexcept;
 
-  Result SetThreadNum(size_t thread_num) noexcept;
-  size_t GetThreadNum() const noexcept;
+  Result setThreadNum(int32_t thread_num) noexcept;
+  int32_t threadNum() const noexcept;
 
-  utf8string GetUrl() const noexcept;
-  utf8string GetTargetFilePath() const noexcept;
+  utf8string url() const noexcept;
+  utf8string targetFilePath() const noexcept;
 
-  Result SetNetworkConnectionTimeout(size_t milliseconds) noexcept;  // default is 3000ms
-  size_t GetNetworkConnectionTimeout() const noexcept;
+  Result setNetworkConnectionTimeout(int32_t milliseconds) noexcept;  // default is 3000ms
+  int32_t networkConnectionTimeout() const noexcept;
 
-  Result SetNetworkReadTimeout(size_t milliseconds) noexcept;  // default is 3000ms
-  size_t GetNetworkReadTimeout() const noexcept;
+  Result setNetworkReadTimeout(int32_t milliseconds) noexcept;  // default is 3000ms
+  int32_t networkReadTimeout() const noexcept;
 
-  Result SetQueryFileSizeRetryTimes(size_t retry_times) noexcept;
-  size_t GetQueryFileSizeRetryTimes() const noexcept;
+  Result setFetchFileInfoRetryTimes(int32_t retry_times) noexcept;
+  int32_t fetchFileInfoRetryTimes() const noexcept;
 
   // default is -1 = forever, 0 = not use exist slice cache
-  void SetSliceExpiredTime(int seconds) noexcept;
-  int GetSliceExpiredTime() const noexcept;
+  void setTmpFileExpiredTime(int32_t seconds) noexcept;
+  int32_t tmpFileExpiredTime() const noexcept;
 
-  void SetMaxDownloadSpeed(size_t byte_per_seconds) noexcept;  // default is 0 = not limit
-  size_t GetMaxDownloadSpeed() const noexcept;
+  // default is -1 = not limit
+  void setMaxDownloadSpeed(int32_t byte_per_seconds) noexcept;
+  int32_t maxDownloadSpeed() const noexcept;
 
-  void SetDiskCacheSize(size_t cache_size) noexcept;  // byte, default is 20Mb
-  size_t GetDiskCacheSize() const noexcept;           // byte
+  // default is 20Mb
+  Result setDiskCacheSize(int32_t cache_size) noexcept;  // byte
+  int32_t diskCacheSize() const noexcept;             // byte
 
-  std::shared_future<Result> Start(const utf8string& url,
+  std::shared_future<Result> start(const utf8string& url,
                                    const utf8string& target_file_path,
                                    ResultFunctor result_functor,
                                    ProgressFunctor progress_functor,
                                    RealtimeSpeedFunctor realtime_speed_functor,
-                                   CancelEvent* cancel_event = nullptr,
                                    bool can_update_url = false) noexcept;
 
-  void Stop(bool wait = false) noexcept;
+  void stop(bool wait = false) noexcept;
 
  protected:
   class TeemoImpl;

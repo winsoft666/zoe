@@ -9,7 +9,7 @@ using namespace teemo;
 void DoCancelTest(std::vector<TestData> test_datas, int thread_num) {
   for (auto test_data : test_datas) {
     Teemo efd;
-    efd.SetThreadNum(thread_num);
+    efd.setThreadNum(thread_num);
     CancelEvent cancel_event;
 
     std::thread t = std::thread([&cancel_event]() {
@@ -19,12 +19,12 @@ void DoCancelTest(std::vector<TestData> test_datas, int thread_num) {
     t.detach();
 
     Result ret =
-        efd.Start(
+        efd.start(
                test_data.url, test_data.target_file_path,
                [test_data](Result result) {
                  printf("\nResult: %s\n", GetResultString(result));
-                 EXPECT_TRUE(result == Successed || result == Canceled);
-                 if (result == Result::Successed) {
+                 EXPECT_TRUE(result == SUCCESSED || result == CANCELED);
+                 if (result == Result::SUCCESSED) {
                    if (test_data.md5.length()) {
                      EXPECT_TRUE(test_data.md5 == base::GetFileMd5(test_data.target_file_path));
                    }

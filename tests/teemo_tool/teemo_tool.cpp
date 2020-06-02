@@ -85,20 +85,20 @@ int main(int argc, char** argv) {
   char* md5 = nullptr;
 
   if (argc >= 4)
-    efd.SetThreadNum(atoi(argv[3]));
+    efd.setThreadNum(atoi(argv[3]));
   if (argc >= 5)
-    efd.SetDiskCacheSize(atoi(argv[4]) * 1024 * 1024);
+    efd.setDiskCacheSize(atoi(argv[4]) * 1024 * 1024);
   if (argc >= 6)
     md5 = argv[5];
   if (argc >= 7)
-    efd.SetSliceExpiredTime(atoi(argv[6]));
+    efd.setTmpFileExpiredTime(atoi(argv[6]));
   if (argc >= 8)
-    efd.SetMaxDownloadSpeed(atoi(argv[7]));
+    efd.setMaxDownloadSpeed(atoi(argv[7]));
 
   int exit_code = 0;
   Teemo::GlobalInit();
   FILE* f_verbose = fopen("teemo_tool_verbose.log", "wb");
-  efd.SetVerboseOutput([f_verbose](const utf8string& verbose) {
+  efd.setVerboseOutput([f_verbose](const utf8string& verbose) {
     fwrite(verbose.c_str(), 1, verbose.size(), f_verbose);
 #if defined(WIN32) || defined(_WIN32) || defined(__WIN32__) || defined(__NT__)
     OutputDebugStringA(verbose.c_str());
@@ -106,13 +106,13 @@ int main(int argc, char** argv) {
   });
 
   auto start_time = std::chrono::high_resolution_clock::now();
-  std::shared_future<Result> aysnc_task = efd.Start(
+  std::shared_future<Result> aysnc_task = efd.start(
       url, target_file_path,
       [=, &exit_code](Result result) {
         std::cout << std::endl << GetResultString(result) << std::endl;
         exit_code = result;
 
-        if (result == Result::Successed) {
+        if (result == Result::SUCCESSED) {
           if (md5) {
             if (stricmp(md5, base::GetFileMd5(target_file_path).c_str()) == 0) {
               std::cout << "MD5 checksum successful." << std::endl;

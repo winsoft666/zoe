@@ -26,7 +26,6 @@
 
 namespace teemo {
 
-#define TMP_FILE_EXTENSION ".teemo"
 #if defined(WIN32) || defined(_WIN32) || defined(__WIN32__) || defined(__NT__)
 #define PATH_SEPARATOR '\\'
 
@@ -77,15 +76,26 @@ static std::string UnicodeToUtf8(const std::wstring& str) {
 #define PATH_SEPARATOR '/'
 #endif
 
-long GetFileSize(FILE* f) {
+int64_t FileUtil::GetFileSize(FILE* f) {
   if (!f)
     return 0;
   fseek(f, 0, SEEK_END);
-  long fsize = ftell(f);
+  int64_t fsize = ftell(f);
   return fsize;
 }
 
-utf8string GetSystemTmpDirectory() {
+int64_t FileUtil::GetFileSize(const utf8string& path) {
+  int64_t fsize = -1;
+  FILE* f = OpenFile(path, "rb");
+  if (f) {
+    fsize = GetFileSize(f);
+    fclose(f);
+    f = nullptr;
+  }
+  return fsize;
+}
+
+utf8string FileUtil::GetSystemTmpDirectory() {
   utf8string target_dir;
 #if defined(WIN32) || defined(_WIN32) || defined(__WIN32__) || defined(__NT__)
   wchar_t buf[MAX_PATH] = {0};
@@ -106,21 +116,21 @@ utf8string GetSystemTmpDirectory() {
   return target_dir;
 }
 
-bool CreateDirectories(const utf8string& path) {
+bool FileUtil::CreateDirectories(const utf8string& path) {
   if (path.length() == 0)
     return true;
   std::error_code ec;
   return ghc::filesystem::create_directories(path, ec);
 }
 
-utf8string GetDirectory(const utf8string& path) {
+utf8string FileUtil::GetDirectory(const utf8string& path) {
   utf8string::size_type pos = path.find_last_of(PATH_SEPARATOR);
   if (pos == utf8string::npos)
     return "";
   return path.substr(0, pos);
 }
 
-utf8string GetFileName(const utf8string& path) {
+utf8string FileUtil::GetFileName(const utf8string& path) {
   utf8string::size_type pos = path.find_last_of(PATH_SEPARATOR);
   if (pos == utf8string::npos)
     pos = 0;
@@ -129,15 +139,7 @@ utf8string GetFileName(const utf8string& path) {
   return path.substr(pos);
 }
 
-utf8string GenerateTmpFilePath(const utf8string& path) {
-  if (path.length() == 0)
-    return "";
-  utf8string tmp_path = path;
-  tmp_path += utf8string(TMP_FILE_EXTENSION);
-  return tmp_path;
-}
-
-utf8string AppendFileName(const utf8string& dir, const utf8string& filename) {
+utf8string FileUtil::AppendFileName(const utf8string& dir, const utf8string& filename) {
   utf8string result = dir;
   if (result.length() > 0) {
     if (result[result.length() - 1] != PATH_SEPARATOR)
@@ -148,7 +150,7 @@ utf8string AppendFileName(const utf8string& dir, const utf8string& filename) {
   return result;
 }
 
-bool FileIsExist(const utf8string& filepath) {
+bool FileUtil::FileIsExist(const utf8string& filepath) {
   if (filepath.length() == 0)
     return false;
 #if defined(WIN32) || defined(_WIN32) || defined(__WIN32__) || defined(__NT__)
@@ -159,7 +161,7 @@ bool FileIsExist(const utf8string& filepath) {
 #endif
 }
 
-bool FileIsRW(const utf8string& filepath) {
+bool FileUtil::FileIsRW(const utf8string& filepath) {
   if (filepath.length() == 0)
     return false;
 #if defined(WIN32) || defined(_WIN32) || defined(__WIN32__) || defined(__NT__)
@@ -170,7 +172,7 @@ bool FileIsRW(const utf8string& filepath) {
 #endif
 }
 
-bool RemoveFile(const utf8string& filepath) {
+bool FileUtil::RemoveFile(const utf8string& filepath) {
   if (filepath.length() == 0)
     return false;
 #if defined(WIN32) || defined(_WIN32) || defined(__WIN32__) || defined(__NT__)
@@ -181,7 +183,9 @@ bool RemoveFile(const utf8string& filepath) {
 #endif
 }
 
-bool RenameTargetFile(const utf8string& from, const utf8string &to, bool allow_remove_old) {
+bool FileUtil::RenameFile(const utf8string& from,
+                                const utf8string& to,
+                                bool allow_remove_old) {
   if (FileIsExist(to)) {
     if (allow_remove_old && !RemoveFile(to)) {
       return false;
@@ -196,10 +200,9 @@ bool RenameTargetFile(const utf8string& from, const utf8string &to, bool allow_r
 #else
   return (rename(from.c_str(), to.c_str()) == 0);
 #endif
-
 }
 
-FILE* OpenFile(const utf8string& path, const utf8string& mode) {
+FILE* FileUtil::OpenFile(const utf8string& path, const utf8string& mode) {
   FILE* f = nullptr;
   if (path.length() == 0 || mode.length() == 0)
     return f;
@@ -213,23 +216,31 @@ FILE* OpenFile(const utf8string& path, const utf8string& mode) {
   return f;
 }
 
-bool CreateFixedSizeFile(const utf8string& path, size_t fixed_size) {
+bool FileUtil::CreateFixedSizeFile(const utf8string& path, int64_t fixed_size) {
+  utf8string str_dir = GetDirectory(path);
+  if (str_dir.length() > 0 && !CreateDirectories(str_dir))
+    return false;
+
   FILE* f = OpenFile(path, "wb");
   if (!f)
     return false;
   if (fixed_size == 0) {
+    fflush(f);
     fclose(f);
     return true;
   }
 
-  if (fseek(f, fixed_size - 1, SEEK_SET) != 0) {
+  if (fseek(f, (long)(fixed_size - 1), SEEK_SET) != 0) {
+    fflush(f);
     fclose(f);
     return false;
   }
   if (fwrite("", 1, 1, f) != 1) {
+    fflush(f);
     fclose(f);
     return false;
   }
+  fflush(f);
   fclose(f);
   f = nullptr;
 
@@ -237,7 +248,8 @@ bool CreateFixedSizeFile(const utf8string& path, size_t fixed_size) {
   f = OpenFile(path, "rb");
   if (!f)
     return false;
-  long size = GetFileSize(f);
+  int64_t size = GetFileSize(f);
+  fflush(f);
   fclose(f);
   return (fixed_size == size);
 }

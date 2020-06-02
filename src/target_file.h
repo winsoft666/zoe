@@ -25,21 +25,21 @@ namespace teemo {
     TargetFile();
     virtual ~TargetFile();
 
-    bool Create(const utf8string& file_path, long fixed_size);
+    bool Create(const utf8string& file_path, int64_t fixed_size);
     bool Open(const utf8string& file_path);
     void Close();
 
-    long Write(long pos, const void* data, long data_size);
+    int64_t Write(int64_t pos, const void* data, int64_t data_size);
 
 
     utf8string filePath() const;
-    long fixedSize() const;
+    int64_t fixedSize() const;
     bool IsOpened() const;
 
   protected:
     bool file_opened_;
-    long file_seek_pos_;
-    long fixed_size_;
+    int64_t file_seek_pos_;
+    int64_t fixed_size_;
 
     utf8string file_path_;
     FILE* f_;

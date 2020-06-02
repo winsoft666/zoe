@@ -8,13 +8,13 @@ using namespace teemo;
 TEST(StopTest, NoWait) {
   EXPECT_NO_THROW({
     Teemo t;
-    t.Stop();
+    t.stop();
   });
 }
 
 TEST(StopTest, Wait) {
   EXPECT_NO_THROW({
     Teemo t;
-    t.Stop(true);
+    t.stop(true);
   });
 }

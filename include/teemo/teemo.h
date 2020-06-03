@@ -14,9 +14,9 @@
 #ifndef TEEMO_H_
 #define TEEMO_H_
 #pragma once
+
 #include <string>
 #include <memory>
-#include <atomic>
 #include <future>
 
 #ifdef TEEMO_STATIC
@@ -68,7 +68,6 @@ enum Result {
   SLICE_DOWNLOAD_FAILED
 };
 
-
 TEEMO_API const char* GetResultString(int enumVal);
 
 class TEEMO_API Event {
@@ -77,16 +76,15 @@ class TEEMO_API Event {
   ~Event();
 
   void set() noexcept;
-  void unSet() noexcept;
+  void unset() noexcept;
   bool isSetted() noexcept;
   bool wait(int32_t millseconds) noexcept;
 
  protected:
   Event(const Event&) = delete;
   Event& operator=(const Event&) = delete;
-  bool setted_;
-  std::mutex setted_mutex_;
-  std::condition_variable setted_cond_var_;
+  class EventImpl;
+  EventImpl* impl_;
 };
 
 typedef std::string utf8string;
@@ -105,41 +103,80 @@ class TEEMO_API Teemo {
 
   void setVerboseOutput(VerboseOuputFunctor verbose_functor) noexcept;
 
+  // Pass an int specifying the maximum thread number.
+  // teemo will use these threads as much as possible.
+  // Set to 0 or negative to switch to the default built-in thread number - 1.
+  // The number of threads cannot be greater than 100, otherwise teemo will return INVALID_THREAD_NUM.
+  //
   Result setThreadNum(int32_t thread_num) noexcept;
   int32_t threadNum() const noexcept;
 
-  utf8string url() const noexcept;
-  utf8string targetFilePath() const noexcept;
 
-  Result setNetworkConnectionTimeout(int32_t milliseconds) noexcept;  // default is 3000ms
-  int32_t networkConnectionTimeout() const noexcept;
+  // Pass an int. It should contain the maximum time in milliseconds that you allow the connection phase to the server to take. 
+  // This only limits the connection phase, it has no impact once it has connected. 
+  // Set to 0 or negative to switch to the default built-in connection timeout - 3000 milliseconds.
+  //
+  Result setNetworkConnectionTimeout(int32_t milliseconds) noexcept;  // milliseconds
+  int32_t networkConnectionTimeout() const noexcept;                  // milliseconds
 
-  Result setNetworkReadTimeout(int32_t milliseconds) noexcept;  // default is 3000ms
-  int32_t networkReadTimeout() const noexcept;
 
+  // Pass an int specifying the retry times when request file information(such as file size) failed.
+  // Set to 0 or negative to switch to the default built-in retry times - 1.
+  //
   Result setFetchFileInfoRetryTimes(int32_t retry_times) noexcept;
   int32_t fetchFileInfoRetryTimes() const noexcept;
 
-  // default is -1 = forever, 0 = not use exist slice cache
-  void setTmpFileExpiredTime(int32_t seconds) noexcept;
-  int32_t tmpFileExpiredTime() const noexcept;
 
-  // default is -1 = not limit
-  void setMaxDownloadSpeed(int32_t byte_per_seconds) noexcept;
+  // Pass an int as parameter.
+  // If the interval seconds that from the saved time of temporary file to present greater than or equal to this parameter, the temporary file will be discarded.
+  // Default to -1, never expired.
+  //
+  Result setTmpFileExpiredTime(int32_t seconds) noexcept;  // seconds
+  int32_t tmpFileExpiredTime() const noexcept;             // seconds
+
+
+  // Pass an int as parameter.
+  // If a download exceeds this speed (counted in bytes per second) the transfer will pause to keep the speed less than or equal to the parameter value.
+  // Defaults to -1, unlimited speed.
+  // This option doesn't affect transfer speeds done with FILE:// URLs.
+  //
+  Result setMaxDownloadSpeed(int32_t byte_per_seconds) noexcept;
   int32_t maxDownloadSpeed() const noexcept;
 
-  // default is 20Mb
+  // Pass an unsigned int specifying your maximal size for the disk cache total buffer in teemo.
+  // This buffer size is by default 20971520 byte (20MB).
+  //
   Result setDiskCacheSize(int32_t cache_size) noexcept;  // byte
-  int32_t diskCacheSize() const noexcept;             // byte
+  int32_t diskCacheSize() const noexcept;                // byte
 
+  // Set an event, teemo will stop downloading when this event set.
+  // If download is stopped for stop_event set or call stop, teemo will return CANCELED.
+  //
+  Result setStopEvent(Event* stop_event) noexcept;
+  Event* stopEvent() noexcept;
+
+  // Set true, teemo will not check whether the url passed by *start* is the same as in the index file, 
+  // and in this case, if the url passed by *start* is empty, teemo will use the url in index file.
+  // Default to false, if the url passed by *start* is different from the url in the index file, teemo will return URL_DIFFERENT error.
+  //
+  Result setSkippingUrlCheck(bool skip) noexcept;
+  bool skippingUrlCheck() const noexcept;
+
+  // Start to download.
+  // Supported url protocol is the same as libcurl.
+  //
   std::shared_future<Result> start(const utf8string& url,
                                    const utf8string& target_file_path,
                                    ResultFunctor result_functor,
                                    ProgressFunctor progress_functor,
-                                   RealtimeSpeedFunctor realtime_speed_functor,
-                                   bool can_update_url = false) noexcept;
+                                   RealtimeSpeedFunctor realtime_speed_functor) noexcept;
 
-  void stop(bool wait = false) noexcept;
+  // Stop downloading, teemo will return CANCELED.
+  //
+  void stop() noexcept;
+
+  utf8string url() const noexcept;
+  utf8string targetFilePath() const noexcept;
 
  protected:
   class TeemoImpl;
@@ -149,5 +186,4 @@ class TEEMO_API Teemo {
   Teemo& operator=(const Teemo&) = delete;
 };
 }  // namespace teemo
-
-#endif
+#endif  // !TEEMO_H_

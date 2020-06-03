@@ -12,24 +12,20 @@
 * file.
 *******************************************************************************/
 
-#ifndef TEEMO_SLICE_MANAGE_H__
-#define TEEMO_SLICE_MANAGE_H__
+#ifndef TEEMO_SLICE_MANAGE_H_
+#define TEEMO_SLICE_MANAGE_H_
 #pragma once
 
-#include <string>
 #include <vector>
-#include <memory>
 #include <atomic>
-#include <future>
-#include <condition_variable>
 #include "slice.h"
-#include "curl/curl.h"
 #include "teemo/teemo.h"
 #include "target_file.h"
 
 namespace teemo {
 class Slice;
 typedef struct _Options Options;
+
 class SliceManager : public std::enable_shared_from_this<SliceManager> {
  public:
   SliceManager(Options* options);
@@ -57,11 +53,12 @@ class SliceManager : public std::enable_shared_from_this<SliceManager> {
   const Options* options();
 
   utf8string indexFilePath() const;
+
  protected:
   utf8string makeIndexFilePath() const;
 
  protected:
-   const Options* options_;
+  Options* options_;
   int64_t origin_file_size_;
 
   utf8string index_file_path_;
@@ -72,4 +69,4 @@ class SliceManager : public std::enable_shared_from_this<SliceManager> {
 };
 }  // namespace teemo
 
-#endif
+#endif  // !TEEMO_SLICE_MANAGE_H_

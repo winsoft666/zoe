@@ -11,11 +11,11 @@
 * that you have found/implemented and I will fix/incorporate them into this
 * file.
 *******************************************************************************/
+
 #ifndef TARGET_FILE_H__
 #define TARGET_FILE_H__
 #pragma once
 
-#include <string>
 #include "teemo/teemo.h"
 #include <mutex>
 
@@ -30,7 +30,6 @@ namespace teemo {
     void Close();
 
     int64_t Write(int64_t pos, const void* data, int64_t data_size);
-
 
     utf8string filePath() const;
     int64_t fixedSize() const;

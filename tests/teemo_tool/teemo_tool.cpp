@@ -33,7 +33,23 @@ using namespace teemo;
 Teemo efd;
 std::mutex console_mutex;
 
-void PrintConsole(long total, long downloaded, long speed);
+void PrintConsole(int64_t total, int64_t downloaded, int32_t speed);
+
+inline char EasyCharToLowerA(char in) {
+  if (in <= 'Z' && in >= 'A')
+    return in - ('Z' - 'z');
+  return in;
+}
+
+template <typename T, typename Func>
+typename std::enable_if<std::is_same<char, T>::value || std::is_same<wchar_t, T>::value,
+                        std::basic_string<T, std::char_traits<T>, std::allocator<T>>>::type
+StringCaseConvert(const std::basic_string<T, std::char_traits<T>, std::allocator<T>>& str,
+                  Func func) {
+  std::basic_string<T, std::char_traits<T>, std::allocator<T>> ret = str;
+  std::transform(ret.begin(), ret.end(), ret.begin(), func);
+  return ret;
+}
 
 #if (defined WIN32 || defined _WIN32)
 BOOL WINAPI ControlSignalHandler(DWORD fdwCtrlType) {
@@ -43,7 +59,7 @@ BOOL WINAPI ControlSignalHandler(DWORD fdwCtrlType) {
     case CTRL_BREAK_EVENT:
     case CTRL_LOGOFF_EVENT:
     case CTRL_SHUTDOWN_EVENT:
-      efd.Stop(true);
+      efd.stop();
       return TRUE;
 
     default:
@@ -59,7 +75,7 @@ void ControlSignalHandler(int s) {
 
 //
 // Usage:
-// teemo_tool URL TargetFilePath [ThreadNum] [DiskCacheMb] [MD5] [SliceExpiredSeconds] [MaxSpeed]
+// teemo_tool URL TargetFilePath [ThreadNum] [DiskCacheMb] [MD5] [TmpExpiredSeconds] [MaxSpeed]
 //
 int main(int argc, char** argv) {
   if (argc < 3) {
@@ -114,7 +130,8 @@ int main(int argc, char** argv) {
 
         if (result == Result::SUCCESSED) {
           if (md5) {
-            if (stricmp(md5, base::GetFileMd5(target_file_path).c_str()) == 0) {
+            std::string low_md5 = StringCaseConvert(std::string(md5), EasyCharToLowerA);
+            if (strcmp(low_md5.c_str(), base::GetFileMd5(target_file_path).c_str()) == 0) {
               std::cout << "MD5 checksum successful." << std::endl;
             }
             else {
@@ -124,14 +141,15 @@ int main(int argc, char** argv) {
           }
         }
       },
-      [](long total, long downloaded) { PrintConsole(total, downloaded, -1); },
-      [](long byte_per_secs) { PrintConsole(-1, -1, byte_per_secs / 1000); });
+      [](int64_t total, int64_t downloaded) { PrintConsole(total, downloaded, -1); },
+      [](int64_t byte_per_secs) { PrintConsole(-1, -1, byte_per_secs / 1000.f); });
 
   aysnc_task.wait();
 
   auto end_time = std::chrono::high_resolution_clock::now();
 
-  std::chrono::milliseconds mill = std::chrono::duration_cast<std::chrono::milliseconds>(end_time - start_time);
+  std::chrono::milliseconds mill =
+      std::chrono::duration_cast<std::chrono::milliseconds>(end_time - start_time);
   std::cout << "Total: " << mill.count() << "ms" << std::endl;
 
   fclose(f_verbose);
@@ -140,15 +158,15 @@ int main(int argc, char** argv) {
   return exit_code;
 }
 
-void PrintConsole(long total, long downloaded, long speed) {
+void PrintConsole(int64_t total, int64_t downloaded, int32_t speed) {
   const char* PBSTR = "============================================================";
   const int PBWIDTH = 60;
 
   std::lock_guard<std::mutex> lg(console_mutex);
 
-  static long avaliable_total = -1;
-  static long avaliable_downloaded = -1;
-  static long avaliable_speed = 0;
+  static int64_t avaliable_total = -1;
+  static int64_t avaliable_downloaded = -1;
+  static int32_t avaliable_speed = 0;
 
   if (total > 0)
     avaliable_total = total;

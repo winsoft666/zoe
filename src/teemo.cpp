@@ -13,6 +13,7 @@
 *******************************************************************************/
 
 #include "teemo/teemo.h"
+#include <assert.h>
 #include "file_util.h"
 #include "curl_utils.h"
 #include "slice_manager.h"
@@ -87,97 +88,141 @@ void Teemo::GlobalUnInit() {
 }
 
 void Teemo::setVerboseOutput(VerboseOuputFunctor verbose_functor) noexcept {
+  assert(impl_);
   impl_->options_.verbose_functor = verbose_functor;
 }
 
 Result Teemo::setThreadNum(int32_t thread_num) noexcept {
+  assert(impl_);
   if (impl_->isDownloading())
     return ALREADY_DOWNLOADING;
-  if (thread_num == 0 || thread_num > 100)
+  if (thread_num <= 0)
+    thread_num = TEEMO_DEFAULT_THREAD_NUM;
+  if (thread_num > 100)
     return INVALID_THREAD_NUM;
-
   impl_->options_.thread_num = thread_num;
   return SUCCESSED;
 }
 
 int32_t Teemo::threadNum() const noexcept {
+  assert(impl_);
   return impl_->options_.thread_num;
 }
 
 utf8string Teemo::url() const noexcept {
+  assert(impl_);
   return impl_->options_.url;
 }
 
 utf8string Teemo::targetFilePath() const noexcept {
+  assert(impl_);
   return impl_->options_.target_file_path;
 }
 
 Result Teemo::setNetworkConnectionTimeout(int32_t milliseconds) noexcept {
+  assert(impl_);
   if (impl_->isDownloading())
     return ALREADY_DOWNLOADING;
+  if (milliseconds <= 0)
+    milliseconds = TEEMO_DEFAULT_NETWORK_CONN_TIMEOUT_MS;
   impl_->options_.network_conn_timeout = milliseconds;
   return SUCCESSED;
 }
 
 int32_t Teemo::networkConnectionTimeout() const noexcept {
+  assert(impl_);
   return impl_->options_.network_conn_timeout;
 }
 
-Result Teemo::setNetworkReadTimeout(int32_t milliseconds) noexcept {
-  if (impl_->isDownloading())
-    return ALREADY_DOWNLOADING;
-  impl_->options_.network_read_timeout = milliseconds;
-  return SUCCESSED;
-}
-
-int32_t Teemo::networkReadTimeout() const noexcept {
-  return impl_->options_.network_read_timeout;
-}
-
 Result Teemo::setFetchFileInfoRetryTimes(int32_t retry_times) noexcept {
+  assert(impl_);
   if (impl_->isDownloading())
     return ALREADY_DOWNLOADING;
-
+  if (retry_times <= 0)
+    retry_times = TEEMO_DEFAULT_FETCH_FILE_INFO_RETRY_TIMES;
+  impl_->options_.fetch_file_info_retry = retry_times;
   return SUCCESSED;
 }
 
 int32_t Teemo::fetchFileInfoRetryTimes() const noexcept {
+  assert(impl_);
   return impl_->options_.fetch_file_info_retry;
 }
 
-void Teemo::setTmpFileExpiredTime(int32_t seconds) noexcept {
+Result Teemo::setTmpFileExpiredTime(int32_t seconds) noexcept {
+  assert(impl_);
+  if (impl_->isDownloading())
+    return ALREADY_DOWNLOADING;
   impl_->options_.tmp_file_expired_time = seconds;
+
+  return SUCCESSED;
 }
 
 int32_t Teemo::tmpFileExpiredTime() const noexcept {
+  assert(impl_);
   return impl_->options_.tmp_file_expired_time;
 }
 
-void Teemo::setMaxDownloadSpeed(int32_t byte_per_seconds) noexcept {
+Result Teemo::setMaxDownloadSpeed(int32_t byte_per_seconds) noexcept {
+  assert(impl_);
+  if (impl_->isDownloading())
+    return ALREADY_DOWNLOADING;
   impl_->options_.max_speed = byte_per_seconds;
+
+  return SUCCESSED;
 }
 
 int32_t Teemo::maxDownloadSpeed() const noexcept {
+  assert(impl_);
   return impl_->options_.max_speed;
 }
 
 Result Teemo::setDiskCacheSize(int32_t cache_size) noexcept {
+  assert(impl_);
   if (impl_->isDownloading())
     return ALREADY_DOWNLOADING;
+  if (cache_size < 0)
+    cache_size = 0;
   impl_->options_.disk_cache_size = cache_size;
   return SUCCESSED;
 }
 
 int32_t Teemo::diskCacheSize() const noexcept {
+  assert(impl_);
   return impl_->options_.disk_cache_size;
+}
+
+Result Teemo::setStopEvent(Event* stop_event) noexcept {
+  assert(impl_);
+  if (impl_->isDownloading())
+    return ALREADY_DOWNLOADING;
+  impl_->options_.user_stop_event = stop_event;
+  return SUCCESSED;
+}
+
+Event* Teemo::stopEvent() noexcept {
+  assert(impl_);
+  return impl_->options_.user_stop_event;
+}
+
+Result Teemo::setSkippingUrlCheck(bool skip) noexcept {
+  assert(impl_);
+  if (impl_->isDownloading())
+    return ALREADY_DOWNLOADING;
+  impl_->options_.skipping_url_check = skip;
+  return SUCCESSED;
+}
+
+bool Teemo::skippingUrlCheck() const noexcept {
+  return impl_->options_.skipping_url_check;
 }
 
 std::shared_future<Result> Teemo::start(const utf8string& url,
                                         const utf8string& target_file_path,
                                         ResultFunctor result_functor,
                                         ProgressFunctor progress_functor,
-                                        RealtimeSpeedFunctor realtime_speed_functor,
-                                        bool can_update_url) noexcept {
+                                        RealtimeSpeedFunctor realtime_speed_functor) noexcept {
+  assert(impl_);
   Result ret = SUCCESSED;
 
   if (impl_->isDownloading())
@@ -201,38 +246,77 @@ std::shared_future<Result> Teemo::start(const utf8string& url,
   impl_->options_.progress_functor = progress_functor;
   impl_->options_.speed_functor = realtime_speed_functor;
 
+  if (impl_->entry_handler_)
+    impl_->entry_handler_.reset();
+
   impl_->entry_handler_ = std::make_shared<EntryHandler>();
 
   return impl_->entry_handler_->start(&impl_->options_);
 }
 
-void Teemo::stop(bool wait) noexcept {
+void Teemo::stop() noexcept {
+  assert(impl_ && impl_->entry_handler_);
   impl_->entry_handler_->stop();
 }
 
-Event::Event(bool setted) : setted_(setted) {}
+class Event::EventImpl {
+ public:
+  EventImpl(bool setted) : setted_(setted) {}
+  void set() noexcept {
+    std::unique_lock<std::mutex> ul(setted_mutex_);
+    setted_ = true;
+  }
 
-Event::~Event() {}
+  void unset() noexcept {
+    std::unique_lock<std::mutex> ul(setted_mutex_);
+    setted_ = false;
+  }
 
-void Event::set() noexcept {
-  std::unique_lock<std::mutex> ul(setted_mutex_);
-  setted_ = true;
+  bool isSetted() noexcept {
+    std::unique_lock<std::mutex> ul(setted_mutex_);
+    return setted_;
+  }
+
+  bool wait(int32_t millseconds) noexcept {
+    std::unique_lock<std::mutex> ul(setted_mutex_);
+    setted_cond_var_.wait_for(ul, std::chrono::milliseconds(millseconds),
+                              [this] { return setted_; });
+    return setted_;
+  }
+
+ protected:
+  bool setted_;
+  std::mutex setted_mutex_;
+  std::condition_variable setted_cond_var_;
+};
+
+Event::Event(bool setted) : impl_(new EventImpl(setted)) {}
+
+Event::~Event() {
+  assert(impl_);
+  if (impl_) {
+    delete impl_;
+    impl_ = nullptr;
+  }
 }
 
-void Event::unSet() noexcept {
-  std::unique_lock<std::mutex> ul(setted_mutex_);
-  setted_ = false;
+void Event::set() noexcept {
+  assert(impl_);
+  impl_->set();
+}
+
+void Event::unset() noexcept {
+  assert(impl_);
+  impl_->unset();
 }
 
 bool Event::isSetted() noexcept {
-  std::unique_lock<std::mutex> ul(setted_mutex_);
-  return setted_;
+  assert(impl_);
+  return impl_->isSetted();
 }
 
 bool Event::wait(int32_t millseconds) noexcept {
-  std::unique_lock<std::mutex> ul(setted_mutex_);
-  setted_cond_var_.wait_for(ul, std::chrono::milliseconds(millseconds), [this] { return setted_; });
-  return setted_;
+  assert(impl_);
+  return impl_->wait(millseconds);
 }
-
 }  // namespace teemo

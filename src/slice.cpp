@@ -116,7 +116,7 @@ Result Slice::start(void* multi, int64_t disk_cache_size, int32_t max_speed) {
   if (max_speed > 0) {
     curl_easy_setopt(curl_, CURLOPT_MAX_RECV_SPEED_LARGE, (curl_off_t)max_speed);
   }
-
+  curl_easy_setopt(curl_, CURLOPT_FORBID_REUSE, 0L);
   curl_easy_setopt(curl_, CURLOPT_WRITEFUNCTION, DownloadWriteCallback);
   curl_easy_setopt(curl_, CURLOPT_WRITEDATA, this);
   char range[64] = {0};

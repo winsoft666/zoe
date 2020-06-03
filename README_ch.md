@@ -57,35 +57,35 @@ make
 #include <iostream>
 #include "teemo.h"
 
-using namespace teemo;
+int main(int argc, char** argv) {
+  using namespace teemo;
 
-int main(int argc, char **argv) {
-    Teemo::GlobalInit();
+  Teemo::GlobalInit();
 
-    Teemo efd;
-    std::shared_future<Result> async_task = efd.Start(u8"http://xxx.xxx.com/test.exe",
-              u8"D:\\test.exe",
-    [](Result result) {
+  Teemo efd;
+
+  efd.setThreadNum(10);                     // Optional
+  efd.setTmpFileExpiredTime(3600);          // Optional
+  efd.setDiskCacheSize(20 * (2 << 19));     // Optional
+  efd.setMaxDownloadSpeed(50 * (2 << 19));  // Optional
+
+  std::shared_future<Result> async_task = efd.start(
+      u8"http://xxx.xxx.com/test.exe", u8"D:\\test.exe",
+      [](Result result) {  // Optional
         // result callback
-    },
-    [](long total, long downloaded) {
+      },
+      [](int64_t total, int64_t downloaded) {  // Optional
         // progress callback
-    }, 
-    [](long byte_per_secs) {
-        // realtime speed callback
-    })
-    .then([=](pplx::task<Result> result) {
-        std::cout << std::endl << GetResultString(result.get()) << std::endl;
-        if (result.get() == Result::Successed) {
-			// Successed
-        }
-    });
-    
-    async_task.wait();
-	
-    Teemo::GlobalUnInit();
-	
-	return 0;
+      },
+      [](int64_t byte_per_secs) {  // Optional
+        // real-time speed callback
+      });
+
+  async_task.wait();
+
+  Teemo::GlobalUnInit();
+
+  return 0;
 }
 ```
 
@@ -95,7 +95,7 @@ int main(int argc, char **argv) {
 `teemo_tool`是一个基于`teemo`库开发的命令行下载工具，用法如下：
 
 ```bash
-teemo_tool URL TargetFilePath [ThreadNum] [DiskCacheMb] [MD5] [EnableSaveSliceToTmp] [SliceCacheExpiredSeconds] [MaxSpeed]
+teemo_tool URL TargetFilePath [ThreadNum] [DiskCacheMb] [MD5] [TmpExpiredSeconds] [MaxSpeed]
 ```
 
 - URL: 下载链接
@@ -103,6 +103,5 @@ teemo_tool URL TargetFilePath [ThreadNum] [DiskCacheMb] [MD5] [EnableSaveSliceTo
 - ThreadNum: 线程数量，可选，默认为1
 - DiskCacheMb: 磁盘缓存大小，单位Mb，默认为20Mb
 - MD5: 下载文件的MD5，可选，若不为空，则在下载完成之后会进行文件MD5校验
-- EnableSaveSliceToTmp: 0或1，可选，是否保存分片文件到系统临时目录，Windows平台为`GetTempPath`API返回的路径，Linux平台为`/var/tmp/`
-- SliceCacheExpiredSeconds: 秒数，可选，分片缓存文件经过多少秒之后过期
+- TmpExpiredSeconds: 秒数，可选，临时文件经过多少秒之后过期
 - MaxSpeed: 最高下载速度(byte/s)

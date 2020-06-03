@@ -12,8 +12,8 @@
 * file.
 *******************************************************************************/
 
-#ifndef TEEMO_SLICE_H__
-#define TEEMO_SLICE_H__
+#ifndef TEEMO_SLICE_H_
+#define TEEMO_SLICE_H_
 #pragma once
 
 #include <string>
@@ -29,9 +29,9 @@ class Slice {
  public:
    enum Status {
      UNFETCH = 0,
-     FETCHED,
-     DOWNLOADING,
-     DOWNLOAD_FAILED
+     FETCHED = 1,
+     DOWNLOADING = 2,
+     DOWNLOAD_FAILED = 3
    };
   Slice(int32_t index,
         int64_t begin,
@@ -81,5 +81,4 @@ class Slice {
   std::shared_ptr<SliceManager> slice_manager_;
 };
 }  // namespace teemo
-
-#endif
+#endif // !TEEMO_SLICE_H_

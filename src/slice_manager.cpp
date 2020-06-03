@@ -19,6 +19,7 @@
 #include <iostream>
 #include "json.hpp"
 #include "file_util.h"
+#include "curl/curl.h"
 #include "curl_utils.h"
 #include "options.h"
 
@@ -92,8 +93,11 @@ Result SliceManager::loadExistSlice() {
     if (!target_file_->Open(tmp_file_path_))
       return OPEN_TMP_FILE_FAILED;
 
-    if (j["url"].get<utf8string>() != options_->url && !options_->can_update_url)
+    if (j["url"].get<utf8string>() != options_->url && !options_->skipping_url_check)
       return URL_DIFFERENT;
+
+    if (options_->url.length() == 0)
+      options_->url = j["url"].get<utf8string>();
 
     slices_.clear();
     int32_t slice_index = 0;

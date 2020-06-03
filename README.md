@@ -61,35 +61,35 @@ make install
 #include <iostream>
 #include "teemo.h"
 
-using namespace teemo;
+int main(int argc, char** argv) {
+  using namespace teemo;
 
-int main(int argc, char **argv) {
-    Teemo::GlobalInit();
+  Teemo::GlobalInit();
 
-    Teemo efd;
-    std::shared_future<Result> async_task = efd.Start(u8"http://xxx.xxx.com/test.exe",
-              u8"D:\\test.exe",
-    [](Result result) {
+  Teemo efd;
+
+  efd.setThreadNum(10);                     // Optional
+  efd.setTmpFileExpiredTime(3600);          // Optional
+  efd.setDiskCacheSize(20 * (2 << 19));     // Optional
+  efd.setMaxDownloadSpeed(50 * (2 << 19));  // Optional
+
+  std::shared_future<Result> async_task = efd.start(
+      u8"http://xxx.xxx.com/test.exe", u8"D:\\test.exe",
+      [](Result result) {  // Optional
         // result callback
-    },
-    [](long total, long downloaded) {
+      },
+      [](int64_t total, int64_t downloaded) {  // Optional
         // progress callback
-    }, 
-    [](long byte_per_secs) {
-        // realtime speed callback
-    })
-    .then([=](pplx::task<Result> result) {
-        std::cout << std::endl << GetResultString(result.get()) << std::endl;
-        if (result.get() == Result::Successed) {
-			// Successed
-        }
-    });
-    
-    async_task.wait();
-	
-    Teemo::GlobalUnInit();
-	
-	return 0;
+      },
+      [](int64_t byte_per_secs) {  // Optional
+        // real-time speed callback
+      });
+
+  async_task.wait();
+
+  Teemo::GlobalUnInit();
+
+  return 0;
 }
 ```
 
@@ -99,7 +99,7 @@ int main(int argc, char **argv) {
 `teemo` is command line download tool based on `teemo` library. Usage:
 
 ```bash
-teemo_tool URL TargetFilePath [ThreadNum] [DiskCacheMb] [MD5] [EnableSaveSliceToTmp] [SliceCacheExpiredSeconds] [MaxSpeed]
+teemo_tool URL TargetFilePath [ThreadNum] [DiskCacheMb] [MD5] [TmpExpiredSeconds] [MaxSpeed]
 ```
 
 - URL: Download URL.
@@ -107,6 +107,5 @@ teemo_tool URL TargetFilePath [ThreadNum] [DiskCacheMb] [MD5] [EnableSaveSliceTo
 - ThreadNum: thread number, optional, default is `1`.
 - DiskCacheMb: Disk cache size(Mb), default is `20Mb`.
 - MD5: target file md5, optional, if this value isn't empty, tools will check file md5 after download finished.
-- EnableSaveSliceToTmp: 0 or 1, optional, whether save slice file to system temp directory or not, Windows system is the path returned by `GetTempPath` API, Linux is `/var/tmp/`.
-- SliceCacheExpiredSeconds: seconds, optional, slice cache file expired after these senconds.
+- TmpExpiredSeconds: seconds, optional, the temporary file will expired after these senconds.
 - MaxSpeed: max download speed(byte/s).

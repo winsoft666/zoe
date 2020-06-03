@@ -1,3 +1,17 @@
+/*******************************************************************************
+* Copyright (C) 2018 - 2020, winsoft666, <winsoft666@outlook.com>.
+*
+* THIS CODE AND INFORMATION IS PROVIDED "AS IS" WITHOUT WARRANTY OF ANY KIND,
+* EITHER EXPRESSED OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE IMPLIED
+* WARRANTIES OF MERCHANTABILITY AND/OR FITNESS FOR A PARTICULAR PURPOSE.
+*
+* Expect bugs
+*
+* Please use and enjoy. Please let me know of any bugs/improvements
+* that you have found/implemented and I will fix/incorporate them into this
+* file.
+*******************************************************************************/
+
 #include "entry_handler.h"
 #include <assert.h>
 #include "curl_utils.h"
@@ -5,16 +19,17 @@
 
 namespace teemo {
 
-utf8string bool_to_string(bool b) {
+utf8string bool2string(bool b) {
   return (b ? "true" : "false");
 }
 
 EntryHandler::EntryHandler()
     : options_(nullptr)
-    , stop_event_(false)
     , slice_manager_(nullptr)
     , progress_handler_(nullptr)
-    , speed_handler_(nullptr) {}
+    , speed_handler_(nullptr) {
+  user_stop_.store(false);
+}
 
 EntryHandler::~EntryHandler() {}
 
@@ -29,19 +44,25 @@ std::shared_future<Result> EntryHandler::start(Options* options) {
 }
 
 void EntryHandler::stop() {
-  stop_event_.set();
+  user_stop_.store(true);
+  options_->internal_stop_event.set();
 }
 
 bool EntryHandler::isDownloading() {
-  if (async_task_.valid() && async_task_.wait_for(std::chrono::milliseconds(0)) != std::future_status::ready)
+  if (async_task_.valid() &&
+      async_task_.wait_for(std::chrono::milliseconds(0)) != std::future_status::ready)
     return true;
   return false;
 }
 
 Result EntryHandler::asyncTaskProcess() {
+  options_->internal_stop_event.unset();
+  user_stop_.store(false);
+
   Result ret = _asyncTaskProcess();
 
-  stop_event_.set();
+  options_->internal_stop_event.set();
+
   if (speed_handler_)
     speed_handler_.reset();
   if (progress_handler_)
@@ -127,16 +148,16 @@ Result EntryHandler::_asyncTaskProcess() {
   }
 
   if (options_->progress_functor)
-    progress_handler_ = std::make_shared<ProgressHandler>(options_, &stop_event_, slice_manager_);
+    progress_handler_ = std::make_shared<ProgressHandler>(options_, slice_manager_);
   if (options_->speed_functor)
-    speed_handler_ = std::make_shared<SpeedHandler>(slice_manager_->totalDownloaded(), options_,
-                                                    &stop_event_, slice_manager_);
+    speed_handler_ =
+        std::make_shared<SpeedHandler>(slice_manager_->totalDownloaded(), options_, slice_manager_);
 
   int still_running = 0;
   CURLMcode m_code = curl_multi_perform(multi_, &still_running);
 
   do {
-    if (stop_event_.isSetted())
+    if (options_->internal_stop_event.isSetted())
       break;
 
     struct timeval timeout;
@@ -230,7 +251,7 @@ Result EntryHandler::_asyncTaskProcess() {
   if (ret == SUCCESSED)
     return SUCCESSED;
 
-  if (stop_event_.isSetted())
+  if (user_stop_.load() || (options_->user_stop_event && options_->user_stop_event->isSetted()))
     return CANCELED;
 
   return ret;
@@ -248,12 +269,7 @@ bool EntryHandler::fetchFileInfo(int64_t& file_size) const {
   curl_easy_setopt(curl, CURLOPT_FOLLOWLOCATION, 1);
   curl_easy_setopt(curl, CURLOPT_SSL_VERIFYHOST, 0);
   curl_easy_setopt(curl, CURLOPT_SSL_VERIFYPEER, 0);
-  curl_easy_setopt(
-      curl, CURLOPT_CONNECTTIMEOUT_MS,
-      options_->network_conn_timeout);  // Time-out connect operations after this amount of seconds
-  curl_easy_setopt(
-      curl, CURLOPT_TIMEOUT_MS,
-      options_->network_read_timeout);  // Time-out the read operation after this amount of seconds
+  curl_easy_setopt(curl, CURLOPT_CONNECTTIMEOUT_MS, options_->network_conn_timeout);
 
   //if (ca_path_.length() > 0)
   //    curl_easy_setopt(curl, CURLOPT_CAINFO, ca_path_.c_str());
@@ -295,8 +311,8 @@ void EntryHandler::outputVerbose(const utf8string& info) {
 }
 
 void EntryHandler::calculateSliceInfo(int32_t concurrency_num,
-  int32_t* disk_cache_per_slice,
-  int32_t* max_speed_per_slice) {
+                                      int32_t* disk_cache_per_slice,
+                                      int32_t* max_speed_per_slice) {
   if (concurrency_num <= 0) {
     if (disk_cache_per_slice) {
       *disk_cache_per_slice = options_->disk_cache_size;

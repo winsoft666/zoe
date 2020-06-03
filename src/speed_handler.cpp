@@ -13,6 +13,7 @@
 *******************************************************************************/
 
 #include "speed_handler.h"
+#include <functional>
 #include "options.h"
 
 namespace teemo {

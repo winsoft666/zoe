@@ -76,7 +76,7 @@ void TargetFile::Close() {
 
 int64_t TargetFile::Write(int64_t pos, const void* data, int64_t data_size) {
   std::lock_guard<std::recursive_mutex> lg(file_mutex_);
-  assert(f_  && file_opened_);
+  assert(f_ && file_opened_);
   int64_t written = 0L;
   do {
     if (!f_)

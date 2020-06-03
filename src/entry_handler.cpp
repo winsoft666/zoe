@@ -14,6 +14,7 @@
 
 #include "entry_handler.h"
 #include <assert.h>
+#include <functional>
 #include "curl_utils.h"
 #include "file_util.h"
 

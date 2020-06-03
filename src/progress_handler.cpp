@@ -13,6 +13,7 @@
 *******************************************************************************/
 
 #include "progress_handler.h"
+#include <functional>
 #include "options.h"
 
 namespace teemo {

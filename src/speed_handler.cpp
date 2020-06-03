@@ -32,8 +32,8 @@ SpeedHandler::~SpeedHandler() {
 }
 
 void SpeedHandler::asyncTaskProcess() {
-  while ((!options_->internal_stop_event.wait(1000)) ||
-         (options_->user_stop_event && options_->user_stop_event->isSetted())) {
+  while (!options_->internal_stop_event.wait(1000) ||
+         (options_->user_stop_event && !options_->user_stop_event->isSetted())) {
     if (options_ && slice_manager_) {
       int64_t now = slice_manager_->totalDownloaded();
 

@@ -158,7 +158,8 @@ Result EntryHandler::_asyncTaskProcess() {
   CURLMcode m_code = curl_multi_perform(multi_, &still_running);
 
   do {
-    if (options_->internal_stop_event.isSetted())
+    if (options_->internal_stop_event.isSetted() ||
+        (options_->user_stop_event && options_->user_stop_event->isSetted()))
       break;
 
     struct timeval timeout;

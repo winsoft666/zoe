@@ -11,10 +11,3 @@ TEST(StopTest, NoWait) {
     t.stop();
   });
 }
-
-TEST(StopTest, Wait) {
-  EXPECT_NO_THROW({
-    Teemo t;
-    t.stop(true);
-  });
-}

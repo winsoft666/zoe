@@ -8,13 +8,15 @@ using namespace teemo;
 
 void DoCancelTest(std::vector<TestData> test_datas, int thread_num) {
   for (auto test_data : test_datas) {
+    Event cancel_event;
+
     Teemo efd;
     efd.setThreadNum(thread_num);
-    CancelEvent cancel_event;
+    efd.setStopEvent(&cancel_event);
 
     std::thread t = std::thread([&cancel_event]() {
       std::this_thread::sleep_for(std::chrono::milliseconds(2500));
-      cancel_event.Cancel();
+      cancel_event.set();
     });
     t.detach();
 
@@ -30,11 +32,11 @@ void DoCancelTest(std::vector<TestData> test_datas, int thread_num) {
                    }
                  }
                },
-               [](long total, long downloaded) {
+               [](int64_t total, int64_t downloaded) {
                  if (total > 0)
                    printf("%3d%%\b\b\b\b", (int)((double)downloaded * 100.f / (double)total));
                },
-               nullptr, &cancel_event)
+               nullptr)
             .get();
   }
 }

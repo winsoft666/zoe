@@ -31,8 +31,8 @@ ProgressHandler::~ProgressHandler() {
 }
 
 void ProgressHandler::asyncTaskProcess() {
-  while ((!options_->internal_stop_event.wait(500)) ||
-         (options_->user_stop_event && options_->user_stop_event->isSetted())) {
+  while (!options_->internal_stop_event.wait(500) ||
+         (options_->user_stop_event && !options_->user_stop_event->isSetted())) {
     if (options_ && options_->progress_functor && slice_manager_) {
       options_->progress_functor(slice_manager_->originFileSize(),
                                  slice_manager_->totalDownloaded());

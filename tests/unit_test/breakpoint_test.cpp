@@ -31,7 +31,7 @@ void DoBreakpointTest(std::vector<TestData> test_datas, int thread_num) {
 
       std::this_thread::sleep_for(std::chrono::milliseconds(1000));
 
-      efd.stop(true);
+      efd.stop();
 
       r.get();
       efd.setThreadNum(thread_num);
@@ -64,7 +64,7 @@ TEST(BreakPointHttpTest, Http_ThreadNum_1_Breakpoint) {
   DoBreakpointTest(http_test_datas, 1);
 }
 
-#if 0
+
 TEST(BreakPointHttpTest, Http_ThreadNum_3_Breakpoint) {
   DoBreakpointTest(http_test_datas, 3);
 }
@@ -87,4 +87,3 @@ TEST(BreakPointFTPTest, FTP_ThreadNum_3_Breakpoint) {
 TEST(BreakPointFTPTest, FTP_ThreadNum_10_Breakpoint) {
   DoBreakpointTest(ftp_test_datas, 10);
 }
-#endif

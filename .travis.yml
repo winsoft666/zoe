@@ -1,8 +1,5 @@
 language: cpp
 sudo: required
-branches:
-  only:
-    - master
             
 matrix:
   include:

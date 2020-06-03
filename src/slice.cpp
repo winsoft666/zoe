@@ -133,7 +133,7 @@ Result Slice::start(void* multi, int64_t disk_cache_size, int32_t max_speed) {
   }
 
   CURLMcode m_code = curl_multi_add_handle(multi, curl_);
-  if (m_code != CURLE_OK) {
+  if (m_code != CURLM_OK) {
     curl_easy_cleanup(curl_);
     curl_ = nullptr;
     tryFreeDiskCacheBuffer();

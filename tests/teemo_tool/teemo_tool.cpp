@@ -123,12 +123,15 @@ int main(int argc, char** argv) {
   });
 
   auto start_time = std::chrono::high_resolution_clock::now();
+  std::chrono::time_point<std::chrono::high_resolution_clock> end_time;
+
   std::shared_future<Result> aysnc_task = efd.start(
       url, target_file_path,
-      [=, &exit_code](Result result) {
+      [=, &exit_code, &end_time](Result result) {
         std::cout << std::endl << GetResultString(result) << std::endl;
         exit_code = result;
 
+        end_time = std::chrono::high_resolution_clock::now();
         if (result == Result::SUCCESSED) {
           if (md5) {
             std::string low_md5 = StringCaseConvert(std::string(md5), EasyCharToLowerA);
@@ -147,15 +150,12 @@ int main(int argc, char** argv) {
 
   aysnc_task.wait();
 
-  auto end_time = std::chrono::high_resolution_clock::now();
-
   std::chrono::milliseconds mill =
       std::chrono::duration_cast<std::chrono::milliseconds>(end_time - start_time);
   std::cout << "Total: " << mill.count() << "ms" << std::endl;
 
   fclose(f_verbose);
   Teemo::GlobalUnInit();
-  std::cout << "Global UnInit." << std::endl;
   return exit_code;
 }
 

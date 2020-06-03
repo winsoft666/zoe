@@ -22,6 +22,7 @@ namespace teemo {
 #define TEEMO_DEFAULT_NETWORK_CONN_TIMEOUT_MS 3000
 #define TEEMO_DEFAULT_TOTAL_DISK_CACHE_SIZE_BYTE 20971520  // 20MB
 #define TEEMO_DEFAULT_FIXED_SLICE_SIZE_BYTE 10485760       // 10MB
+#define TEEMO_DEFAULT_FIXED_SLICE_NUM 1
 #define TEEMO_DEFAULT_FETCH_FILE_INFO_RETRY_TIMES 1
 #define TEEMO_DEFAULT_THREAD_NUM 1
 
@@ -33,7 +34,9 @@ typedef struct _Options {
   int32_t tmp_file_expired_time;
   int32_t fetch_file_info_retry;
   int32_t network_conn_timeout;
-  int64_t fixed_slice_size;
+
+  SlicePolicy slice_policy;
+  int64_t slice_policy_value;
 
   ResultFunctor result_functor;
   ProgressFunctor progress_functor;
@@ -50,7 +53,10 @@ typedef struct _Options {
     skipping_url_check = false;
     thread_num = TEEMO_DEFAULT_THREAD_NUM;
     disk_cache_size = TEEMO_DEFAULT_TOTAL_DISK_CACHE_SIZE_BYTE;
-    fixed_slice_size = TEEMO_DEFAULT_FIXED_SLICE_SIZE_BYTE;
+
+    slice_policy = Auto;
+    slice_policy_value = 0L;
+
     max_speed = -1;
     tmp_file_expired_time = -1;
     fetch_file_info_retry = TEEMO_DEFAULT_FETCH_FILE_INFO_RETRY_TIMES;

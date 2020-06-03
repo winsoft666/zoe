@@ -11,10 +11,7 @@ void DoTest(std::vector<TestData> test_datas, int thread_num) {
   for (auto test_data : test_datas) {
     Teemo efd;
 
-    if (thread_num != -1)
-      efd.setThreadNum(thread_num);
-
-    efd.setDiskCacheSize(thread_num * 1 * 1024 * 1024);
+    efd.setThreadNum(thread_num);
 
     Result ret =
         efd.start(

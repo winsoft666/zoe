@@ -29,7 +29,7 @@ bool TargetFile::Create(const utf8string& file_path, int64_t fixed_size) {
   assert(f_ == nullptr && file_opened_ == false);
 
   if (fixed_size < 0)
-    return false;
+    fixed_size = 0;
 
   if (!FileUtil::CreateFixedSizeFile(file_path, fixed_size))
     return false;

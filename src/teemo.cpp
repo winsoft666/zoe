@@ -28,6 +28,7 @@ const char* GetResultString(int enumVal) {
                                       u8"INVALID_INDEX_FORMAT",
                                       u8"INVALID_TARGET_FILE_PATH",
                                       u8"INVALID_THREAD_NUM",
+                                      u8"INVALID_SLICE_POLICY",
                                       u8"INVALID_NETWORK_CONN_TIMEOUT",
                                       u8"INVALID_NETWORK_READ_TIMEOUT",
                                       u8"INVALID_FETCH_FILE_INFO_RETRY_TIMES",
@@ -167,6 +168,8 @@ Result Teemo::setMaxDownloadSpeed(int32_t byte_per_seconds) noexcept {
   assert(impl_);
   if (impl_->isDownloading())
     return ALREADY_DOWNLOADING;
+  if (byte_per_seconds <= 0)
+    byte_per_seconds = -1;
   impl_->options_.max_speed = byte_per_seconds;
 
   return SUCCESSED;
@@ -215,6 +218,37 @@ Result Teemo::setSkippingUrlCheck(bool skip) noexcept {
 
 bool Teemo::skippingUrlCheck() const noexcept {
   return impl_->options_.skipping_url_check;
+}
+
+Result Teemo::setSlicePolicy(SlicePolicy policy, int64_t policy_value) noexcept {
+  assert(impl_);
+  if (policy == FixedSize) {
+    if (policy_value <= 0)
+      policy_value = TEEMO_DEFAULT_FIXED_SLICE_SIZE_BYTE;
+    impl_->options_.slice_policy = policy;
+    impl_->options_.slice_policy_value = policy_value;
+    return SUCCESSED;
+  }
+  else if (policy == FixedNum) {
+    if (policy_value <= 0)
+      policy_value = TEEMO_DEFAULT_FIXED_SLICE_NUM;
+    impl_->options_.slice_policy = policy;
+    impl_->options_.slice_policy_value = policy_value;
+    return SUCCESSED;
+  }
+  else if (policy == Auto) {
+    impl_->options_.slice_policy = policy;
+    impl_->options_.slice_policy_value = 0L;
+    return SUCCESSED;
+  }
+  assert(false);
+  return INVALID_SLICE_POLICY;
+}
+
+void Teemo::slicePolicy(SlicePolicy& policy, int64_t& policy_value) const noexcept {
+  assert(impl_);
+  policy = impl_->options_.slice_policy;
+  policy_value = impl_->options_.slice_policy_value;
 }
 
 std::shared_future<Result> Teemo::start(const utf8string& url,

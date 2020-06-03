@@ -45,6 +45,7 @@ enum Result {
   INVALID_INDEX_FORMAT,
   INVALID_TARGET_FILE_PATH,
   INVALID_THREAD_NUM,
+  INVALID_SLICE_POLICY,
   INVALID_NETWORK_CONN_TIMEOUT,
   INVALID_NETWORK_READ_TIMEOUT,
   INVALID_FETCH_FILE_INFO_RETRY_TIMES,
@@ -69,6 +70,18 @@ enum Result {
 };
 
 TEEMO_API const char* GetResultString(int enumVal);
+
+enum SlicePolicy {
+  Auto = 0,
+  FixedSize,
+  FixedNum
+};
+
+enum HashType {
+  MD5 = 0,
+  SHA1,
+  SHA256
+};
 
 class TEEMO_API Event {
  public:
@@ -138,6 +151,7 @@ class TEEMO_API Teemo {
   // Pass an int as parameter.
   // If a download exceeds this speed (counted in bytes per second) the transfer will pause to keep the speed less than or equal to the parameter value.
   // Defaults to -1, unlimited speed.
+  // Set to 0 or negative to switch to the default built-in limit - -1(unlimited speed).
   // This option doesn't affect transfer speeds done with FILE:// URLs.
   //
   Result setMaxDownloadSpeed(int32_t byte_per_seconds) noexcept;
@@ -161,6 +175,9 @@ class TEEMO_API Teemo {
   //
   Result setSkippingUrlCheck(bool skip) noexcept;
   bool skippingUrlCheck() const noexcept;
+
+  Result setSlicePolicy(SlicePolicy policy, int64_t policy_value) noexcept;
+  void slicePolicy(SlicePolicy& policy, int64_t& policy_value) const noexcept;
 
   // Start to download.
   // Supported url protocol is the same as libcurl.

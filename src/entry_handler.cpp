@@ -91,7 +91,6 @@ Result EntryHandler::_asyncTaskProcess() {
     } while (++try_times <= options_->fetch_file_info_retry);
 
     origin_file_size = fetch_size_ret ? origin_file_size : -1;
-    slice_manager_->setOriginFileSize(origin_file_size);
 
     // If target file is an empty file, create it.
     //
@@ -101,6 +100,8 @@ Result EntryHandler::_asyncTaskProcess() {
                  ? SUCCESSED
                  : CREATE_TARGET_FILE_FAILED;
     }
+
+    slice_manager_->setOriginFileSize(origin_file_size);
   }
 
   Result ms_ret = slice_manager_->tryMakeSlices();
@@ -131,7 +132,7 @@ Result EntryHandler::_asyncTaskProcess() {
   while (true) {
     if (selected >= options_->thread_num)
       break;
-    std::shared_ptr<Slice> slice = slice_manager_->fetchUsefulSlice();
+    std::shared_ptr<Slice> slice = slice_manager_->fetchUsefulSlice(false, nullptr);
     if (!slice)
       break;
     ss_ret = slice->start(multi_, disk_cache_per_slice, max_speed_per_slice);
@@ -154,98 +155,85 @@ Result EntryHandler::_asyncTaskProcess() {
     speed_handler_ =
         std::make_shared<SpeedHandler>(slice_manager_->totalDownloaded(), options_, slice_manager_);
 
+
+  // https://curl.haxx.se/libcurl/c/curl_multi_fdset.html
+  // https://docs.microsoft.com/en-us/windows/win32/api/winsock2/nf-winsock2-select
+  // https://manpages.courier-mta.org/htmlman2/select.2.html
+  //
+  struct timeval select_timeout;
+  select_timeout.tv_sec = 1;
+  select_timeout.tv_usec = 0;
+
+  long curl_timeo = -1;
+  curl_multi_timeout(multi_, &curl_timeo);
+
+  if (curl_timeo > 0) {
+    select_timeout.tv_sec = curl_timeo / 1000;
+    if (select_timeout.tv_sec > 1)
+      select_timeout.tv_sec = 1;
+    else
+      select_timeout.tv_usec = (curl_timeo % 1000) * 1000;
+  }
+  else {
+    select_timeout.tv_sec = 0;
+    select_timeout.tv_usec = 100 * 1000;
+  }
+
+  fd_set fdread;
+  fd_set fdwrite;
+  fd_set fdexcep;
+  int maxfd = -1;
   int still_running = 0;
-  CURLMcode m_code = curl_multi_perform(multi_, &still_running);
+
+  CURLMcode mcode = curl_multi_perform(multi_, &still_running);
 
   do {
     if (options_->internal_stop_event.isSetted() ||
         (options_->user_stop_event && options_->user_stop_event->isSetted()))
       break;
 
-    struct timeval timeout;
-    timeout.tv_sec = 1;
-    timeout.tv_usec = 0;
-
-    long curl_timeo = -1;
-    curl_multi_timeout(multi_, &curl_timeo);
-
-    if (curl_timeo > 0) {
-      timeout.tv_sec = curl_timeo / 1000;
-      if (timeout.tv_sec > 1)
-        timeout.tv_sec = 1;
-      else
-        timeout.tv_usec = (curl_timeo % 1000) * 1000;
-    }
-    else {
-      timeout.tv_sec = 0;
-      timeout.tv_usec = 100 * 1000;
-    }
-
-    fd_set fdread;
-    fd_set fdwrite;
-    fd_set fdexcep;
-    int maxfd = -1;
 
     FD_ZERO(&fdread);
     FD_ZERO(&fdwrite);
     FD_ZERO(&fdexcep);
-
-    CURLMcode code = curl_multi_fdset(multi_, &fdread, &fdwrite, &fdexcep, &maxfd);
-    if (code != CURLM_CALL_MULTI_PERFORM && code != CURLM_OK) {
+    mcode = curl_multi_fdset(multi_, &fdread, &fdwrite, &fdexcep, &maxfd);
+    if (mcode != CURLM_CALL_MULTI_PERFORM && mcode != CURLM_OK) {
       if (options_->verbose_functor)
-        outputVerbose("\r\ncurl_multi_fdset failed, code: " + std::to_string((int)code) + "\r\n");
+        outputVerbose("\r\ncurl_multi_fdset failed, code: " + std::to_string((int)mcode) + "\r\n");
       break;
     }
 
-    /* On success the value of maxfd is guaranteed to be >= -1. We call
-      select(maxfd + 1, ...); specially in case of (maxfd == -1) there are
-      no fds ready yet so we sleep 100ms, which is the minimum suggested value in the
-      curl_multi_fdset() doc.
-    */
-    int rc;
     if (maxfd == -1) {
       std::this_thread::sleep_for(std::chrono::milliseconds(100));
-      rc = 0;
-    }
+    } 
     else {
-      rc = select(maxfd + 1, &fdread, &fdwrite, &fdexcep, &timeout);
-    }
-
-    if (rc != -1) {
-      curl_multi_perform(multi_, &still_running);
+      int rc = select(maxfd + 1, &fdread, &fdwrite, &fdexcep, &select_timeout);
+      if (rc > 0) {
+        curl_multi_perform(multi_, &still_running);
+      }
+      else {
+        std::this_thread::sleep_for(std::chrono::milliseconds(50));
+      }
     }
 
     if (still_running < options_->thread_num) {
-      std::shared_ptr<Slice> slice = slice_manager_->fetchUsefulSlice();
+      // Get a slice that not started
+      // Implied: flush the disk cache buffer of completed slice, then free buffer.
+      std::shared_ptr<Slice> slice = slice_manager_->fetchUsefulSlice(true, multi_);
       if (slice) {
         int32_t disk_cache_per_slice = 0L;
         int32_t max_speed_per_slice = 0L;
         calculateSliceInfo(still_running + 1, &disk_cache_per_slice, &max_speed_per_slice);
-        if (slice->start(multi_, disk_cache_per_slice, max_speed_per_slice) != SUCCESSED) {
+        Result start_ret = slice->start(multi_, disk_cache_per_slice, max_speed_per_slice);
+        if (still_running <= 0) {
+          if(start_ret == SUCCESSED)
+            curl_multi_perform(multi_, &still_running);
+          else
+            still_running = 1;
         }
-        if (still_running <= 0)
-          still_running = 1;
       }
     }
   } while (still_running > 0);
-
-  if (options_->verbose_functor)
-    outputVerbose("\r\nstill running handles: " + std::to_string(still_running) + "\r\n");
-
-  size_t done_thread = 0;
-  CURLMsg* msg = NULL;
-  int msgsInQueue;
-  while ((msg = curl_multi_info_read(multi_, &msgsInQueue)) != NULL) {
-    if (msg->msg == CURLMSG_DONE) {
-      if (msg->data.result == CURLE_OK) {
-        done_thread++;
-      }
-    }
-  }
-
-  if (options_->verbose_functor) {
-    outputVerbose("done thread num: " + std::to_string(done_thread) + "\r\n");
-  }
 
   Result ret = slice_manager_->finishDownload();
   slice_manager_.reset();
@@ -304,6 +292,7 @@ bool EntryHandler::fetchFileInfo(int64_t& file_size) const {
   if (ret_code != CURLE_OK) {
     return false;
   }
+
   return true;
 }
 

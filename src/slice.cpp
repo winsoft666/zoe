@@ -37,6 +37,8 @@ Slice::Slice(int32_t index,
     , slice_manager_(slice_manager) {
   capacity_.store(init_capacity);
   disk_cache_capacity_.store(0L);
+
+  assert(end_ == -1 || (end_ >= begin_ + capacity_.load()));
 }
 
 Slice::~Slice() {
@@ -119,10 +121,23 @@ Result Slice::start(void* multi, int64_t disk_cache_size, int32_t max_speed) {
   curl_easy_setopt(curl_, CURLOPT_FORBID_REUSE, 0L);
   curl_easy_setopt(curl_, CURLOPT_WRITEFUNCTION, DownloadWriteCallback);
   curl_easy_setopt(curl_, CURLOPT_WRITEDATA, this);
-  char range[64] = {0};
-  snprintf(range, sizeof(range), "%ld-%ld", (long)(begin_ + capacity_), (long)end_);
-  if (strlen(range) > 0) {
-    CURLcode err = curl_easy_setopt(curl_, CURLOPT_RANGE, range);
+  if (end_ != -1) {
+    char range[64] = { 0 };
+    snprintf(range, sizeof(range), "%ld-%ld", (long)(begin_ + capacity_), (long)end_);
+    if (strlen(range) > 0) {
+      CURLcode err = curl_easy_setopt(curl_, CURLOPT_RANGE, range);
+      if (err != CURLE_OK) {
+        curl_easy_cleanup(curl_);
+        curl_ = nullptr;
+        tryFreeDiskCacheBuffer();
+        status_ = DOWNLOAD_FAILED;
+        return SET_CURL_OPTION_FAILED;
+      }
+    }
+  }
+  else {
+    curl_off_t offset = begin_ + capacity_;
+    CURLcode err = curl_easy_setopt(curl_, CURLOPT_RESUME_FROM_LARGE, offset);
     if (err != CURLE_OK) {
       curl_easy_cleanup(curl_);
       curl_ = nullptr;
@@ -155,6 +170,7 @@ void Slice::stop(void* multi) {
     curl_ = nullptr;
   }
 
+  flushToDisk();
   tryFreeDiskCacheBuffer();
 }
 
@@ -170,7 +186,7 @@ bool Slice::isCompleted() {
   if (end_ == -1)
     return false;
 
-  return ((end_ - begin_ + 1) == capacity_ + disk_cache_capacity_);
+  return ((end_ - begin_ + 1) == capacity_.load() + disk_cache_capacity_.load());
 }
 
 bool Slice::flushToDisk() {
@@ -185,6 +201,7 @@ bool Slice::flushToDisk() {
     }
     std::atomic_fetch_add(&capacity_, written);
     bret = (written == need_write);
+    assert(bret);
   }
   return bret;
 }
@@ -194,7 +211,7 @@ void Slice::tryFreeDiskCacheBuffer() {
     free(disk_cache_buffer_);
     disk_cache_buffer_ = nullptr;
     disk_cache_size_ = 0L;
-    disk_cache_capacity_ = 0L;
+    disk_cache_capacity_.store(0L);
   }
 }
 

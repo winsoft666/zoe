@@ -38,14 +38,23 @@ SliceManager::~SliceManager() {
   target_file_.reset();
 }
 
-std::shared_ptr<Slice> SliceManager::fetchUsefulSlice() {
+std::shared_ptr<Slice> SliceManager::fetchUsefulSlice(bool remove_completed_slice, void* mult) {
+  std::shared_ptr<Slice> ret_slice;
   for (auto& s : slices_) {
-    if (!s->isCompleted() && s->status() == Slice::Status::UNFETCH) {
-      s->setFetched();
-      return s;
+    if (s->isCompleted()) {
+      if (remove_completed_slice && mult)
+        s->stop(mult);
+    }
+    else {
+      if (!ret_slice && s->status() == Slice::Status::UNFETCH) {
+        ret_slice = s;
+        ret_slice->setFetched();
+        if (remove_completed_slice && mult)
+          break;
+      }
     }
   }
-  return nullptr;
+  return ret_slice;
 }
 
 const Options* SliceManager::options() {
@@ -133,6 +142,7 @@ std::shared_ptr<TargetFile> SliceManager::targetFile() {
 
 Result SliceManager::tryMakeSlices() {
   if (slices_.size() > 0) {
+    dumpSlice();
     return SUCCESSED;
   }
 
@@ -142,20 +152,52 @@ Result SliceManager::tryMakeSlices() {
       return CREATE_TARGET_FILE_FAILED;
   }
 
-  int64_t cur_begin = 0L;
-  int64_t cur_end = 0L;
-  int32_t slice_index = 0;
-  do {
-    cur_end = std::min(cur_begin + options_->fixed_slice_size, origin_file_size_ - 1);
-    std::shared_ptr<Slice> slice =
-        std::make_shared<Slice>(slice_index++, cur_begin, cur_end, 0L, shared_from_this());
+  assert(origin_file_size_ > 0 || origin_file_size_ == -1);
+
+  if (origin_file_size_ == -1) {
+    std::shared_ptr<Slice> slice = std::make_shared<Slice>(0, 0, -1, 0L, shared_from_this());
     slices_.push_back(slice);
-    cur_begin = cur_end;
+  }
+  else {
+    int64_t slice_size = 0L;
+    int64_t cur_begin = 0L;
+    int64_t cur_end = 0L;
+    int32_t slice_index = 0;
 
-    if (cur_end >= origin_file_size_ - 1)
-      break;
-  } while (true);
+    if (options_->slice_policy == FixedSize) {
+      slice_size = options_->slice_policy_value;
+    }
+    else if (options_->slice_policy == FixedNum) {
+      slice_size = origin_file_size_ / options_->slice_policy_value;
+    }
+    else if (options_->slice_policy == Auto) {
+      if (origin_file_size_ <= TEEMO_DEFAULT_FIXED_SLICE_SIZE_BYTE * 1.5f) {
+        slice_size = origin_file_size_;
+      }
+      else {
+        slice_size = TEEMO_DEFAULT_FIXED_SLICE_SIZE_BYTE;
+      }
+    }
 
+    do {
+      cur_end = std::min(cur_begin + slice_size, origin_file_size_ - 1);
+      std::shared_ptr<Slice> slice =
+          std::make_shared<Slice>(slice_index++, cur_begin, cur_end, 0L, shared_from_this());
+      slices_.push_back(slice);
+
+      // last slice contains all of remainder space.
+      //
+      if (options_->slice_policy == FixedNum && slice_index == options_->slice_policy_value) {
+        cur_end = origin_file_size_ - 1;
+      }
+
+      cur_begin = cur_end;
+      if (cur_end >= origin_file_size_ - 1)
+        break;
+    } while (true);
+  }
+
+  dumpSlice();
   return SUCCESSED;
 }
 
@@ -185,6 +227,10 @@ Result SliceManager::finishDownload() {
 
   if (ret != SUCCESSED)
     return ret;
+
+  // Can not fetch file size, we don't know if the file is actually download completed.
+  if (origin_file_size_ == -1) {
+  }
 
   if (isAllSliceCompleted()) {
     FileUtil::RemoveFile(index_file_path_);
@@ -240,4 +286,18 @@ utf8string SliceManager::makeIndexFilePath() const {
   utf8string target_filename = FileUtil::GetFileName(options_->target_file_path);
   return FileUtil::AppendFileName(target_dir, target_filename + ".efdindex");
 }
+
+void SliceManager::dumpSlice() {
+  if (options_->verbose_functor) {
+    std::stringstream ss;
+    int32_t s_index = 0;
+    for (auto& s : slices_) {
+      ss << "[" << s_index++ << "] " << s->begin() << "~" << s->end() << ", Disk: " << s->capacity()
+         << ", Buffer: " << s->diskCacheCapacity() << "\r\n";
+    }
+
+    options_->verbose_functor(ss.str());
+  }
+}
+
 }  // namespace teemo

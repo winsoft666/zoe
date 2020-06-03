@@ -16,6 +16,7 @@
 #include <string.h>
 #include <sstream>
 #include <chrono>
+#include <algorithm>
 #include <iomanip>
 #include "teemo/teemo.h"
 #include "../md5.h"
@@ -69,7 +70,7 @@ BOOL WINAPI ControlSignalHandler(DWORD fdwCtrlType) {
 #else
 
 void ControlSignalHandler(int s) {
-  efd.Stop(true);
+  efd.stop();
 }
 #endif
 

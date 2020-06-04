@@ -22,6 +22,10 @@
 #include "curl/curl.h"
 #include "curl_utils.h"
 #include "options.h"
+#include "md5.h"
+#include "crc32.h"
+#include "sha1.h"
+#include "sha256.h"
 
 using json = nlohmann::json;
 
@@ -29,6 +33,24 @@ using json = nlohmann::json;
 #define TMP_FILE_EXTENSION ".teemo"
 
 namespace teemo {
+
+namespace {
+inline char EasyCharToLowerA(char in) {
+  if (in <= 'Z' && in >= 'A')
+    return in - ('Z' - 'z');
+  return in;
+}
+
+template <typename T, typename Func>
+typename std::enable_if<std::is_same<char, T>::value || std::is_same<wchar_t, T>::value,
+                        std::basic_string<T, std::char_traits<T>, std::allocator<T>>>::type
+StringCaseConvert(const std::basic_string<T, std::char_traits<T>, std::allocator<T>>& str,
+                  Func func) {
+  std::basic_string<T, std::char_traits<T>, std::allocator<T>> ret = str;
+  std::transform(ret.begin(), ret.end(), ret.begin(), func);
+  return ret;
+}
+}  // namespace
 SliceManager::SliceManager(Options* options) : options_(options), origin_file_size_(0L) {
   index_file_path_ = makeIndexFilePath();
   target_file_ = std::make_shared<TargetFile>();
@@ -219,30 +241,68 @@ bool SliceManager::isAllSliceCompleted() const {
 
 Result SliceManager::finishDownload() {
   Result ret = SUCCESSED;
-  for (auto& s : slices_) {
-    if (!s->flushToDisk())
-      ret = FLUSH_TMP_FILE_FAILED;
-  }
-  target_file_->Close();
 
-  if (ret != SUCCESSED)
-    return ret;
+  do {
+    Result flush_ret = SUCCESSED;
+    for (auto& s : slices_) {
+      if (!s->flushToDisk())
+        flush_ret = FLUSH_TMP_FILE_FAILED;
+    }
+    target_file_->Close();
 
-  // Can not fetch file size, we don't know if the file is actually download completed.
-  if (origin_file_size_ == -1) {
-  }
+    if (flush_ret != SUCCESSED) {
+      ret = flush_ret;
+      break;
+    }
 
-  if (isAllSliceCompleted()) {
-    FileUtil::RemoveFile(index_file_path_);
-    if (!FileUtil::RenameFile(tmp_file_path_, options_->target_file_path, true))
-      return RENAME_TMP_FILE_FAILED;
-    return SUCCESSED;
+    // Can not fetch file size, we don't know if the file is actually download completed.
+    if (origin_file_size_ == -1) {
+      if (options_->hash_value.length() > 0) {
+        utf8string str_hash = StringCaseConvert(calculateTmpFileHash(), EasyCharToLowerA);
+
+        if (str_hash != StringCaseConvert(options_->hash_value, EasyCharToLowerA)) {
+          ret = HASH_VERIFY_NOT_PASS;
+          break;
+        }
+      }
+
+      ret = SUCCESSED;
+      break;
+    }
+
+    if (isAllSliceCompleted()) {
+      if (options_->hash_value.length() > 0 && options_->hash_verify_policy == ALWAYS) {
+        utf8string str_hash = StringCaseConvert(calculateTmpFileHash(), EasyCharToLowerA);
+        if (str_hash != StringCaseConvert(options_->hash_value, EasyCharToLowerA)) {
+          ret = HASH_VERIFY_NOT_PASS;
+          break;
+        }
+      }
+
+      if (!FileUtil::RenameFile(tmp_file_path_, options_->target_file_path, true)) {
+        ret = RENAME_TMP_FILE_FAILED;
+        break;
+      }
+
+      ret = SUCCESSED;
+      break;
+    }
+
+    ret = SLICE_DOWNLOAD_FAILED;
+  } while (false);
+
+  if (ret == SUCCESSED) {
+    if (!FileUtil::RemoveFile(index_file_path_)) {
+      if (options_->verbose_functor)
+        options_->verbose_functor("\r\nremove index file failed\r\n");
+    }
   }
   else {
     if (!flushIndexFile())
-      return UPDATE_INDEX_FILE_FAILED;
+      ret = UPDATE_INDEX_FILE_FAILED;
   }
-  return SLICE_DOWNLOAD_FAILED;
+
+  return ret;
 }
 
 int32_t SliceManager::usefulSliceNum() const {
@@ -285,6 +345,24 @@ utf8string SliceManager::makeIndexFilePath() const {
   utf8string target_dir = FileUtil::GetDirectory(options_->target_file_path);
   utf8string target_filename = FileUtil::GetFileName(options_->target_file_path);
   return FileUtil::AppendFileName(target_dir, target_filename + ".efdindex");
+}
+
+utf8string SliceManager::calculateTmpFileHash() {
+  utf8string str_hash;
+
+  if (options_->hash_type == MD5) {
+    str_hash = CalculateFileMd5(tmp_file_path_);
+  }
+  else if (options_->hash_type == CRC32) {
+    str_hash = CalculateFileCRC32(tmp_file_path_);
+  }
+  else if (options_->hash_type == SHA1) {
+    str_hash = CalculateFileSHA1(tmp_file_path_);
+  }
+  else if (options_->hash_type == SHA256) {
+    str_hash = CalculateFileSHA256(tmp_file_path_);
+  }
+  return str_hash;
 }
 
 void SliceManager::dumpSlice() {

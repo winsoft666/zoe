@@ -1,6 +1,4 @@
 #include <future>
-
-#include "../md5.h"
 #include "gtest/gtest.h"
 #include "teemo/teemo.h"
 #include "test_data.h"
@@ -16,6 +14,7 @@ void DoTest(std::vector<TestData> test_datas, int thread_num, int32_t disk_cache
       efd.setThreadNum(thread_num);
 
     efd.setDiskCacheSize(disk_cache);
+    efd.setHashVerifyPolicy(ALWAYS, MD5, test_data.md5);
 
     Result ret =
         efd.start(
@@ -23,11 +22,6 @@ void DoTest(std::vector<TestData> test_datas, int thread_num, int32_t disk_cache
                [test_data](Result result) {
                  printf("\nResult: %s\n", GetResultString(result));
                  EXPECT_TRUE(result == SUCCESSED || result == CANCELED);
-                 if (result == Result::SUCCESSED) {
-                   if (test_data.md5.length()) {
-                     EXPECT_TRUE(test_data.md5 == base::GetFileMd5(test_data.target_file_path));
-                   }
-                 }
                },
                [](int64_t total, int64_t downloaded) {
                  if (total > 0)

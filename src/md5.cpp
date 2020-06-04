@@ -1,10 +1,8 @@
 ﻿#include "md5.h"
 #include <memory.h>
-#if defined(WIN32) || defined(_WIN32) || defined(__WIN32__) || defined(__NT__)
-#include <windows.h>
-#endif
+#include "file_util.h"
 
-namespace base {
+namespace teemo {
 namespace libmd5_internal {
 /*
  * This code implements the MD5 message-digest algorithm.
@@ -301,39 +299,10 @@ void MD5SigToString(unsigned char signature[16], char *str, int len) {
 }
 } // namespace libmd5_internal
 
-#if defined(WIN32) || defined(_WIN32) || defined(__WIN32__) || defined(__NT__)
 
-static std::wstring Utf8ToUnicode(const std::string &str) {
-  std::wstring strRes;
-  int iSize = ::MultiByteToWideChar(CP_UTF8, 0, str.c_str(), -1, NULL, 0);
 
-  if (iSize == 0)
-    return strRes;
-
-  wchar_t *szBuf = new (std::nothrow) wchar_t[iSize];
-
-  if (!szBuf)
-    return strRes;
-
-  memset(szBuf, 0, iSize * sizeof(wchar_t));
-  ::MultiByteToWideChar(CP_UTF8, 0, str.c_str(), -1, szBuf, iSize);
-
-  strRes = szBuf;
-  delete[] szBuf;
-
-  return strRes;
-}
-#endif
-
-std::string GetFileMd5(const std::string &file_path) {
-  FILE *f = nullptr;
-#if defined(WIN32) || defined(_WIN32) || defined(__WIN32__) || defined(__NT__)
-  std::wstring unicode_file_path = Utf8ToUnicode(file_path);
-  f = _wfopen(unicode_file_path.c_str(), L"rb");
-#else
-  f = fopen(file_path.c_str(), "rb");
-#endif
-
+utf8string CalculateFileMd5(const utf8string &file_path) {
+  FILE *f = FileUtil::OpenFile(file_path, "rb");
   if (!f)
     return "";
 
@@ -354,6 +323,6 @@ std::string GetFileMd5(const std::string &file_path) {
   libmd5_internal::MD5Final(szMd5Sig, &md5Context);
   libmd5_internal::MD5SigToString(szMd5Sig, szMd5, 33);
 
-  return szMd5;
+  return utf8string(szMd5);
 }
-} // namespace base
+} // namespace teemo

@@ -34,7 +34,7 @@ if (NOT BUILD_SHARED_LIBS)
 	add_definitions(-DTEEMO_STATIC)
 endif()
 
-file(GLOB SOURCE_FILES 			./*.cpp ../md5.h ../md5.cpp)
+file(GLOB SOURCE_FILES 			./*.cpp)
 
 add_executable(
 	${EXE_NAME}

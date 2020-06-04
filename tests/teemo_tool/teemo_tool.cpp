@@ -19,7 +19,6 @@
 #include <algorithm>
 #include <iomanip>
 #include "teemo/teemo.h"
-#include "../md5.h"
 #include <mutex>
 #if defined(WIN32) || defined(_WIN32) || defined(__WIN32__) || defined(__NT__)
 #include <windows.h>
@@ -99,14 +98,16 @@ int main(int argc, char** argv) {
 
   char* url = argv[1];
   char* target_file_path = argv[2];
-  char* md5 = nullptr;
 
   if (argc >= 4)
     efd.setThreadNum(atoi(argv[3]));
   if (argc >= 5)
     efd.setDiskCacheSize(atoi(argv[4]) * 1024 * 1024);
-  if (argc >= 6)
-    md5 = argv[5];
+  if (argc >= 6) {
+    if (strlen(argv[5]) > 0) {
+      efd.setHashVerifyPolicy(ALWAYS, MD5, argv[5]);
+    }
+  }
   if (argc >= 7)
     efd.setTmpFileExpiredTime(atoi(argv[6]));
   if (argc >= 8)
@@ -133,16 +134,6 @@ int main(int argc, char** argv) {
 
         end_time = std::chrono::high_resolution_clock::now();
         if (result == Result::SUCCESSED) {
-          if (md5) {
-            std::string low_md5 = StringCaseConvert(std::string(md5), EasyCharToLowerA);
-            if (strcmp(low_md5.c_str(), base::GetFileMd5(target_file_path).c_str()) == 0) {
-              std::cout << "MD5 checksum successful." << std::endl;
-            }
-            else {
-              exit_code = -1;
-              std::cout << "MD5 checksum failed." << std::endl;
-            }
-          }
         }
       },
       [](int64_t total, int64_t downloaded) { PrintConsole(total, downloaded, -1); },

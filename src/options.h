@@ -38,6 +38,10 @@ typedef struct _Options {
   SlicePolicy slice_policy;
   int64_t slice_policy_value;
 
+  HashVerifyPolicy hash_verify_policy;
+  HashType hash_type;
+  utf8string hash_value;
+
   ResultFunctor result_functor;
   ProgressFunctor progress_functor;
   RealtimeSpeedFunctor speed_functor;
@@ -56,6 +60,9 @@ typedef struct _Options {
 
     slice_policy = Auto;
     slice_policy_value = 0L;
+
+    hash_verify_policy = ALWAYS;
+    hash_type = MD5;
 
     max_speed = -1;
     tmp_file_expired_time = -1;

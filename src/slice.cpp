@@ -38,7 +38,7 @@ Slice::Slice(int32_t index,
   capacity_.store(init_capacity);
   disk_cache_capacity_.store(0L);
 
-  assert(end_ == -1 || (end_ >= begin_ + capacity_.load()));
+  assert(end_ == -1 || (end_ + 1 >= begin_ + capacity_.load()));
 }
 
 Slice::~Slice() {

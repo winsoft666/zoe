@@ -45,6 +45,7 @@ enum Result {
   INVALID_INDEX_FORMAT,
   INVALID_TARGET_FILE_PATH,
   INVALID_THREAD_NUM,
+  INVALID_HASH_POLICY,
   INVALID_SLICE_POLICY,
   INVALID_NETWORK_CONN_TIMEOUT,
   INVALID_NETWORK_READ_TIMEOUT,
@@ -66,22 +67,17 @@ enum Result {
   TMP_FILE_CANNOT_RW,
   FLUSH_TMP_FILE_FAILED,
   UPDATE_INDEX_FILE_FAILED,
-  SLICE_DOWNLOAD_FAILED
+  SLICE_DOWNLOAD_FAILED,
+  HASH_VERIFY_NOT_PASS,
 };
 
 TEEMO_API const char* GetResultString(int enumVal);
 
-enum SlicePolicy {
-  Auto = 0,
-  FixedSize,
-  FixedNum
-};
+enum SlicePolicy { Auto = 0, FixedSize, FixedNum };
 
-enum HashType {
-  MD5 = 0,
-  SHA1,
-  SHA256
-};
+enum HashType { MD5 = 0, CRC32, SHA1, SHA256 };
+
+enum HashVerifyPolicy { ALWAYS = 0, ONLY_NO_FILESIZE };
 
 class TEEMO_API Event {
  public:
@@ -124,14 +120,12 @@ class TEEMO_API Teemo {
   Result setThreadNum(int32_t thread_num) noexcept;
   int32_t threadNum() const noexcept;
 
-
-  // Pass an int. It should contain the maximum time in milliseconds that you allow the connection phase to the server to take. 
-  // This only limits the connection phase, it has no impact once it has connected. 
+  // Pass an int. It should contain the maximum time in milliseconds that you allow the connection phase to the server to take.
+  // This only limits the connection phase, it has no impact once it has connected.
   // Set to 0 or negative to switch to the default built-in connection timeout - 3000 milliseconds.
   //
   Result setNetworkConnectionTimeout(int32_t milliseconds) noexcept;  // milliseconds
   int32_t networkConnectionTimeout() const noexcept;                  // milliseconds
-
 
   // Pass an int specifying the retry times when request file information(such as file size) failed.
   // Set to 0 or negative to switch to the default built-in retry times - 1.
@@ -139,14 +133,12 @@ class TEEMO_API Teemo {
   Result setFetchFileInfoRetryTimes(int32_t retry_times) noexcept;
   int32_t fetchFileInfoRetryTimes() const noexcept;
 
-
   // Pass an int as parameter.
   // If the interval seconds that from the saved time of temporary file to present greater than or equal to this parameter, the temporary file will be discarded.
   // Default to -1, never expired.
   //
   Result setTmpFileExpiredTime(int32_t seconds) noexcept;  // seconds
   int32_t tmpFileExpiredTime() const noexcept;             // seconds
-
 
   // Pass an int as parameter.
   // If a download exceeds this speed (counted in bytes per second) the transfer will pause to keep the speed less than or equal to the parameter value.
@@ -169,15 +161,28 @@ class TEEMO_API Teemo {
   Result setStopEvent(Event* stop_event) noexcept;
   Event* stopEvent() noexcept;
 
-  // Set true, teemo will not check whether the url passed by *start* is the same as in the index file, 
+  // Set true, teemo will not check whether the url passed by *start* is the same as in the index file,
   // and in this case, if the url passed by *start* is empty, teemo will use the url in index file.
   // Default to false, if the url passed by *start* is different from the url in the index file, teemo will return URL_DIFFERENT error.
   //
   Result setSkippingUrlCheck(bool skip) noexcept;
   bool skippingUrlCheck() const noexcept;
 
+  // Set slice policy, tell teemo how to calculate each slice size.
+  // Default: fixed to 10485760 bytes(10MB)
+  //
   Result setSlicePolicy(SlicePolicy policy, int64_t policy_value) noexcept;
   void slicePolicy(SlicePolicy& policy, int64_t& policy_value) const noexcept;
+
+  // Set hash verify policy, the hash value is the whole file's hash, not for a slice.
+  // If fetch file size failed, hash verify is the only way to know whether file download completed.
+  // If hash value is empty, will not calculate hash, nor verify hash value.
+  //
+  Result setHashVerifyPolicy(HashVerifyPolicy policy,
+                             HashType hash_type,
+                             const utf8string& hash_value) noexcept;
+  void hashVerifyPolicy(HashVerifyPolicy& policy, HashType& hash_type, utf8string& hash_value) const
+      noexcept;
 
   // Start to download.
   // Supported url protocol is the same as libcurl.

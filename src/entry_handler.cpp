@@ -219,6 +219,7 @@ Result EntryHandler::_asyncTaskProcess() {
     if (still_running < options_->thread_num) {
       // Get a slice that not started
       // Implied: flush the disk cache buffer of completed slice, then free buffer.
+      //
       std::shared_ptr<Slice> slice = slice_manager_->fetchUsefulSlice(true, multi_);
       if (slice) {
         int32_t disk_cache_per_slice = 0L;
@@ -239,10 +240,10 @@ Result EntryHandler::_asyncTaskProcess() {
   slice_manager_.reset();
 
   if (ret == SUCCESSED)
-    return SUCCESSED;
+    return ret;
 
   if (user_stop_.load() || (options_->user_stop_event && options_->user_stop_event->isSetted()))
-    return CANCELED;
+    ret = CANCELED; // user cancel, ignore other failed reason
 
   return ret;
 }

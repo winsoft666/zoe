@@ -28,6 +28,7 @@ const char* GetResultString(int enumVal) {
                                       u8"INVALID_INDEX_FORMAT",
                                       u8"INVALID_TARGET_FILE_PATH",
                                       u8"INVALID_THREAD_NUM",
+                                      u8"INVALID_HASH_POLICY",
                                       u8"INVALID_SLICE_POLICY",
                                       u8"INVALID_NETWORK_CONN_TIMEOUT",
                                       u8"INVALID_NETWORK_READ_TIMEOUT",
@@ -49,7 +50,9 @@ const char* GetResultString(int enumVal) {
                                       u8"TMP_FILE_CANNOT_RW",
                                       u8"FLUSH_TMP_FILE_FAILED",
                                       u8"UPDATE_INDEX_FILE_FAILED",
-                                      u8"SLICE_DOWNLOAD_FAILED"};
+                                      u8"SLICE_DOWNLOAD_FAILED",
+                                      u8"HASH_VERIFY_NOT_PASS"
+  };
   return EnumStrings[enumVal];
 }
 
@@ -249,6 +252,29 @@ void Teemo::slicePolicy(SlicePolicy& policy, int64_t& policy_value) const noexce
   assert(impl_);
   policy = impl_->options_.slice_policy;
   policy_value = impl_->options_.slice_policy_value;
+}
+
+Result Teemo::setHashVerifyPolicy(HashVerifyPolicy policy,
+                                  HashType hash_type,
+                                  const utf8string& hash_value) noexcept {
+  assert(impl_);
+  if (impl_->isDownloading())
+    return ALREADY_DOWNLOADING;
+
+  impl_->options_.hash_verify_policy = policy;
+  impl_->options_.hash_type = hash_type;
+  impl_->options_.hash_value = hash_value;
+
+  return SUCCESSED;
+}
+
+void Teemo::hashVerifyPolicy(HashVerifyPolicy& policy,
+                             HashType& hash_type,
+                             utf8string& hash_value) const noexcept {
+  assert(impl_);
+  policy = impl_->options_.hash_verify_policy;
+  hash_type = impl_->options_.hash_type;
+  hash_value = impl_->options_.hash_value;
 }
 
 std::shared_future<Result> Teemo::start(const utf8string& url,

@@ -23,6 +23,8 @@
 #include "teemo/teemo.h"
 
 namespace teemo {
+typedef struct _Options Options;
+
 namespace sha256_internal {
 #define SHA256_DIGEST_SIZE 32
 #define SHA256_DATA_SIZE 64
@@ -48,7 +50,7 @@ void sha256_digest(const struct sha256_ctx* ctx, unsigned char* digest);
 std::string sha256_digest(const struct sha256_ctx* ctx);
 }  // namespace sha256_internal
 
-utf8string CalculateFileSHA256(const utf8string& file_path);
+Result CalculateFileSHA256(const utf8string& file_path, Options* opt, utf8string& str_hash);
 }  // namespace teemo
 
 #endif

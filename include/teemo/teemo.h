@@ -69,6 +69,7 @@ enum Result {
   UPDATE_INDEX_FILE_FAILED,
   SLICE_DOWNLOAD_FAILED,
   HASH_VERIFY_NOT_PASS,
+  CALCULATE_HASH_FAILED
 };
 
 TEEMO_API const char* GetResultString(int enumVal);

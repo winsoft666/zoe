@@ -56,7 +56,7 @@ class SliceManager : public std::enable_shared_from_this<SliceManager> {
 
  protected:
   utf8string makeIndexFilePath() const;
-  utf8string calculateTmpFileHash();
+  Result calculateTmpFileHash(utf8string& str_hash);
   void dumpSlice();
  protected:
   Options* options_;

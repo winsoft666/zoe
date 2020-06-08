@@ -258,8 +258,13 @@ Result SliceManager::finishDownload() {
     // Can not fetch file size, we don't know if the file is actually download completed.
     if (origin_file_size_ == -1) {
       if (options_->hash_value.length() > 0) {
-        utf8string str_hash = StringCaseConvert(calculateTmpFileHash(), EasyCharToLowerA);
+        utf8string str_hash;
+        ret = calculateTmpFileHash(str_hash);
+        if (ret != SUCCESSED) {
+          break;
+        }
 
+        str_hash = StringCaseConvert(str_hash, EasyCharToLowerA);
         if (str_hash != StringCaseConvert(options_->hash_value, EasyCharToLowerA)) {
           ret = HASH_VERIFY_NOT_PASS;
           break;
@@ -272,7 +277,13 @@ Result SliceManager::finishDownload() {
 
     if (isAllSliceCompleted()) {
       if (options_->hash_value.length() > 0 && options_->hash_verify_policy == ALWAYS) {
-        utf8string str_hash = StringCaseConvert(calculateTmpFileHash(), EasyCharToLowerA);
+        utf8string str_hash;
+        ret = calculateTmpFileHash(str_hash);
+        if (ret != SUCCESSED) {
+          break;
+        }
+
+        str_hash = StringCaseConvert(str_hash, EasyCharToLowerA);
         if (str_hash != StringCaseConvert(options_->hash_value, EasyCharToLowerA)) {
           ret = HASH_VERIFY_NOT_PASS;
           break;
@@ -347,22 +358,21 @@ utf8string SliceManager::makeIndexFilePath() const {
   return FileUtil::AppendFileName(target_dir, target_filename + ".efdindex");
 }
 
-utf8string SliceManager::calculateTmpFileHash() {
-  utf8string str_hash;
-
+Result SliceManager::calculateTmpFileHash(utf8string &str_hash) {
+  Result ret = CALCULATE_HASH_FAILED;
   if (options_->hash_type == MD5) {
-    str_hash = CalculateFileMd5(tmp_file_path_);
+    ret = CalculateFileMd5(tmp_file_path_, options_, str_hash);
   }
   else if (options_->hash_type == CRC32) {
-    str_hash = CalculateFileCRC32(tmp_file_path_);
+    ret = CalculateFileCRC32(tmp_file_path_, options_, str_hash);
   }
   else if (options_->hash_type == SHA1) {
-    str_hash = CalculateFileSHA1(tmp_file_path_);
+    ret = CalculateFileSHA1(tmp_file_path_, options_, str_hash);
   }
   else if (options_->hash_type == SHA256) {
-    str_hash = CalculateFileSHA256(tmp_file_path_);
+    ret = CalculateFileSHA256(tmp_file_path_, options_, str_hash);
   }
-  return str_hash;
+  return ret;
 }
 
 void SliceManager::dumpSlice() {

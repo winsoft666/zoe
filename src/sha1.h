@@ -9,7 +9,7 @@
 
 namespace teemo {
 
-#define MAX_FILE_READ_BUFFER 8000
+typedef struct _Options Options;
 
 class CSHA1 {
  public:
@@ -35,7 +35,7 @@ class CSHA1 {
   void Transform(uint32_t state[5], unsigned char buffer[64]);
 };
 
-utf8string CalculateFileSHA1(const utf8string& file_path);
+Result CalculateFileSHA1(const utf8string& file_path, Options* opt, utf8string& str_hash);
 }  // namespace teemo
 
 #endif

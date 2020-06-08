@@ -2,6 +2,7 @@
 #include <stdio.h>
 #include <string.h>
 #include "file_util.h"
+#include "options.h"
 
 namespace teemo {
 namespace sha256_internal {
@@ -261,17 +262,17 @@ std::string sha256_digest(const struct sha256_ctx* ctx) {
   std::string strSHA256;
   for (int p = 0; p < 32; p++) {
     char buf[10] = {0};
-    snprintf(buf, sizeof(buf), "%02X", digest[p]);
+    snprintf(buf, sizeof(buf), "%02x", digest[p]);
     strSHA256.append(std::string(buf));
   }
   return strSHA256;
 }
 }  // namespace sha256_internal
 
-utf8string CalculateFileSHA256(const utf8string& file_path) {
+Result CalculateFileSHA256(const utf8string& file_path, Options* opt, utf8string& str_hash) {
   FILE* f = FileUtil::OpenFile(file_path, "rb");
   if (!f)
-    return "";
+    return CALCULATE_HASH_FAILED;
 
   sha256_internal::SHA256_CTX sha256Ctx;
   sha256_internal::sha256_init(&sha256Ctx);
@@ -280,15 +281,19 @@ utf8string CalculateFileSHA256(const utf8string& file_path) {
   unsigned char szData[1024] = {0};
 
   while ((dwReadBytes = fread(szData, 1, 1024, f)) > 0) {
+    if (opt && (opt->internal_stop_event.isSetted() || opt->user_stop_event->isSetted())) {
+      fclose(f);
+      return CANCELED;
+    }
     sha256_internal::sha256_update(&sha256Ctx, szData, dwReadBytes);
   }
   fclose(f);
 
   sha256_internal::sha256_final(&sha256Ctx);
 
-  std::string strSHA256 = sha256_internal::sha256_digest(&sha256Ctx);
+  str_hash = sha256_internal::sha256_digest(&sha256Ctx);
 
-  return strSHA256;
+  return SUCCESSED;
 }
 
 }  // namespace teemo

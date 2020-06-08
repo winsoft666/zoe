@@ -5,6 +5,8 @@
 #include "teemo/teemo.h"
 
 namespace teemo {
+typedef struct _Options Options;
+
 namespace libmd5_internal {
 typedef unsigned int UWORD32;
 typedef unsigned char md5byte;
@@ -23,7 +25,7 @@ void MD5SigToString(unsigned char sig[16], char* str, int len);
 }  // namespace libmd5_internal
 
 // Helper function.
-utf8string CalculateFileMd5(const utf8string& file_path);
+Result CalculateFileMd5(const utf8string& file_path, Options* opt, utf8string& str_hash);
 }  // namespace teemo
 
 #endif

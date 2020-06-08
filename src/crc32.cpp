@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <stdint.h>
 #include "file_util.h"
+#include "options.h"
 
 namespace teemo {
 namespace crc32_internal {
@@ -63,10 +64,10 @@ void crc32Finish(uint32_t* pCrc32) {
 }
 }  // namespace crc32_internal
 
-utf8string CalculateFileCRC32(const utf8string& file_path) {
+Result CalculateFileCRC32(const utf8string& file_path, Options* opt, utf8string& str_hash) {
   FILE* f = FileUtil::OpenFile(file_path, "rb");
   if (!f)
-    return "";
+    return CALCULATE_HASH_FAILED;
 
   uint32_t ulCRC32 = 0;
   crc32_internal::crc32Init(&ulCRC32);
@@ -75,6 +76,10 @@ utf8string CalculateFileCRC32(const utf8string& file_path) {
   unsigned char szData[1024] = {0};
 
   while ((dwReadBytes = fread(szData, 1, 1024, f)) > 0) {
+    if (opt && (opt->internal_stop_event.isSetted() || opt->user_stop_event->isSetted())) {
+      fclose(f);
+      return CANCELED;
+    }
     crc32_internal::crc32Update(&ulCRC32, szData, dwReadBytes);
   }
   fclose(f);
@@ -82,8 +87,8 @@ utf8string CalculateFileCRC32(const utf8string& file_path) {
   crc32_internal::crc32Finish(&ulCRC32);
 
   char szCRC[10] = {0};
-  snprintf(szCRC, sizeof(szCRC), "%08X", ulCRC32);
-
-  return utf8string(szCRC);
+  snprintf(szCRC, sizeof(szCRC), "%08x", ulCRC32);
+  str_hash = szCRC;
+  return SUCCESSED;
 }
 }  // namespace teemo

@@ -19,12 +19,13 @@
 #include "teemo/teemo.h"
 
 namespace teemo {
-  namespace crc32_internal {
-    void crc32Init(uint32_t *pCrc32);
-    void crc32Update(uint32_t *pCrc32, unsigned char *pData, uint32_t uSize);
-    void crc32Finish(uint32_t *pCrc32);
-  }
+typedef struct _Options Options;
+namespace crc32_internal {
+void crc32Init(uint32_t* pCrc32);
+void crc32Update(uint32_t* pCrc32, unsigned char* pData, uint32_t uSize);
+void crc32Finish(uint32_t* pCrc32);
+}  // namespace crc32_internal
 
-  utf8string CalculateFileCRC32(const utf8string &file_path);
-}
+Result CalculateFileCRC32(const utf8string& file_path, Options* opt, utf8string &str_hash);
+}  // namespace teemo
 #endif /* ___CRC32_H___ */

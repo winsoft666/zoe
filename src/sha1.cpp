@@ -3,6 +3,7 @@
 #include <stdio.h>
 #include <string.h>
 #include "file_util.h"
+#include "options.h"
 
 namespace teemo {
 
@@ -244,6 +245,7 @@ void CSHA1::Update(unsigned char* data, unsigned int len) {
 
 // Hash in file contents
 bool CSHA1::HashFile(char* szFileName) {
+#define MAX_FILE_READ_BUFFER 8000
   uint32_t ulFileSize = 0, ulRest = 0, ulBlocks = 0;
   uint32_t i = 0;
   unsigned char uData[MAX_FILE_READ_BUFFER];
@@ -310,10 +312,10 @@ void CSHA1::ReportHash(char* szReport, unsigned char uReportType) {
   unsigned char i = 0;
 
   if (uReportType == REPORT_HEX) {
-    sprintf(szReport, "%02X", m_digest[0]);
+    sprintf(szReport, "%02x", m_digest[0]);
 
     for (i = 1; i < 20; i++)
-      sprintf(szReport, "%s%02X", szReport, m_digest[i]);
+      sprintf(szReport, "%s%02x", szReport, m_digest[i]);
   }
   else if (uReportType == REPORT_DIGIT) {
     sprintf(szReport, "%u", m_digest[0]);
@@ -322,8 +324,6 @@ void CSHA1::ReportHash(char* szReport, unsigned char uReportType) {
       sprintf(szReport, "%s%u", szReport, m_digest[i]);
     }
   }
-  else
-    sprintf(szReport, "Error: Unknown report type!");
 }
 
 // Get the raw message digest
@@ -334,10 +334,10 @@ void CSHA1::GetHash(unsigned char* uDest) {
     uDest[i] = m_digest[i];
 }
 
-utf8string CalculateFileSHA1(const utf8string& file_path) {
+Result CalculateFileSHA1(const utf8string& file_path, Options* opt, utf8string& str_hash) {
   FILE* f = FileUtil::OpenFile(file_path, "rb");
   if (!f)
-    return "";
+    return CALCULATE_HASH_FAILED;
 
   CSHA1 sha1;
   sha1.Reset();
@@ -346,6 +346,10 @@ utf8string CalculateFileSHA1(const utf8string& file_path) {
   unsigned char szData[1024] = {0};
 
   while ((dwReadBytes = fread(szData, 1, 1024, f)) > 0) {
+    if (opt && (opt->internal_stop_event.isSetted() || opt->user_stop_event->isSetted())) {
+      fclose(f);
+      return CANCELED;
+    }
     sha1.Update(szData, dwReadBytes);
   }
   fclose(f);
@@ -355,7 +359,9 @@ utf8string CalculateFileSHA1(const utf8string& file_path) {
   char szSHA1[256] = {0};
   sha1.ReportHash(szSHA1, CSHA1::REPORT_HEX);
 
-  return utf8string(szSHA1);
+  str_hash = szSHA1;
+
+  return SUCCESSED;
 }
 
 }  // namespace teemo

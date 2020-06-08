@@ -1,6 +1,7 @@
 ﻿#include "md5.h"
 #include <memory.h>
 #include "file_util.h"
+#include "options.h"
 
 namespace teemo {
 namespace libmd5_internal {
@@ -35,34 +36,35 @@ void detectEndianess() {
   int nl = 0x12345678;
   short ns = 0x1234;
 
-  unsigned char *p = (unsigned char *)(&nl);
-  unsigned char *sp = (unsigned char *)(&ns);
+  unsigned char* p = (unsigned char*)(&nl);
+  unsigned char* sp = (unsigned char*)(&ns);
 
   if (g_endianessDetected)
     return;
 
   if (p[0] == 0x12 && p[1] == 0x34 && p[2] == 0x56 && p[3] == 0x78) {
     g_bigEndian = 1;
-  } else if (p[0] == 0x78 && p[1] == 0x56 && p[2] == 0x34 && p[3] == 0x12) {
+  }
+  else if (p[0] == 0x78 && p[1] == 0x56 && p[2] == 0x34 && p[3] == 0x12) {
     g_bigEndian = 0;
-  } else {
+  }
+  else {
     g_bigEndian = *sp != 0x12;
   }
 
   g_endianessDetected = 1;
 }
 
-void byteSwap(UWORD32 *buf, unsigned words) {
-  md5byte *p;
+void byteSwap(UWORD32* buf, unsigned words) {
+  md5byte* p;
 
   if (!g_bigEndian)
     return;
 
-  p = (md5byte *)buf;
+  p = (md5byte*)buf;
 
   do {
-    *buf++ = (UWORD32)((unsigned)p[3] << 8 | p[2]) << 16 |
-             ((unsigned)p[1] << 8 | p[0]);
+    *buf++ = (UWORD32)((unsigned)p[3] << 8 | p[2]) << 16 | ((unsigned)p[1] << 8 | p[0]);
     p += 4;
   } while (--words);
 }
@@ -78,8 +80,7 @@ void byteSwap(UWORD32 *buf, unsigned words) {
 #define F4(x, y, z) (y ^ (x | ~z))
 
 /* This is the central step in the MD5 algorithm. */
-#define MD5STEP(f, w, x, y, z, in, s)                                          \
-  (w += f(x, y, z) + in, w = (w << s | w >> (32 - s)) + x)
+#define MD5STEP(f, w, x, y, z, in, s) (w += f(x, y, z) + in, w = (w << s | w >> (32 - s)) + x)
 
 /*
  * The core of the MD5 algorithm, this alters an existing MD5 hash to
@@ -174,7 +175,7 @@ void MD5Transform(UWORD32 buf[4], UWORD32 const in[16]) {
  * Start MD5 accumulation.  Set bit count to 0 and buffer to mysterious
  * initialization constants.
  */
-void MD5Init(struct MD5Context *ctx) {
+void MD5Init(struct MD5Context* ctx) {
   detectEndianess();
 
   ctx->buf[0] = 0x67452301;
@@ -190,7 +191,7 @@ void MD5Init(struct MD5Context *ctx) {
  * Update context to reflect the concatenation of another buffer full
  * of bytes.
  */
-void MD5Update(struct MD5Context *ctx, md5byte const *buf, unsigned len) {
+void MD5Update(struct MD5Context* ctx, md5byte const* buf, unsigned len) {
   UWORD32 t;
 
   /* Update byte count */
@@ -203,12 +204,12 @@ void MD5Update(struct MD5Context *ctx, md5byte const *buf, unsigned len) {
   t = 64 - (t & 0x3f); /* Space available in ctx->in (at least 1) */
 
   if (t > len) {
-    memcpy((md5byte *)ctx->in + 64 - t, buf, len);
+    memcpy((md5byte*)ctx->in + 64 - t, buf, len);
     return;
   }
 
   /* First chunk is an odd size */
-  memcpy((md5byte *)ctx->in + 64 - t, buf, t);
+  memcpy((md5byte*)ctx->in + 64 - t, buf, t);
   byteSwap(ctx->in, 16);
   MD5Transform(ctx->buf, ctx->in);
   buf += t;
@@ -231,9 +232,9 @@ void MD5Update(struct MD5Context *ctx, md5byte const *buf, unsigned len) {
  * Final wrapup - pad to 64-byte boundary with the bit pattern
  * 1 0* (64-bit count of bits processed, MSB-first)
  */
-void MD5Final(md5byte digest[16], struct MD5Context *ctx) {
+void MD5Final(md5byte digest[16], struct MD5Context* ctx) {
   int count = ctx->bytes[0] & 0x3f; /* Number of bytes in ctx->in */
-  md5byte *p = (md5byte *)ctx->in + count;
+  md5byte* p = (md5byte*)ctx->in + count;
 
   /* Set the first char of padding to 0x80.  There is always room. */
   *p++ = 0x80;
@@ -245,7 +246,7 @@ void MD5Final(md5byte digest[16], struct MD5Context *ctx) {
     memset(p, 0, count + 8);
     byteSwap(ctx->in, 16);
     MD5Transform(ctx->buf, ctx->in);
-    p = (md5byte *)ctx->in;
+    p = (md5byte*)ctx->in;
     count = 56;
   }
 
@@ -262,24 +263,22 @@ void MD5Final(md5byte digest[16], struct MD5Context *ctx) {
   memset(ctx, 0, sizeof(*ctx)); /* In case it's sensitive */
 }
 
-void MD5Buffer(const unsigned char *buf, unsigned int len,
-               unsigned char sig[16]) {
+void MD5Buffer(const unsigned char* buf, unsigned int len, unsigned char sig[16]) {
   struct MD5Context md5;
   MD5Init(&md5);
   MD5Update(&md5, buf, len);
   MD5Final(sig, &md5);
 }
 
-void MD5SigToString(unsigned char signature[16], char *str, int len) {
-  unsigned char *sig_p;
+void MD5SigToString(unsigned char signature[16], char* str, int len) {
+  unsigned char* sig_p;
   char *str_p, *max_p;
   unsigned int high, low;
 
   str_p = str;
   max_p = str + len;
 
-  for (sig_p = (unsigned char *)signature;
-       sig_p < (unsigned char *)signature + 16; sig_p++) {
+  for (sig_p = (unsigned char*)signature; sig_p < (unsigned char*)signature + 16; sig_p++) {
     high = *sig_p / 16;
     low = *sig_p % 16;
 
@@ -297,14 +296,12 @@ void MD5SigToString(unsigned char signature[16], char *str, int len) {
     *str_p++ = '\0';
   }
 }
-} // namespace libmd5_internal
+}  // namespace libmd5_internal
 
-
-
-utf8string CalculateFileMd5(const utf8string &file_path) {
-  FILE *f = FileUtil::OpenFile(file_path, "rb");
+Result CalculateFileMd5(const utf8string& file_path, Options* opt, utf8string &str_hash) {
+  FILE* f = FileUtil::OpenFile(file_path, "rb");
   if (!f)
-    return "";
+    return CALCULATE_HASH_FAILED;
 
   unsigned char szMd5Sig[16] = {0};
   char szMd5[33] = {0};
@@ -315,6 +312,10 @@ utf8string CalculateFileMd5(const utf8string &file_path) {
   unsigned char szData[1024] = {0};
 
   while ((dwReadBytes = fread(szData, 1, 1024, f)) > 0) {
+    if (opt && (opt->internal_stop_event.isSetted() || opt->user_stop_event->isSetted())) {
+      fclose(f);
+      return CANCELED;
+    }
     libmd5_internal::MD5Update(&md5Context, szData, dwReadBytes);
   }
 
@@ -323,6 +324,8 @@ utf8string CalculateFileMd5(const utf8string &file_path) {
   libmd5_internal::MD5Final(szMd5Sig, &md5Context);
   libmd5_internal::MD5SigToString(szMd5Sig, szMd5, 33);
 
-  return utf8string(szMd5);
+  str_hash = szMd5;
+
+  return SUCCESSED;
 }
-} // namespace teemo
+}  // namespace teemo

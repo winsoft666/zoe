@@ -198,6 +198,8 @@ class TEEMO_API Teemo {
   //
   void stop() noexcept;
 
+  bool isDownloading() noexcept;
+
   utf8string url() const noexcept;
   utf8string targetFilePath() const noexcept;
 

@@ -316,8 +316,18 @@ std::shared_future<Result> Teemo::start(const utf8string& url,
 }
 
 void Teemo::stop() noexcept {
-  assert(impl_ && impl_->entry_handler_);
-  impl_->entry_handler_->stop();
+  assert(impl_);
+  if (impl_ && impl_->entry_handler_) {
+    impl_->entry_handler_->stop();
+  }
+}
+
+bool Teemo::isDownloading() noexcept {
+  assert(impl_);
+  if (impl_ && impl_->entry_handler_) {
+    return impl_->entry_handler_->isDownloading();
+  }
+  return false;
 }
 
 class Event::EventImpl {

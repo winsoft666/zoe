@@ -196,6 +196,16 @@ Result EntryHandler::_asyncTaskProcess() {
     FD_ZERO(&fdread);
     FD_ZERO(&fdwrite);
     FD_ZERO(&fdexcep);
+    /*
+    If no file descriptors are set by libcurl, max_fd will contain -1 when this function returns. 
+    Otherwise it will contain the highest descriptor number libcurl set. 
+    When libcurl returns -1 in max_fd, it is because libcurl currently does something 
+    that isn't possible for your application to monitor with a socket and unfortunately 
+    you can then not know exactly when the current action is completed using select(). 
+    You then need to wait a while before you proceed and call curl_multi_perform anyway. 
+    How long to wait? Unless curl_multi_timeout gives you a lower number, we suggest 100 milliseconds or so, 
+    but you may want to test it out in your own particular conditions to find a suitable value.
+    */
     mcode = curl_multi_fdset(multi_, &fdread, &fdwrite, &fdexcep, &maxfd);
     if (mcode != CURLM_CALL_MULTI_PERFORM && mcode != CURLM_OK) {
       if (options_->verbose_functor)
@@ -207,12 +217,17 @@ Result EntryHandler::_asyncTaskProcess() {
       std::this_thread::sleep_for(std::chrono::milliseconds(100));
     } 
     else {
+      /*
+      The select function returns the total number of socket handles that are ready and contained in the fd_set structures, 
+      zero if the time limit expired, or SOCKET_ERROR if an error occurred. 
+      If the return value is SOCKET_ERROR, WSAGetLastError can be used to retrieve a specific error code.
+      */
       int rc = select(maxfd + 1, &fdread, &fdwrite, &fdexcep, &select_timeout);
-      if (rc > 0) {
-        curl_multi_perform(multi_, &still_running);
+      if (rc == SOCKET_ERROR) {
+        std::this_thread::sleep_for(std::chrono::milliseconds(50));
       }
       else {
-        std::this_thread::sleep_for(std::chrono::milliseconds(50));
+        curl_multi_perform(multi_, &still_running);
       }
     }
 

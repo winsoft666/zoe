@@ -226,10 +226,8 @@ Result EntryHandler::_asyncTaskProcess() {
       if (rc == SOCKET_ERROR) {
         std::this_thread::sleep_for(std::chrono::milliseconds(50));
       }
-      else {
-        curl_multi_perform(multi_, &still_running);
-      }
     }
+    curl_multi_perform(multi_, &still_running);
 
     if (still_running < options_->thread_num) {
       // Get a slice that not started

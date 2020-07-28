@@ -76,7 +76,7 @@ Result CalculateFileCRC32(const utf8string& file_path, Options* opt, utf8string&
   unsigned char szData[1024] = {0};
 
   while ((dwReadBytes = fread(szData, 1, 1024, f)) > 0) {
-    if (opt && (opt->internal_stop_event.isSetted() || opt->user_stop_event->isSetted())) {
+    if (opt && (opt->internal_stop_event.isSetted() || (opt->user_stop_event && opt->user_stop_event->isSetted()))) {
       fclose(f);
       return CANCELED;
     }

@@ -223,7 +223,7 @@ Result EntryHandler::_asyncTaskProcess() {
       If the return value is SOCKET_ERROR, WSAGetLastError can be used to retrieve a specific error code.
       */
       int rc = select(maxfd + 1, &fdread, &fdwrite, &fdexcep, &select_timeout);
-      if (rc == SOCKET_ERROR) {
+      if (rc == -1) { // SOCKET_ERROR
         std::this_thread::sleep_for(std::chrono::milliseconds(50));
       }
     }

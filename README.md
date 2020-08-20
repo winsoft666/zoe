@@ -4,7 +4,7 @@
 
 [ >>> 中文版](README_ch.md)
 
-# Introduction
+# 1. Introduction
 Although there are many mature and powerful download tools at present, such as `Free Download Manager`, `Aria2`, etc. However when I want to find a library that support multiple protocols (such as http, ftp), multi-threaded download, breakpoint resume download, cross-platform, I realize that this is difficult to find a satisfactory library, especially developed by C++. 
 
 So I developed this download library named `"teemo"` based on libcurl, which can support the following features:
@@ -23,8 +23,18 @@ So I developed this download library named `"teemo"` based on libcurl, which can
 
 ---
 
-# Dependencies
-I prefer to use `vcpkg` to install dependencies, of course, this is not the only way, you can install dependencies through any ways.
+# 2. Compile and Install
+## Method 1: Using vcpkg
+The `teemo` library has been included in Microsoft's [vcpkg](https://github.com/microsoft/vcpkg), you can use the following command to install `teemo`:
+```bash
+vcpkg install teemo:x86-windows
+```
+
+> About vcpkg: [https://github.com/microsoft/vcpkg](https://github.com/microsoft/vcpkg)
+
+## Method 2: Compile from source code
+### Step 1: Install dependencies
+I prefer to use `vcpkg` to install dependencies. Of course, this is not the only way, you can install dependencies through any ways.
 
 - libcurl
 
@@ -41,8 +51,8 @@ unit test project depend on gtest.
 vcpkg install gtest:x86-windows
 ```
 
-# Build
-Firstly using CMake to generate project or makefile, then comiple.
+### Step 2: Compile teemo
+Firstly using CMake to generate project or makefile, then comiple it:
 
 ```bash
 # Windows Sample
@@ -56,7 +66,7 @@ make install
 
 ---
 
-# Getting Started
+# 3. Getting Started
 ```c++
 #include <iostream>
 #include "teemo.h"
@@ -95,7 +105,7 @@ int main(int argc, char** argv) {
 
 ---
 
-# Command line tool
+# 4. Command line tool
 `teemo` is command line download tool based on `teemo` library. Usage:
 
 ```bash

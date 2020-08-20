@@ -4,7 +4,7 @@
 
 [ >>> English Version](README.md)
 
-# 介绍
+# 一、介绍
 目前虽然有很多成熟且功能强大的下载工具，如`Free Download Manager`, `Aria2`等等，但当我想找一个支持多种协议(如http， ftp)、多线程下载、断点续传、跨平台的开源库时，发现很难找到满意的，特别是使用C++开发的。于是我基于libcurl开发了这个名为`"teemo"`下载库，它可以支持如下特性：
 
 ✅ 多协议支持，由于是基于libcurl的，所以支持libcurl所支持的所有协议，如http, https, ftp等。
@@ -21,8 +21,19 @@
 
 ---
 
-# 安装依赖项
-我倾向于使用vcpkg来安装依赖项，当然，这不是安装依赖项的唯一方式，你可以使用任何方式来安装依赖项。
+# 二、编译与安装
+
+## 方式一、使用vcpkg
+`teemo`库已经收录到微软的[vcpkg](https://github.com/microsoft/vcpkg)之中，可以使用如下命令一键安装:
+```bash
+vcpkg install teemo:x86-windows
+```
+
+> 关于vcpkg的介绍，可以参考：[https://github.com/microsoft/vcpkg/blob/master/README_zh_CN.md](https://github.com/microsoft/vcpkg/blob/master/README_zh_CN.md)
+
+## 方式二、使用源码编译
+### 1. 安装依赖项
+我倾向于使用[vcpkg](https://github.com/microsoft/vcpkg)来安装依赖项，当然，这不是安装依赖项的唯一方式，你可以使用任何方式来安装依赖项。
 
 - libcurl
     ```bash
@@ -37,9 +48,8 @@
     vcpkg install gtest:x86-windows
     ```
 
----
 
-# 编译
+### 2. 编译
 使用CMake生成相应的工程，然后编译即可。
 ```bash
 # Windows示例
@@ -52,7 +62,7 @@ make
 
 ---
 
-# 快速开始
+# 三、快速开始
 ```c++
 #include <iostream>
 #include "teemo.h"
@@ -91,7 +101,7 @@ int main(int argc, char** argv) {
 
 ---
 
-# 命令行工具
+# 四、命令行工具
 `teemo_tool`是一个基于`teemo`库开发的命令行下载工具，用法如下：
 
 ```bash

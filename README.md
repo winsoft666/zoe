@@ -105,9 +105,10 @@ int main(int argc, char** argv) {
 
 ---
 
-# 4. Command line tool
-`teemo` is command line download tool based on `teemo` library. Usage:
+# 4. Command-line tool
+`teemo` is command-line download tool based on `teemo` library. 
 
+Usage:
 ```bash
 teemo_tool URL TargetFilePath [ThreadNum] [DiskCacheMb] [MD5] [TmpExpiredSeconds] [MaxSpeed]
 ```

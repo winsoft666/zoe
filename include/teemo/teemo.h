@@ -203,6 +203,10 @@ class TEEMO_API Teemo {
   utf8string url() const noexcept;
   utf8string targetFilePath() const noexcept;
 
+  // The file size of server side that will be downloaded.
+  // Set to (-1) when get original file size failed.
+  //
+  int64_t originFileSize() const noexcept;
  protected:
   class TeemoImpl;
   TeemoImpl* impl_;

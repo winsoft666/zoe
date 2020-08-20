@@ -56,6 +56,12 @@ bool EntryHandler::isDownloading() {
   return false;
 }
 
+int64_t EntryHandler::originFileSize() const {
+  if (slice_manager_)
+    return slice_manager_->originFileSize();
+  return -1;
+}
+
 Result EntryHandler::asyncTaskProcess() {
   options_->internal_stop_event.unset();
   user_stop_.store(false);

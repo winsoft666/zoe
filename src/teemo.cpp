@@ -124,6 +124,14 @@ utf8string Teemo::targetFilePath() const noexcept {
   return impl_->options_.target_file_path;
 }
 
+int64_t Teemo::originFileSize() const noexcept {
+  assert(impl_);
+  int64_t ret = -1;
+  if (impl_ && impl_->entry_handler_)
+    ret = impl_->entry_handler_->originFileSize();
+  return ret;
+}
+
 Result Teemo::setNetworkConnectionTimeout(int32_t milliseconds) noexcept {
   assert(impl_);
   if (impl_->isDownloading())

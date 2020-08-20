@@ -32,6 +32,7 @@ class EntryHandler {
   void stop();
 
   bool isDownloading();
+  int64_t originFileSize() const;
  protected:
   Result asyncTaskProcess();
   Result _asyncTaskProcess();

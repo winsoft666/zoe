@@ -2,7 +2,7 @@
 [![Vcpkg package](https://img.shields.io/badge/Vcpkg-package-blueviolet)](https://github.com/microsoft/vcpkg/tree/master/ports/teemo)
 [![badge](https://img.shields.io/badge/license-GUN-blue)](https://github.com/winsoft666/teemo/blob/master/LICENSE)
 
-[ >>> English Version](README.md)
+简体中文 | [ English](README.md)
 
 # 一、介绍
 目前虽然有很多成熟且功能强大的下载工具，如`Free Download Manager`, `Aria2`等等，但当我想找一个支持多种协议(如http， ftp)、多线程下载、断点续传、跨平台的开源库时，发现很难找到满意的，特别是使用C++开发的。于是我基于libcurl开发了这个名为`"teemo"`下载库，它可以支持如下特性：
@@ -115,3 +115,13 @@ teemo_tool URL TargetFilePath [ThreadNum] [DiskCacheMb] [MD5] [TmpExpiredSeconds
 - MD5: 下载文件的MD5，可选，若不为空，则在下载完成之后会进行文件MD5校验
 - TmpExpiredSeconds: 秒数，可选，临时文件经过多少秒之后过期
 - MaxSpeed: 最高下载速度(byte/s)
+
+
+
+---
+
+
+
+# 五、捐赠
+
+本项目暂不接受捐赠，感谢你的好意，如果你觉得这个项目帮助到了你，可以给该项目点颗小星星.

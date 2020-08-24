@@ -2,7 +2,7 @@
 [![Vcpkg package](https://img.shields.io/badge/Vcpkg-package-blueviolet)](https://github.com/microsoft/vcpkg/tree/master/ports/teemo)
 [![badge](https://img.shields.io/badge/license-GUN-blue)](https://github.com/winsoft666/teemo/blob/master/LICENSE)
 
-[ >>> 中文版](README_ch.md)
+English | [ 简体中文](README_ch.md)
 
 # 1. Introduction
 Although there are many mature and powerful download tools at present, such as `Free Download Manager`, `Aria2`, etc. However when I want to find a library that support multiple protocols (such as http, ftp), multi-threaded download, breakpoint resume download, cross-platform, I realize that this is difficult to find a satisfactory library, especially developed by C++. 
@@ -120,3 +120,14 @@ teemo_tool URL TargetFilePath [ThreadNum] [DiskCacheMb] [MD5] [TmpExpiredSeconds
 - MD5: target file md5, optional, if this value isn't empty, tools will check file md5 after download finished.
 - TmpExpiredSeconds: seconds, optional, the temporary file will expired after these senconds.
 - MaxSpeed: max download speed(byte/s).
+
+
+
+---
+
+
+
+# 5. Donate
+
+This project does not accept donations, Thank you for your kindness, If you think this project helped you, you can give the project a star.
+

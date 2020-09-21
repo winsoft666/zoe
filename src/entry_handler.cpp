@@ -96,7 +96,11 @@ Result EntryHandler::_asyncTaskProcess() {
         break;
     } while (++try_times <= options_->fetch_file_info_retry);
 
-    origin_file_size = fetch_size_ret ? origin_file_size : -1;
+    if (!fetch_size_ret) {
+      return FETCH_FILE_INFO_FAILED;
+    }
+
+    //origin_file_size = fetch_size_ret ? origin_file_size : -1;
 
     // If target file is an empty file, create it.
     //
@@ -307,10 +311,10 @@ bool EntryHandler::fetchFileInfo(int64_t& file_size) const {
     }
   }
 
-  file_size = 0;
+  file_size = 0L;
   ret_code = curl_easy_getinfo(curl, CURLINFO_CONTENT_LENGTH_DOWNLOAD_T, &file_size);
   if (ret_code != CURLE_OK) {
-    return false;
+    file_size = -1L;
   }
 
   return true;

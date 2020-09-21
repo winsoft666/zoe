@@ -52,7 +52,8 @@ const char* GetResultString(int enumVal) {
                                       u8"UPDATE_INDEX_FILE_FAILED",
                                       u8"SLICE_DOWNLOAD_FAILED",
                                       u8"HASH_VERIFY_NOT_PASS",
-                                      u8"CALCULATE_HASH_FAILED"
+                                      u8"CALCULATE_HASH_FAILED",
+                                      u8"FETCH_FILE_INFO_FAILED"
   };
   return EnumStrings[enumVal];
 }

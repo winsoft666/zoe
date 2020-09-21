@@ -24,7 +24,7 @@
 # 二、编译与安装
 
 ## 方式一、使用vcpkg
-`teemo`库已经收录到微软的[vcpkg](https://github.com/microsoft/vcpkg)之中，可以使用如下命令一键安装:
+`teemo`库已经收录到微软的[vcpkg](https://github.com/microsoft/vcpkg/tree/master/ports/teemo)之中，可以使用如下命令一键安装:
 ```bash
 vcpkg install teemo:x86-windows
 ```

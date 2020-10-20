@@ -24,7 +24,7 @@ So I developed this download library named `"teemo"` based on libcurl, which can
 ---
 
 # 2. Compile and Install
-## Method 1: Using vcpkg
+## Method 1: Using with vcpkg
 The `teemo` library has been included in Microsoft's [vcpkg](https://github.com/microsoft/vcpkg/tree/master/ports/teemo), you can use the following command to install `teemo`:
 ```bash
 vcpkg install teemo:x86-windows

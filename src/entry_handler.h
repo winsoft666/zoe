@@ -37,7 +37,7 @@ class EntryHandler {
   Result asyncTaskProcess();
   Result _asyncTaskProcess();
   bool fetchFileInfo(int64_t& file_size) const;
-  void outputVerbose(const utf8string& info);
+  void outputVerbose(const utf8string& info) const;
   void calculateSliceInfo(int32_t concurrency_num, int32_t* disk_cache_per_slice, int32_t* max_speed_per_slice);
 
  protected:

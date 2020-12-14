@@ -190,7 +190,8 @@ Result SliceManager::tryMakeSlices() {
       slice_size = options_->slice_policy_value;
     }
     else if (options_->slice_policy == FixedNum) {
-      slice_size = origin_file_size_ / options_->slice_policy_value;
+      if(options_->slice_policy_value > 0)
+        slice_size = origin_file_size_ / options_->slice_policy_value;
     }
     else if (options_->slice_policy == Auto) {
       if (origin_file_size_ <= TEEMO_DEFAULT_FIXED_SLICE_SIZE_BYTE * 1.5f) {
@@ -201,22 +202,28 @@ Result SliceManager::tryMakeSlices() {
       }
     }
 
-    do {
-      cur_end = std::min(cur_begin + slice_size, origin_file_size_ - 1);
-      std::shared_ptr<Slice> slice =
+    if (slice_size > 0) {
+      bool is_last = false;
+      do {
+        cur_end = std::min(cur_begin + slice_size - 1, origin_file_size_ - 1);
+        // last slice contains all of remainder space.
+        if (options_->slice_policy == FixedNum && slice_index == options_->slice_policy_value) {
+            cur_end = origin_file_size_ - 1;
+        }
+
+         is_last = (cur_end == (origin_file_size_ - 1));
+
+        // TODO: control by option
+        if (is_last)
+          cur_end = -1;
+
+        std::shared_ptr<Slice> slice =
           std::make_shared<Slice>(slice_index++, cur_begin, cur_end, 0L, shared_from_this());
-      slices_.push_back(slice);
+        slices_.push_back(slice);
 
-      // last slice contains all of remainder space.
-      //
-      if (options_->slice_policy == FixedNum && slice_index == options_->slice_policy_value) {
-        cur_end = origin_file_size_ - 1;
-      }
-
-      cur_begin = cur_end;
-      if (cur_end >= origin_file_size_ - 1)
-        break;
-    } while (true);
+        cur_begin = cur_end + 1;
+      } while (!is_last);
+    }
   }
 
   dumpSlice();
@@ -232,6 +239,7 @@ int64_t SliceManager::totalDownloaded() const {
 }
 
 bool SliceManager::isAllSliceCompleted() const {
+  dumpSlice();
   for (auto& s : slices_) {
     if (!s->isCompleted())
       return false;
@@ -240,7 +248,7 @@ bool SliceManager::isAllSliceCompleted() const {
 }
 
 Result SliceManager::finishDownload() {
-  Result ret = SUCCESSED;
+  Result ret = SLICE_DOWNLOAD_FAILED;
 
   do {
     Result flush_ret = SUCCESSED;
@@ -255,43 +263,43 @@ Result SliceManager::finishDownload() {
       break;
     }
 
-    // Can not fetch file size, we don't know if the file is actually download completed.
-    if (origin_file_size_ == -1) {
-      if (options_->hash_value.length() > 0) {
-        utf8string str_hash;
-        ret = calculateTmpFileHash(str_hash);
-        if (ret != SUCCESSED) {
-          break;
-        }
+    // file hash compare
+    if (options_->hash_value.length() > 0 && options_->hash_verify_policy == ALWAYS) {
+      utf8string str_hash;
+      ret = calculateTmpFileHash(str_hash);
+      if (ret != SUCCESSED) {
+        break;
+      }
 
-        str_hash = StringCaseConvert(str_hash, EasyCharToLowerA);
-        if (str_hash != StringCaseConvert(options_->hash_value, EasyCharToLowerA)) {
-          ret = HASH_VERIFY_NOT_PASS;
-          break;
-        }
+      str_hash = StringCaseConvert(str_hash, EasyCharToLowerA);
+      if (str_hash != StringCaseConvert(options_->hash_value, EasyCharToLowerA)) {
+        ret = HASH_VERIFY_NOT_PASS;
       }
 
       ret = SUCCESSED;
       break;
     }
 
-    if (isAllSliceCompleted()) {
-      if (options_->hash_value.length() > 0 && options_->hash_verify_policy == ALWAYS) {
-        utf8string str_hash;
-        ret = calculateTmpFileHash(str_hash);
-        if (ret != SUCCESSED) {
-          break;
-        }
+    // file size compare
+    if (origin_file_size_ != -1) {
+      if (totalDownloaded() != origin_file_size_) 
+        ret = SLICE_DOWNLOAD_FAILED;
+      else 
+        ret = SUCCESSED;
+      break;
+    }
 
-        str_hash = StringCaseConvert(str_hash, EasyCharToLowerA);
-        if (str_hash != StringCaseConvert(options_->hash_value, EasyCharToLowerA)) {
-          ret = HASH_VERIFY_NOT_PASS;
-          break;
-        }
+    // finally, try file hash compare
+    if (options_->hash_value.length() > 0) {
+      utf8string str_hash;
+      ret = calculateTmpFileHash(str_hash);
+      if (ret != SUCCESSED) {
+        break;
       }
 
-      if (!FileUtil::RenameFile(tmp_file_path_, options_->target_file_path, true)) {
-        ret = RENAME_TMP_FILE_FAILED;
+      str_hash = StringCaseConvert(str_hash, EasyCharToLowerA);
+      if (str_hash != StringCaseConvert(options_->hash_value, EasyCharToLowerA)) {
+        ret = HASH_VERIFY_NOT_PASS;
         break;
       }
 
@@ -299,11 +307,16 @@ Result SliceManager::finishDownload() {
       break;
     }
 
-    ret = SLICE_DOWNLOAD_FAILED;
+    ret = SUCCESSED;
   } while (false);
 
   if (ret == SUCCESSED) {
+    if (!FileUtil::RenameFile(tmp_file_path_, options_->target_file_path, true)) {
+      ret = RENAME_TMP_FILE_FAILED;
+    }
+
     if (!FileUtil::RemoveFile(index_file_path_)) {
+      // not failed
       if (options_->verbose_functor)
         options_->verbose_functor("\r\nremove index file failed\r\n");
     }
@@ -375,12 +388,12 @@ Result SliceManager::calculateTmpFileHash(utf8string &str_hash) {
   return ret;
 }
 
-void SliceManager::dumpSlice() {
+void SliceManager::dumpSlice() const {
   if (options_->verbose_functor) {
     std::stringstream ss;
     int32_t s_index = 0;
     for (auto& s : slices_) {
-      ss << "[" << s_index++ << "] " << s->begin() << "~" << s->end() << ", Disk: " << s->capacity()
+      ss << "<" << s_index++ << "> [" << s->begin() << "~" << s->end() << "], Disk: " << s->capacity()
          << ", Buffer: " << s->diskCacheCapacity() << "\r\n";
     }
 

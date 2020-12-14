@@ -237,6 +237,7 @@ Result EntryHandler::_asyncTaskProcess() {
         std::this_thread::sleep_for(std::chrono::milliseconds(50));
       }
     }
+    
     curl_multi_perform(multi_, &still_running);
 
     if (still_running < options_->thread_num) {
@@ -317,10 +318,13 @@ bool EntryHandler::fetchFileInfo(int64_t& file_size) const {
     file_size = -1L;
   }
 
+  outputVerbose("\r\nCURLINFO_CONTENT_LENGTH_DOWNLOAD_T: " + 
+    std::to_string((unsigned long)file_size) + "\r\n");
+
   return true;
 }
 
-void EntryHandler::outputVerbose(const utf8string& info) {
+void EntryHandler::outputVerbose(const utf8string& info) const {
   if (options_->verbose_functor)
     options_->verbose_functor(info);
 }

@@ -139,12 +139,13 @@ Result SliceManager::loadExistSlice() {
       slices_.push_back(slice);
     }
   } catch (const std::exception& e) {
-    if (e.what())
-      std::cerr << e.what() << std::endl;
+    outputVerbose(u8"load exist slice exception: " + (e.what() ? std::string(e.what()) : ""));
     origin_file_size_ = 0;
     slices_.clear();
     return INVALID_INDEX_FORMAT;
   }
+  outputVerbose(u8"load exist slice success");
+  dumpSlice();
   return SUCCESSED;
 }
 
@@ -164,7 +165,6 @@ std::shared_ptr<TargetFile> SliceManager::targetFile() {
 
 Result SliceManager::tryMakeSlices() {
   if (slices_.size() > 0) {
-    dumpSlice();
     return SUCCESSED;
   }
 
@@ -190,7 +190,7 @@ Result SliceManager::tryMakeSlices() {
       slice_size = options_->slice_policy_value;
     }
     else if (options_->slice_policy == FixedNum) {
-      if(options_->slice_policy_value > 0)
+      if (options_->slice_policy_value > 0)
         slice_size = origin_file_size_ / options_->slice_policy_value;
     }
     else if (options_->slice_policy == Auto) {
@@ -208,17 +208,17 @@ Result SliceManager::tryMakeSlices() {
         cur_end = std::min(cur_begin + slice_size - 1, origin_file_size_ - 1);
         // last slice contains all of remainder space.
         if (options_->slice_policy == FixedNum && slice_index == options_->slice_policy_value) {
-            cur_end = origin_file_size_ - 1;
+          cur_end = origin_file_size_ - 1;
         }
 
-         is_last = (cur_end == (origin_file_size_ - 1));
+        is_last = (cur_end == (origin_file_size_ - 1));
 
         // TODO: control by option
         if (is_last)
           cur_end = -1;
 
         std::shared_ptr<Slice> slice =
-          std::make_shared<Slice>(slice_index++, cur_begin, cur_end, 0L, shared_from_this());
+            std::make_shared<Slice>(slice_index++, cur_begin, cur_end, 0L, shared_from_this());
         slices_.push_back(slice);
 
         cur_begin = cur_end + 1;
@@ -238,95 +238,79 @@ int64_t SliceManager::totalDownloaded() const {
   return total;
 }
 
-bool SliceManager::isAllSliceCompleted() const {
-  dumpSlice();
-  for (auto& s : slices_) {
-    if (!s->isCompleted())
-      return false;
+Result SliceManager::isAllSliceCompleted() const {
+  // file hash compare
+  if (options_->hash_value.length() > 0 && options_->hash_verify_policy == ALWAYS) {
+    utf8string str_hash;
+    if (calculateTmpFileHash(str_hash) == SUCCESSED) {
+      str_hash = StringCaseConvert(str_hash, EasyCharToLowerA);
+      if (str_hash == StringCaseConvert(options_->hash_value, EasyCharToLowerA))
+        return SUCCESSED;
+      return HASH_VERIFY_NOT_PASS;
+    }
   }
-  return true;
+
+  // file size compare
+  if (origin_file_size_ != -1) {
+    if (totalDownloaded() == origin_file_size_)
+      return SUCCESSED;
+    return SLICE_DOWNLOAD_FAILED;
+  }
+
+  // finally, try file hash compare
+  if (options_->hash_value.length() > 0) {
+    utf8string str_hash;
+    if (calculateTmpFileHash(str_hash)) {
+      str_hash = StringCaseConvert(str_hash, EasyCharToLowerA);
+      if (str_hash == StringCaseConvert(options_->hash_value, EasyCharToLowerA))
+        return SUCCESSED;
+      return HASH_VERIFY_NOT_PASS;
+    }
+  }
+
+  return UNSURE_DOWNLOAD_COMPLETED;
 }
 
-Result SliceManager::finishDownload() {
-  Result ret = SLICE_DOWNLOAD_FAILED;
+Result SliceManager::finishDownloadProgress(bool need_check_completed) {
+  outputVerbose(u8"finish download progress");
 
-  do {
-    Result flush_ret = SUCCESSED;
-    for (auto& s : slices_) {
-      if (!s->flushToDisk())
-        flush_ret = FLUSH_TMP_FILE_FAILED;
-    }
+  // first of all, flush buffer to disk
+  Result flush_disk_ret = SUCCESSED;
+  for (auto& s : slices_) {
+    if (!s->flushToDisk())
+      flush_disk_ret = FLUSH_TMP_FILE_FAILED;
+  }
+  if (target_file_)
     target_file_->Close();
 
-    if (flush_ret != SUCCESSED) {
-      ret = flush_ret;
-      break;
-    }
-
-    // file hash compare
-    if (options_->hash_value.length() > 0 && options_->hash_verify_policy == ALWAYS) {
-      utf8string str_hash;
-      ret = calculateTmpFileHash(str_hash);
-      if (ret != SUCCESSED) {
-        break;
-      }
-
-      str_hash = StringCaseConvert(str_hash, EasyCharToLowerA);
-      if (str_hash != StringCaseConvert(options_->hash_value, EasyCharToLowerA)) {
-        ret = HASH_VERIFY_NOT_PASS;
-      }
-
-      ret = SUCCESSED;
-      break;
-    }
-
-    // file size compare
-    if (origin_file_size_ != -1) {
-      if (totalDownloaded() != origin_file_size_) 
-        ret = SLICE_DOWNLOAD_FAILED;
-      else 
-        ret = SUCCESSED;
-      break;
-    }
-
-    // finally, try file hash compare
-    if (options_->hash_value.length() > 0) {
-      utf8string str_hash;
-      ret = calculateTmpFileHash(str_hash);
-      if (ret != SUCCESSED) {
-        break;
-      }
-
-      str_hash = StringCaseConvert(str_hash, EasyCharToLowerA);
-      if (str_hash != StringCaseConvert(options_->hash_value, EasyCharToLowerA)) {
-        ret = HASH_VERIFY_NOT_PASS;
-        break;
-      }
-
-      ret = SUCCESSED;
-      break;
-    }
-
-    ret = SUCCESSED;
-  } while (false);
-
-  if (ret == SUCCESSED) {
-    if (!FileUtil::RenameFile(tmp_file_path_, options_->target_file_path, true)) {
-      ret = RENAME_TMP_FILE_FAILED;
-    }
-
-    if (!FileUtil::RemoveFile(index_file_path_)) {
-      // not failed
-      if (options_->verbose_functor)
-        options_->verbose_functor("\r\nremove index file failed\r\n");
-    }
-  }
-  else {
-    if (!flushIndexFile())
-      ret = UPDATE_INDEX_FILE_FAILED;
+  // then flush index file.
+  if (!flushIndexFile()) {
+    outputVerbose(u8"flush index file failed");
   }
 
-  return ret;
+  // check flush disk result
+  if (flush_disk_ret != SUCCESSED) {
+    return flush_disk_ret;
+  }
+
+  if (need_check_completed) {
+    // is all slice download completed?
+    Result completed_ret = isAllSliceCompleted();
+    if (completed_ret != SUCCESSED && completed_ret != UNSURE_DOWNLOAD_COMPLETED) {
+      return completed_ret;
+    }
+  }
+
+  if (!FileUtil::RenameFile(tmp_file_path_, options_->target_file_path, true)) {
+    return RENAME_TMP_FILE_FAILED;
+  }
+
+  if (!FileUtil::RemoveFile(index_file_path_)) {
+    // not failed
+    outputVerbose(u8"remove index file failed");
+  }
+
+  return SUCCESSED;
 }
 
 int32_t SliceManager::usefulSliceNum() const {
@@ -371,7 +355,7 @@ utf8string SliceManager::makeIndexFilePath() const {
   return FileUtil::AppendFileName(target_dir, target_filename + ".efdindex");
 }
 
-Result SliceManager::calculateTmpFileHash(utf8string &str_hash) {
+Result SliceManager::calculateTmpFileHash(utf8string& str_hash) const {
   Result ret = CALCULATE_HASH_FAILED;
   if (options_->hash_type == MD5) {
     ret = CalculateFileMd5(tmp_file_path_, options_, str_hash);
@@ -393,12 +377,17 @@ void SliceManager::dumpSlice() const {
     std::stringstream ss;
     int32_t s_index = 0;
     for (auto& s : slices_) {
-      ss << "<" << s_index++ << "> [" << s->begin() << "~" << s->end() << "], Disk: " << s->capacity()
-         << ", Buffer: " << s->diskCacheCapacity() << "\r\n";
+      ss << "<" << s_index++ << "> [" << s->begin() << "~" << s->end()
+         << "], Disk: " << s->capacity() << ", Buffer: " << s->diskCacheCapacity() << "\r\n";
     }
 
     options_->verbose_functor(ss.str());
   }
 }
 
+void SliceManager::outputVerbose(const utf8string& info) const {
+  if (options_ && options_->verbose_functor) {
+    options_->verbose_functor(info);
+  }
+}
 }  // namespace teemo

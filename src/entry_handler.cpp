@@ -86,6 +86,11 @@ Result EntryHandler::_asyncTaskProcess() {
   assert(!slice_manager_.get());
   slice_manager_ = std::make_shared<SliceManager>(options_);
 
+  outputVerbose(u8"url: " + options_->url);
+  outputVerbose(u8"thread num: " + std::to_string((unsigned long)options_->thread_num));
+  outputVerbose(u8"disk cache size: " + std::to_string((unsigned long)options_->disk_cache_size));
+  outputVerbose(u8"target file path: " + options_->target_file_path);
+
   if (slice_manager_->loadExistSlice() != SUCCESSED) {
     int64_t origin_file_size = 0L;
     bool fetch_size_ret = false;
@@ -97,6 +102,7 @@ Result EntryHandler::_asyncTaskProcess() {
     } while (++try_times <= options_->fetch_file_info_retry);
 
     if (!fetch_size_ret) {
+      outputVerbose(u8"fetch file size failed");
       return FETCH_FILE_INFO_FAILED;
     }
 
@@ -105,6 +111,7 @@ Result EntryHandler::_asyncTaskProcess() {
     // If target file is an empty file, create it.
     //
     if (origin_file_size == 0) {
+      outputVerbose(u8"file size is 0");
       slice_manager_.reset();
       return FileUtil::CreateFixedSizeFile(options_->target_file_path, 0)
                  ? SUCCESSED
@@ -120,14 +127,19 @@ Result EntryHandler::_asyncTaskProcess() {
     return ms_ret;
   }
 
-  if (slice_manager_->isAllSliceCompleted()) {
-    Result ret = slice_manager_->finishDownload();
+  Result all_completed_ret = slice_manager_->isAllSliceCompleted();
+  if (all_completed_ret == SUCCESSED) {
+    outputVerbose(u8"all of slices download completed");
+    Result ret = slice_manager_->finishDownloadProgress(false);
     slice_manager_.reset();
     return ret;
   }
+  outputVerbose(u8"one or more slice is not completed: " +
+                std::to_string((unsigned long)all_completed_ret));
 
   multi_ = curl_multi_init();
   if (!multi_) {
+    outputVerbose(u8"curl_multi_init failed");
     slice_manager_.reset();
     return INIT_CURL_MULTI_FAILED;
   }
@@ -147,12 +159,14 @@ Result EntryHandler::_asyncTaskProcess() {
       break;
     ss_ret = slice->start(multi_, disk_cache_per_slice, max_speed_per_slice);
     if (ss_ret != SUCCESSED) {
+      outputVerbose(u8"slice start failed: " + std::to_string((unsigned long)ss_ret));
       continue;
     }
     selected++;
   }
 
   if (selected == 0) {
+    outputVerbose(u8"no available slice");
     curl_multi_cleanup(multi_);
     multi_ = nullptr;
     slice_manager_.reset();
@@ -164,7 +178,6 @@ Result EntryHandler::_asyncTaskProcess() {
   if (options_->speed_functor)
     speed_handler_ =
         std::make_shared<SpeedHandler>(slice_manager_->totalDownloaded(), options_, slice_manager_);
-
 
   // https://curl.haxx.se/libcurl/c/curl_multi_fdset.html
   // https://docs.microsoft.com/en-us/windows/win32/api/winsock2/nf-winsock2-select
@@ -196,12 +209,12 @@ Result EntryHandler::_asyncTaskProcess() {
   int still_running = 0;
 
   CURLMcode mcode = curl_multi_perform(multi_, &still_running);
+  outputVerbose(u8"start downloading...");
 
   do {
     if (options_->internal_stop_event.isSetted() ||
         (options_->user_stop_event && options_->user_stop_event->isSetted()))
       break;
-
 
     FD_ZERO(&fdread);
     FD_ZERO(&fdwrite);
@@ -218,14 +231,13 @@ Result EntryHandler::_asyncTaskProcess() {
     */
     mcode = curl_multi_fdset(multi_, &fdread, &fdwrite, &fdexcep, &maxfd);
     if (mcode != CURLM_CALL_MULTI_PERFORM && mcode != CURLM_OK) {
-      if (options_->verbose_functor)
-        outputVerbose("\r\ncurl_multi_fdset failed, code: " + std::to_string((int)mcode) + "\r\n");
+      outputVerbose("curl_multi_fdset failed, code: " + std::to_string((int)mcode));
       break;
     }
 
     if (maxfd == -1) {
       std::this_thread::sleep_for(std::chrono::milliseconds(100));
-    } 
+    }
     else {
       /*
       The select function returns the total number of socket handles that are ready and contained in the fd_set structures, 
@@ -233,11 +245,11 @@ Result EntryHandler::_asyncTaskProcess() {
       If the return value is SOCKET_ERROR, WSAGetLastError can be used to retrieve a specific error code.
       */
       int rc = select(maxfd + 1, &fdread, &fdwrite, &fdexcep, &select_timeout);
-      if (rc == -1) { // SOCKET_ERROR
+      if (rc == -1) {  // SOCKET_ERROR
         std::this_thread::sleep_for(std::chrono::milliseconds(50));
       }
     }
-    
+
     curl_multi_perform(multi_, &still_running);
 
     if (still_running < options_->thread_num) {
@@ -251,23 +263,27 @@ Result EntryHandler::_asyncTaskProcess() {
         calculateSliceInfo(still_running + 1, &disk_cache_per_slice, &max_speed_per_slice);
         Result start_ret = slice->start(multi_, disk_cache_per_slice, max_speed_per_slice);
         if (still_running <= 0) {
-          if(start_ret == SUCCESSED)
+          if (start_ret == SUCCESSED) {
             curl_multi_perform(multi_, &still_running);
-          else
+          } else {
             still_running = 1;
+            outputVerbose(u8"slice start failed: " + std::to_string((unsigned long)start_ret));
+          }
         }
       }
     }
   } while (still_running > 0);
 
-  Result ret = slice_manager_->finishDownload();
+  outputVerbose(u8"download over");
+
+  Result ret = slice_manager_->finishDownloadProgress(true);
   slice_manager_.reset();
 
   if (ret == SUCCESSED)
     return ret;
 
   if (user_stop_.load() || (options_->user_stop_event && options_->user_stop_event->isSetted()))
-    ret = CANCELED; // user cancel, ignore other failed reason
+    ret = CANCELED;  // user cancel, ignore other failed reason
 
   return ret;
 }
@@ -318,8 +334,7 @@ bool EntryHandler::fetchFileInfo(int64_t& file_size) const {
     file_size = -1L;
   }
 
-  outputVerbose("\r\nCURLINFO_CONTENT_LENGTH_DOWNLOAD_T: " + 
-    std::to_string((unsigned long)file_size) + "\r\n");
+  outputVerbose("CURLINFO_CONTENT_LENGTH_DOWNLOAD_T: " + std::to_string((unsigned long)file_size));
 
   return true;
 }

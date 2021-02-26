@@ -35,6 +35,8 @@ vcpkg install teemo:x86-windows
 ### 1. 安装依赖项
 我倾向于使用[vcpkg](https://github.com/microsoft/vcpkg)来安装依赖项，当然，这不是安装依赖项的唯一方式，你可以使用任何方式来安装依赖项。
 
+建议将vcpkg.exe所在目录添加到PATH环境变量。
+
 - libcurl
     ```bash
     # 如果需要支持非http协议，如ftp等，需要指定[non-http]选项

@@ -36,6 +36,8 @@ vcpkg install teemo:x86-windows
 ### Step 1: Install dependencies
 I prefer to use `vcpkg` to install dependencies. Of course, this is not the only way, you can install dependencies through any ways.
 
+Recommend: add the directory where vcpkg.exe resides to the PATH environment variable.
+
 - libcurl
 
 ```bash

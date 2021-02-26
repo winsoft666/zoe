@@ -35,6 +35,7 @@ class SpeedHandler {
  protected:
   std::shared_future<void> async_task_;
   const int64_t already_download_;
+  int64_t last_download_;
   const Options* options_;
   std::shared_ptr<SliceManager> slice_manager_;
 };

@@ -418,6 +418,8 @@ bool EntryHandler::requestFileInfo(const utf8string& url, FileInfo& fileInfo) {
 
   CURLcode ret_code = curl_easy_perform(curl);
   if (ret_code != CURLE_OK) {
+    outputVerbose(u8"[teemo] curl_easy_perform failed, CURLcode: " +
+                  std::to_string((long)ret_code));
     return false;
   }
 
@@ -429,13 +431,18 @@ bool EntryHandler::requestFileInfo(const utf8string& url, FileInfo& fileInfo) {
   }
 
   int http_code = 0;
-  if (curl_easy_getinfo(curl, CURLINFO_RESPONSE_CODE, &http_code) != CURLM_OK) {
+  if ((ret_code = curl_easy_getinfo(curl, CURLINFO_RESPONSE_CODE,
+                                    &http_code)) != CURLE_OK) {
+    outputVerbose(u8"[teemo] Get CURLINFO_RESPONSE_CODE failed, CURLcode: " +
+                  std::to_string((long)ret_code));
     return false;
   }
 
   if (http_code != 200 && http_code != 350) {
     // A 350 response code is sent by the server in response to a file-related command that
     // requires further commands in order for the operation to be completed
+    outputVerbose(u8"[teemo] HTTP response code error, code: " +
+                  std::to_string((long)http_code));
     return false;
   }
 

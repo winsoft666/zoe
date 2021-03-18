@@ -16,6 +16,7 @@
 #define TEEMO_STRING_HELPER_H_
 #pragma once
 #include "teemo/teemo.h"
+#include <algorithm>
 
 namespace teemo {
 inline char EasyCharToLowerA(char in) {

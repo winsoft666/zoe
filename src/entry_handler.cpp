@@ -70,8 +70,6 @@ static size_t __WriteHeaderCallback(char* buffer,
   utf8string key_lowercase = StringCaseConvert(key, EasyCharToLowerA);
   utf8string value = header.substr(pos + 2, header.length() - pos - 4);
 
-  OutputDebugStringA(header.c_str());
-
   if (key_lowercase == "content-length") {
     pFileInfo->fileSize = strtoll(value.c_str(), nullptr, 10);
   }

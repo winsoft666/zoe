@@ -29,12 +29,14 @@ namespace teemo {
     static utf8string GetDirectory(const utf8string& path);
     static utf8string GetFileName(const utf8string& path);
     static utf8string AppendFileName(const utf8string& dir, const utf8string& filename);
-    static bool FileIsExist(const utf8string& filepath);
-    static bool FileIsRW(const utf8string& filepath);
+    static bool IsExist(const utf8string& filepath);
+    static bool IsRW(const utf8string& filepath);
     static bool RemoveFile(const utf8string& filepath);
-    static bool RenameFile(const utf8string& from, const utf8string &to, bool allow_remove_old);
-    static FILE* OpenFile(const utf8string& path, const utf8string& mode);
-    static bool CreateFixedSizeFile(const utf8string& path, int64_t fixed_size);
+    static bool Rename(const utf8string& from, const utf8string &to);
+    static FILE* Open(const utf8string& path, const utf8string& mode);
+    static int Seek(FILE* f, int64_t offset, int origin);
+    static void Close(FILE* f);
+    static FILE* CreateFixedSizeFile(const utf8string& path, int64_t fixed_size);
   };
 }  // namespace teemo
 

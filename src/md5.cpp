@@ -64,7 +64,8 @@ void byteSwap(UWORD32* buf, unsigned words) {
   p = (md5byte*)buf;
 
   do {
-    *buf++ = (UWORD32)((unsigned)p[3] << 8 | p[2]) << 16 | ((unsigned)p[1] << 8 | p[0]);
+    *buf++ = (UWORD32)((unsigned)p[3] << 8 | p[2]) << 16 |
+             ((unsigned)p[1] << 8 | p[0]);
     p += 4;
   } while (--words);
 }
@@ -80,7 +81,8 @@ void byteSwap(UWORD32* buf, unsigned words) {
 #define F4(x, y, z) (y ^ (x | ~z))
 
 /* This is the central step in the MD5 algorithm. */
-#define MD5STEP(f, w, x, y, z, in, s) (w += f(x, y, z) + in, w = (w << s | w >> (32 - s)) + x)
+#define MD5STEP(f, w, x, y, z, in, s) \
+  (w += f(x, y, z) + in, w = (w << s | w >> (32 - s)) + x)
 
 /*
  * The core of the MD5 algorithm, this alters an existing MD5 hash to
@@ -263,7 +265,9 @@ void MD5Final(md5byte digest[16], struct MD5Context* ctx) {
   memset(ctx, 0, sizeof(*ctx)); /* In case it's sensitive */
 }
 
-void MD5Buffer(const unsigned char* buf, unsigned int len, unsigned char sig[16]) {
+void MD5Buffer(const unsigned char* buf,
+               unsigned int len,
+               unsigned char sig[16]) {
   struct MD5Context md5;
   MD5Init(&md5);
   MD5Update(&md5, buf, len);
@@ -278,7 +282,8 @@ void MD5SigToString(unsigned char signature[16], char* str, int len) {
   str_p = str;
   max_p = str + len;
 
-  for (sig_p = (unsigned char*)signature; sig_p < (unsigned char*)signature + 16; sig_p++) {
+  for (sig_p = (unsigned char*)signature;
+       sig_p < (unsigned char*)signature + 16; sig_p++) {
     high = *sig_p / 16;
     low = *sig_p % 16;
 
@@ -298,8 +303,10 @@ void MD5SigToString(unsigned char signature[16], char* str, int len) {
 }
 }  // namespace libmd5_internal
 
-Result CalculateFileMd5(const utf8string& file_path, Options* opt, utf8string &str_hash) {
-  FILE* f = FileUtil::OpenFile(file_path, "rb");
+Result CalculateFileMd5(const utf8string& file_path,
+                        Options* opt,
+                        utf8string& str_hash) {
+  FILE* f = FileUtil::Open(file_path, "rb");
   if (!f)
     return CALCULATE_HASH_FAILED;
 
@@ -312,14 +319,44 @@ Result CalculateFileMd5(const utf8string& file_path, Options* opt, utf8string &s
   unsigned char szData[1024] = {0};
 
   while ((dwReadBytes = fread(szData, 1, 1024, f)) > 0) {
-    if (opt && (opt->internal_stop_event.isSetted() || (opt->user_stop_event && opt->user_stop_event->isSetted()))) {
-      fclose(f);
+    if (opt && (opt->internal_stop_event.isSetted() ||
+                (opt->user_stop_event && opt->user_stop_event->isSetted()))) {
+      FileUtil::Close(f);
       return CANCELED;
     }
     libmd5_internal::MD5Update(&md5Context, szData, dwReadBytes);
   }
 
-  fclose(f);
+  FileUtil::Close(f);
+
+  libmd5_internal::MD5Final(szMd5Sig, &md5Context);
+  libmd5_internal::MD5SigToString(szMd5Sig, szMd5, 33);
+
+  str_hash = szMd5;
+
+  return SUCCESSED;
+}
+
+Result CalculateFileMd5(FILE* f, Options* opt, utf8string& str_hash) {
+  if (!f)
+    return CALCULATE_HASH_FAILED;
+  FileUtil::Seek(f, 0L, SEEK_SET);
+
+  unsigned char szMd5Sig[16] = {0};
+  char szMd5[33] = {0};
+  libmd5_internal::MD5Context md5Context;
+  libmd5_internal::MD5Init(&md5Context);
+
+  size_t dwReadBytes = 0;
+  unsigned char szData[1024] = {0};
+
+  while ((dwReadBytes = fread(szData, 1, 1024, f)) > 0) {
+    if (opt && (opt->internal_stop_event.isSetted() ||
+                (opt->user_stop_event && opt->user_stop_event->isSetted()))) {
+      return CANCELED;
+    }
+    libmd5_internal::MD5Update(&md5Context, szData, dwReadBytes);
+  }
 
   libmd5_internal::MD5Final(szMd5Sig, &md5Context);
   libmd5_internal::MD5SigToString(szMd5Sig, szMd5, 33);

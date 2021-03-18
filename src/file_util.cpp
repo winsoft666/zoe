@@ -13,65 +13,20 @@
 *******************************************************************************/
 
 #include "file_util.h"
+#include <assert.h>
 #if defined(WIN32) || defined(_WIN32) || defined(__WIN32__) || defined(__NT__)
 #include <io.h>
 #include <windows.h>
 #else
 #include <unistd.h>
 #endif
-
-#ifndef GHC_USE_STD_FS
+#include "string_encode.h"
 #include "filesystem.hpp"
-#endif
 
 namespace teemo {
 
 #if defined(WIN32) || defined(_WIN32) || defined(__WIN32__) || defined(__NT__)
 #define PATH_SEPARATOR '\\'
-
-static std::wstring Utf8ToUnicode(const std::string& str) {
-  std::wstring strRes;
-  int iSize = ::MultiByteToWideChar(CP_UTF8, 0, str.c_str(), -1, NULL, 0);
-
-  if (iSize == 0)
-    return strRes;
-
-  wchar_t* szBuf = new (std::nothrow) wchar_t[iSize];
-
-  if (!szBuf)
-    return strRes;
-
-  memset(szBuf, 0, iSize * sizeof(wchar_t));
-  ::MultiByteToWideChar(CP_UTF8, 0, str.c_str(), -1, szBuf, iSize);
-
-  strRes = szBuf;
-  delete[] szBuf;
-
-  return strRes;
-}
-
-static std::string UnicodeToUtf8(const std::wstring& str) {
-  std::string strRes;
-
-  int iSize = ::WideCharToMultiByte(CP_UTF8, 0, str.c_str(), -1, NULL, 0, NULL, NULL);
-
-  if (iSize == 0)
-    return strRes;
-
-  char* szBuf = new (std::nothrow) char[iSize];
-
-  if (!szBuf)
-    return strRes;
-
-  memset(szBuf, 0, iSize);
-
-  ::WideCharToMultiByte(CP_UTF8, 0, str.c_str(), -1, szBuf, iSize, NULL, NULL);
-
-  strRes = szBuf;
-  delete[] szBuf;
-
-  return strRes;
-}
 #else
 #define PATH_SEPARATOR '/'
 #endif
@@ -79,17 +34,23 @@ static std::string UnicodeToUtf8(const std::wstring& str) {
 int64_t FileUtil::GetFileSize(FILE* f) {
   if (!f)
     return 0;
-  fseek(f, 0, SEEK_END);
-  int64_t fsize = ftell(f);
+#if defined(WIN32) || defined(_WIN32) || defined(__WIN32__) || defined(__NT__)
+  _fseeki64(f, 0L, SEEK_END);
+  int64_t fsize = _ftelli64(f);
+#else
+  fseeko64(f, 0L, SEEK_END);
+  int64_t fsize = ftello64(f);
+#endif
+
   return fsize;
 }
 
 int64_t FileUtil::GetFileSize(const utf8string& path) {
   int64_t fsize = -1;
-  FILE* f = OpenFile(path, "rb");
+  FILE* f = Open(path, "rb");
   if (f) {
     fsize = GetFileSize(f);
-    fclose(f);
+    Close(f);
     f = nullptr;
   }
   return fsize;
@@ -105,7 +66,7 @@ utf8string FileUtil::GetSystemTmpDirectory() {
   }
 
   if (target_dir.length() > 0) {
-    if (!FileIsExist(target_dir)) {
+    if (!IsExist(target_dir)) {
       target_dir.clear();
     }
   }
@@ -150,7 +111,7 @@ utf8string FileUtil::AppendFileName(const utf8string& dir, const utf8string& fil
   return result;
 }
 
-bool FileUtil::FileIsExist(const utf8string& filepath) {
+bool FileUtil::IsExist(const utf8string& filepath) {
   if (filepath.length() == 0)
     return false;
 #if defined(WIN32) || defined(_WIN32) || defined(__WIN32__) || defined(__NT__)
@@ -161,7 +122,7 @@ bool FileUtil::FileIsExist(const utf8string& filepath) {
 #endif
 }
 
-bool FileUtil::FileIsRW(const utf8string& filepath) {
+bool FileUtil::IsRW(const utf8string& filepath) {
   if (filepath.length() == 0)
     return false;
 #if defined(WIN32) || defined(_WIN32) || defined(__WIN32__) || defined(__NT__)
@@ -183,75 +144,82 @@ bool FileUtil::RemoveFile(const utf8string& filepath) {
 #endif
 }
 
-bool FileUtil::RenameFile(const utf8string& from,
-                                const utf8string& to,
-                                bool allow_remove_old) {
-  if (FileIsExist(to)) {
-    if (allow_remove_old && !RemoveFile(to)) {
-      return false;
-    }
-  }
-
+bool FileUtil::Rename(const utf8string& from, const utf8string& to) {
 #if defined(WIN32) || defined(_WIN32) || defined(__WIN32__) || defined(__NT__)
-  std::wstring unicode_from = Utf8ToUnicode(from);
-  std::wstring unicode_to = Utf8ToUnicode(to);
-
-  return (_wrename(unicode_from.c_str(), unicode_to.c_str()) == 0);
+  return ::MoveFileExW(Utf8ToUnicode(from).c_str(), Utf8ToUnicode(to).c_str(), MOVEFILE_REPLACE_EXISTING | MOVEFILE_WRITE_THROUGH | MOVEFILE_COPY_ALLOWED);
 #else
-  return (rename(from.c_str(), to.c_str()) == 0);
+  return 0 == rename(from.c_str(), to.c_str());
 #endif
 }
 
-FILE* FileUtil::OpenFile(const utf8string& path, const utf8string& mode) {
+FILE* FileUtil::Open(const utf8string& path, const utf8string& mode) {
   FILE* f = nullptr;
   if (path.length() == 0 || mode.length() == 0)
     return f;
 #if defined(WIN32) || defined(_WIN32) || defined(__WIN32__) || defined(__NT__)
-  std::wstring unicode_path = Utf8ToUnicode(path);
-  std::wstring unicode_mode = Utf8ToUnicode(mode);
-  f = _wfopen(unicode_path.c_str(), unicode_mode.c_str());
+  _wfopen_s(&f, Utf8ToUnicode(path).c_str(), Utf8ToUnicode(mode).c_str());
 #else
   f = fopen(path.c_str(), mode.c_str());
 #endif
+
   return f;
 }
 
-bool FileUtil::CreateFixedSizeFile(const utf8string& path, int64_t fixed_size) {
+int FileUtil::Seek(FILE* f, int64_t offset, int origin) {
+  if (f) {
+#if defined(WIN32) || defined(_WIN32) || defined(__WIN32__) || defined(__NT__)
+    return _fseeki64(f, offset, origin);
+#else
+    return fseeko64(f, offset, origin);
+#endif
+  }
+  return -1;
+}
+
+void FileUtil::Close(FILE* f) {
+  if (f) {
+    int err = fclose(f);
+    assert(err == 0);
+  }
+}
+
+FILE* FileUtil::CreateFixedSizeFile(const utf8string& path, int64_t fixed_size) {
   utf8string str_dir = GetDirectory(path);
   if (str_dir.length() > 0 && !CreateDirectories(str_dir))
-    return false;
+    return nullptr;
 
-  FILE* f = OpenFile(path, "wb");
+  FILE* f = Open(path, "wb+");
   if (!f)
-    return false;
+    return nullptr;
+
   if (fixed_size == 0) {
     fflush(f);
-    fclose(f);
-    return true;
+    Close(f);
+    return nullptr;
   }
 
-  if (fseek(f, (long)(fixed_size - 1), SEEK_SET) != 0) {
-    fflush(f);
-    fclose(f);
-    return false;
+  if (Seek(f, fixed_size - 1, SEEK_SET) != 0) {
+    Close(f);
+    return nullptr;
   }
+
   if (fwrite("", 1, 1, f) != 1) {
-    fflush(f);
-    fclose(f);
-    return false;
+    Close(f);
+    return nullptr;
   }
   fflush(f);
-  fclose(f);
-  f = nullptr;
 
-  // check
-  f = OpenFile(path, "rb");
-  if (!f)
-    return false;
   int64_t size = GetFileSize(f);
-  fflush(f);
-  fclose(f);
-  return (fixed_size == size);
+  if (size != fixed_size) {
+    Close(f);
+    return nullptr;
+  }
+  if (Seek(f, 0L, SEEK_SET) != 0) {
+    Close(f);
+    return nullptr;
+  }
+
+  return f;
 }
 
 }  // namespace teemo

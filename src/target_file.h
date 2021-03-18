@@ -20,29 +20,37 @@
 #include <mutex>
 
 namespace teemo {
-  class TargetFile {
-  public:
-    TargetFile();
-    virtual ~TargetFile();
+typedef struct _Options Options;
 
-    bool Create(const utf8string& file_path, int64_t fixed_size);
-    bool Open(const utf8string& file_path);
-    void Close();
+class TargetFile {
+ public:
+  TargetFile(const utf8string& file_path);
+  virtual ~TargetFile();
 
-    int64_t Write(int64_t pos, const void* data, int64_t data_size);
+  bool createNew(int64_t fixed_size);
+  bool open();
+  void close();
+  bool renameTo(Options* opt,
+                const utf8string& new_file_path,
+                bool need_reopen);
+  Result calculateFileHash(Options* opt, utf8string& str_hash);
+  Result calculateFileMd5(Options* opt, utf8string& str_hash);
 
-    utf8string filePath() const;
-    int64_t fixedSize() const;
-    bool IsOpened() const;
+  int64_t fileSize();
 
-  protected:
-    bool file_opened_;
-    int64_t file_seek_pos_;
-    int64_t fixed_size_;
+  int64_t write(int64_t pos, const void* data, int64_t data_size);
 
-    utf8string file_path_;
-    FILE* f_;
-    std::recursive_mutex file_mutex_;
-  };
-}
+  utf8string filePath() const;
+  int64_t fixedSize() const;
+  bool isOpened() const;
+
+ protected:
+  int64_t file_seek_pos_;
+  int64_t fixed_size_;
+
+  utf8string file_path_;
+  FILE* f_;
+  std::recursive_mutex file_mutex_;
+};
+}  // namespace teemo
 #endif

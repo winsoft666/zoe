@@ -27,12 +27,12 @@ namespace teemo {
 class SliceManager;
 class Slice {
  public:
-   enum Status {
-     UNFETCH = 0,
-     FETCHED = 1,
-     DOWNLOADING = 2,
-     DOWNLOAD_FAILED = 3
-   };
+  enum Status {
+    UNFETCH = 0,
+    FETCHED = 1,
+    DOWNLOADING = 2,
+    DOWNLOAD_FAILED = 3
+  };
   Slice(int32_t index,
         int64_t begin,
         int64_t end,
@@ -60,10 +60,10 @@ class Slice {
 
   bool onNewData(const char* p, long size);
   bool flushToDisk();
-
  protected:
   void tryFreeDiskCacheBuffer();
   void outputVerbose(const utf8string& info) const;
+
  protected:
   int32_t index_;
   int64_t begin_;
@@ -81,4 +81,4 @@ class Slice {
   std::shared_ptr<SliceManager> slice_manager_;
 };
 }  // namespace teemo
-#endif // !TEEMO_SLICE_H_
+#endif  // !TEEMO_SLICE_H_

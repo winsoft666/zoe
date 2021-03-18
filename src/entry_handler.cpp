@@ -15,8 +15,9 @@
 #include "entry_handler.h"
 #include <assert.h>
 #include <functional>
-#include "curl_utils.h"
 #include "file_util.h"
+#include "string_helper.hpp"
+#include "string_encode.h"
 
 namespace teemo {
 
@@ -28,32 +29,90 @@ EntryHandler::EntryHandler()
     : options_(nullptr)
     , slice_manager_(nullptr)
     , progress_handler_(nullptr)
+    , fetch_file_info_curl_(nullptr)
     , speed_handler_(nullptr) {
-  user_stop_.store(false);
+  user_paused_.store(false);
+  user_stopped_.store(false);
+  state_.store(DownloadState::STOPPED);
 }
 
 EntryHandler::~EntryHandler() {}
 
-static size_t __fetchFileInfoCallback(char* buffer, size_t size, size_t nitems, void* outstream) {
+static size_t __WriteBodyCallback(char* buffer,
+                                  size_t size,
+                                  size_t nitems,
+                                  void* outstream) {
   return (size * nitems);
+}
+
+static size_t __WriteHeaderCallback(char* buffer,
+                                    size_t size,
+                                    size_t nitems,
+                                    void* userdata) {
+  EntryHandler::FileInfo* pFileInfo =
+      static_cast<EntryHandler::FileInfo*>(userdata);
+  assert(pFileInfo);
+  if (!pFileInfo) {
+    return -1;
+  }
+
+  size_t total = size * nitems;
+  utf8string header;
+  header.assign(buffer, size * nitems);
+
+  size_t pos = header.find(": ");
+
+  if (pos == std::string::npos) {
+    return total;
+  }
+
+  utf8string key = header.substr(0, pos);
+  utf8string key_lowercase = StringCaseConvert(key, EasyCharToLowerA);
+  utf8string value = header.substr(pos + 2, header.length() - pos - 4);
+
+  OutputDebugStringA(header.c_str());
+
+  if (key_lowercase == "content-length") {
+    pFileInfo->fileSize = strtoll(value.c_str(), nullptr, 10);
+  }
+  else if (key_lowercase == "content-md5") {
+    pFileInfo->contentMd5 = value;
+  }
+  else if (key_lowercase == "accept-ranges") {
+    if (StringCaseConvert(value, EasyCharToLowerA) == "none") {
+      pFileInfo->acceptRanges = false;
+    }
+  }
+
+  return total;
 }
 
 std::shared_future<Result> EntryHandler::start(Options* options) {
   options_ = options;
-  async_task_ = std::async(std::launch::async, std::bind(&EntryHandler::asyncTaskProcess, this));
+  async_task_ = std::async(std::launch::async,
+                           std::bind(&EntryHandler::asyncTaskProcess, this));
   return async_task_;
 }
 
-void EntryHandler::stop() {
-  user_stop_.store(true);
-  options_->internal_stop_event.set();
+void EntryHandler::pause() {
+  if (slice_manager_) {
+    user_paused_.store(true);
+    state_.store(DownloadState::PAUSED);
+  }
 }
 
-bool EntryHandler::isDownloading() {
-  if (async_task_.valid() &&
-      async_task_.wait_for(std::chrono::milliseconds(0)) != std::future_status::ready)
-    return true;
-  return false;
+void EntryHandler::resume() {
+  if (slice_manager_) {
+    user_paused_.store(false);
+    state_.store(DownloadState::DOWNLODING);
+  }
+}
+
+void EntryHandler::stop() {
+  user_stopped_.store(true);
+  options_->internal_stop_event.set();
+  cancelFetchFileInfo();
+  state_.store(DownloadState::STOPPED);
 }
 
 int64_t EntryHandler::originFileSize() const {
@@ -62,9 +121,15 @@ int64_t EntryHandler::originFileSize() const {
   return -1;
 }
 
+DownloadState EntryHandler::state() const {
+  return state_.load();
+}
+
 Result EntryHandler::asyncTaskProcess() {
   options_->internal_stop_event.unset();
-  user_stop_.store(false);
+  user_paused_.store(false);
+  user_stopped_.store(false);
+  state_.store(DownloadState::DOWNLODING);
 
   Result ret = _asyncTaskProcess();
 
@@ -83,90 +148,101 @@ Result EntryHandler::asyncTaskProcess() {
 }
 
 Result EntryHandler::_asyncTaskProcess() {
-  assert(!slice_manager_.get());
-  slice_manager_ = std::make_shared<SliceManager>(options_);
+  FileInfo file_info;
+  bool fetch_size_ret = false;
+  int32_t try_times = 0;
+  do {
+    fetch_size_ret = fetchFileInfo(file_info);
+    if (fetch_size_ret)
+      break;
+  } while (++try_times <= options_->fetch_file_info_retry);
 
-  outputVerbose(u8"url: " + options_->url);
-  outputVerbose(u8"thread num: " + std::to_string((unsigned long)options_->thread_num));
-  outputVerbose(u8"disk cache size: " + std::to_string((unsigned long)options_->disk_cache_size));
-  outputVerbose(u8"target file path: " + options_->target_file_path);
+  if (!fetch_size_ret) {
+    outputVerbose(u8"[teemo] Fetch file size failed");
+    return FETCH_FILE_INFO_FAILED;
+  }
 
-  if (slice_manager_->loadExistSlice() != SUCCESSED) {
-    int64_t origin_file_size = 0L;
-    bool fetch_size_ret = false;
-    int32_t try_times = 0;
-    do {
-      fetch_size_ret = fetchFileInfo(origin_file_size);
-      if (fetch_size_ret)
-        break;
-    } while (++try_times <= options_->fetch_file_info_retry);
-
-    if (!fetch_size_ret) {
-      outputVerbose(u8"fetch file size failed");
-      return FETCH_FILE_INFO_FAILED;
-    }
-
-    //origin_file_size = fetch_size_ret ? origin_file_size : -1;
-
-    // If target file is an empty file, create it.
-    //
-    if (origin_file_size == 0) {
-      outputVerbose(u8"file size is 0");
+  // If target file is an empty file, create it.
+  if (file_info.fileSize == 0) {
+    outputVerbose(u8"[teemo] File size is 0");
+    if (slice_manager_)
       slice_manager_.reset();
-      return FileUtil::CreateFixedSizeFile(options_->target_file_path, 0)
-                 ? SUCCESSED
-                 : CREATE_TARGET_FILE_FAILED;
-    }
-
-    slice_manager_->setOriginFileSize(origin_file_size);
+    return FileUtil::CreateFixedSizeFile(options_->target_file_path, 0)
+               ? SUCCESSED
+               : CREATE_TARGET_FILE_FAILED;
   }
 
-  Result ms_ret = slice_manager_->tryMakeSlices();
-  if (ms_ret != SUCCESSED) {
+  outputVerbose(u8"[teemo] URL: " + options_->url);
+  outputVerbose(u8"[teemo] Content MD5: " + file_info.contentMd5);
+  outputVerbose(u8"[teemo] Redirect URL: " + file_info.redirect_url);
+  outputVerbose(u8"[teemo] Thread number: " +
+                std::to_string((unsigned long)options_->thread_num));
+
+  outputVerbose(u8"[teemo] Disk Cache Size: " +
+                std::to_string((unsigned long)options_->disk_cache_size));
+  outputVerbose(u8"[teemo] Target file path: " + options_->target_file_path);
+
+  assert(!slice_manager_.get());
+  if (slice_manager_)
     slice_manager_.reset();
-    return ms_ret;
+  slice_manager_ =
+      std::make_shared<SliceManager>(options_, file_info.redirect_url);
+
+  if (slice_manager_->loadExistSlice(file_info.fileSize,
+                                     file_info.contentMd5) != SUCCESSED) {
+    slice_manager_->setOriginFileSize(file_info.fileSize);
+    slice_manager_->setContentMd5(file_info.contentMd5);
+
+    Result ms_ret = slice_manager_->makeSlices(file_info.acceptRanges);
+    if (ms_ret != SUCCESSED) {
+      slice_manager_.reset();
+      return ms_ret;
+    }
   }
 
-  Result all_completed_ret = slice_manager_->isAllSliceCompleted();
+  Result all_completed_ret = slice_manager_->isAllSliceCompleted(false);
   if (all_completed_ret == SUCCESSED) {
-    outputVerbose(u8"all of slices download completed");
+    outputVerbose(u8"[teemo] All of slices been downloaded");
     Result ret = slice_manager_->finishDownloadProgress(false);
     slice_manager_.reset();
     return ret;
   }
-  outputVerbose(u8"one or more slice is not completed: " +
-                std::to_string((unsigned long)all_completed_ret));
+  outputVerbose(u8"[teemo] Slice download failed: " +
+                utf8string(GetResultString(all_completed_ret)));
 
   multi_ = curl_multi_init();
   if (!multi_) {
-    outputVerbose(u8"curl_multi_init failed");
+    outputVerbose(u8"[teemo] curl_multi_init failed");
     slice_manager_.reset();
     return INIT_CURL_MULTI_FAILED;
   }
 
   int32_t disk_cache_per_slice = 0L;
   int32_t max_speed_per_slice = 0L;
-  calculateSliceInfo(std::min(slice_manager_->usefulSliceNum(), options_->thread_num),
-                     &disk_cache_per_slice, &max_speed_per_slice);
+  calculateSliceInfo(
+      std::min(slice_manager_->usefulSliceNum(), options_->thread_num),
+      &disk_cache_per_slice, &max_speed_per_slice);
 
   Result ss_ret = SUCCESSED;
   int32_t selected = 0;
   while (true) {
     if (selected >= options_->thread_num)
       break;
-    std::shared_ptr<Slice> slice = slice_manager_->fetchUsefulSlice(false, nullptr);
+    std::shared_ptr<Slice> slice =
+        slice_manager_->fetchUsefulSlice(false, nullptr);
     if (!slice)
       break;
     ss_ret = slice->start(multi_, disk_cache_per_slice, max_speed_per_slice);
     if (ss_ret != SUCCESSED) {
-      outputVerbose(u8"slice start failed: " + std::to_string((unsigned long)ss_ret));
+      outputVerbose(u8"[teemo] Start slice failed: " +
+                    utf8string(GetResultString(ss_ret)));
       continue;
     }
     selected++;
   }
 
   if (selected == 0) {
-    outputVerbose(u8"no available slice");
+    outputVerbose(u8"[teemo] No available slice");
     curl_multi_cleanup(multi_);
     multi_ = nullptr;
     slice_manager_.reset();
@@ -174,10 +250,11 @@ Result EntryHandler::_asyncTaskProcess() {
   }
 
   if (options_->progress_functor)
-    progress_handler_ = std::make_shared<ProgressHandler>(options_, slice_manager_);
+    progress_handler_ =
+        std::make_shared<ProgressHandler>(options_, slice_manager_);
   if (options_->speed_functor)
-    speed_handler_ =
-        std::make_shared<SpeedHandler>(slice_manager_->totalDownloaded(), options_, slice_manager_);
+    speed_handler_ = std::make_shared<SpeedHandler>(
+        slice_manager_->totalDownloaded(), options_, slice_manager_);
 
   // https://curl.haxx.se/libcurl/c/curl_multi_fdset.html
   // https://docs.microsoft.com/en-us/windows/win32/api/winsock2/nf-winsock2-select
@@ -209,9 +286,20 @@ Result EntryHandler::_asyncTaskProcess() {
   int still_running = 0;
 
   CURLMcode mcode = curl_multi_perform(multi_, &still_running);
-  outputVerbose(u8"start downloading...");
+  outputVerbose(u8"[teemo] Start downloading");
 
   do {
+    if (user_paused_.load()) {
+      while (true) {
+        if (options_->internal_stop_event.wait(50))
+          break;
+        if (options_->user_stop_event && options_->user_stop_event->isSetted())
+          break;
+        if (!user_paused_.load())
+          break;
+      }
+    }
+
     if (options_->internal_stop_event.isSetted() ||
         (options_->user_stop_event && options_->user_stop_event->isSetted()))
       break;
@@ -231,7 +319,8 @@ Result EntryHandler::_asyncTaskProcess() {
     */
     mcode = curl_multi_fdset(multi_, &fdread, &fdwrite, &fdexcep, &maxfd);
     if (mcode != CURLM_CALL_MULTI_PERFORM && mcode != CURLM_OK) {
-      outputVerbose("curl_multi_fdset failed, code: " + std::to_string((int)mcode));
+      outputVerbose("[teemo] curl_multi_fdset failed, code: " +
+                    std::to_string((int)mcode));
       break;
     }
 
@@ -256,92 +345,120 @@ Result EntryHandler::_asyncTaskProcess() {
       // Get a slice that not started
       // Implied: flush the disk cache buffer of completed slice, then free buffer.
       //
-      std::shared_ptr<Slice> slice = slice_manager_->fetchUsefulSlice(true, multi_);
+      std::shared_ptr<Slice> slice =
+          slice_manager_->fetchUsefulSlice(true, multi_);
       if (slice) {
         int32_t disk_cache_per_slice = 0L;
         int32_t max_speed_per_slice = 0L;
-        calculateSliceInfo(still_running + 1, &disk_cache_per_slice, &max_speed_per_slice);
-        Result start_ret = slice->start(multi_, disk_cache_per_slice, max_speed_per_slice);
+        calculateSliceInfo(still_running + 1, &disk_cache_per_slice,
+                           &max_speed_per_slice);
+        Result start_ret =
+            slice->start(multi_, disk_cache_per_slice, max_speed_per_slice);
         if (still_running <= 0) {
           if (start_ret == SUCCESSED) {
             curl_multi_perform(multi_, &still_running);
-          } else {
+          }
+          else {
             still_running = 1;
-            outputVerbose(u8"slice start failed: " + std::to_string((unsigned long)start_ret));
+            outputVerbose(u8"[teemo] Start slice downloading failed: " +
+                          std::to_string((unsigned long)start_ret));
           }
         }
       }
     }
-  } while (still_running > 0);
+  } while (still_running > 0 || user_paused_.load());
 
-  outputVerbose(u8"download over");
+  outputVerbose(u8"[teemo] Downloading end");
 
   Result ret = slice_manager_->finishDownloadProgress(true);
   slice_manager_.reset();
 
-  if (ret == SUCCESSED)
-    return ret;
+  state_.store(DownloadState::STOPPED);
 
-  if (user_stop_.load() || (options_->user_stop_event && options_->user_stop_event->isSetted()))
+  if (ret == SUCCESSED) {
+    outputVerbose(u8"[teemo] All success!");
+    return ret;
+  }
+
+  if (user_stopped_.load() ||
+      (options_->user_stop_event && options_->user_stop_event->isSetted()))
     ret = CANCELED;  // user cancel, ignore other failed reason
 
   return ret;
 }
 
-bool EntryHandler::fetchFileInfo(int64_t& file_size) const {
-  ScopedCurl scoped_curl;
-  CURL* curl = scoped_curl.GetCurl();
+bool EntryHandler::fetchFileInfo(FileInfo& fileInfo) {
+  return requestFileInfo(options_->url, fileInfo);
+}
 
-  curl_easy_setopt(curl, CURLOPT_VERBOSE, 0);
+bool EntryHandler::requestFileInfo(const utf8string& url, FileInfo& fileInfo) {
+  if (!fetch_file_info_curl_)
+    fetch_file_info_curl_ = std::make_shared<ScopedCurl>();
+  CURL* curl = fetch_file_info_curl_->GetCurl();
+
+  curl_easy_reset(curl);
+  curl_easy_setopt(curl, CURLOPT_VERBOSE, 0L);
   curl_easy_setopt(curl, CURLOPT_NOSIGNAL, 1L);
-  curl_easy_setopt(curl, CURLOPT_URL, options_->url.c_str());
-  curl_easy_setopt(curl, CURLOPT_HEADER, 1);
-  curl_easy_setopt(curl, CURLOPT_NOBODY, 1);
-  curl_easy_setopt(curl, CURLOPT_FOLLOWLOCATION, 1);
-  curl_easy_setopt(curl, CURLOPT_SSL_VERIFYHOST, 0);
-  curl_easy_setopt(curl, CURLOPT_SSL_VERIFYPEER, 0);
-  curl_easy_setopt(curl, CURLOPT_CONNECTTIMEOUT_MS, options_->network_conn_timeout);
+  curl_easy_setopt(curl, CURLOPT_URL, url.c_str());
+  curl_easy_setopt(curl, CURLOPT_NOBODY, 1L);
+  curl_easy_setopt(curl, CURLOPT_FOLLOWLOCATION, 1L);
+  curl_easy_setopt(curl, CURLOPT_SSL_VERIFYHOST, 0L);
+  curl_easy_setopt(curl, CURLOPT_SSL_VERIFYPEER, 0L);
+  curl_easy_setopt(curl, CURLOPT_CONNECTTIMEOUT_MS,
+                   options_->network_conn_timeout);
 
   //if (ca_path_.length() > 0)
   //    curl_easy_setopt(curl, CURLOPT_CAINFO, ca_path_.c_str());
 
   // avoid libcurl failed with "Failed writing body".
-  curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, __fetchFileInfoCallback);
+  curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, __WriteBodyCallback);
+
+  curl_easy_setopt(curl, CURLOPT_HEADERFUNCTION, __WriteHeaderCallback);
+  curl_easy_setopt(curl, CURLOPT_HEADERDATA, (void*)&fileInfo);
+
+  //curl_easy_setopt(curl, CURLOPT_PROXY, "127.0.0.1:8888");
 
   CURLcode ret_code = curl_easy_perform(curl);
   if (ret_code != CURLE_OK) {
     return false;
   }
 
+  char* redirect_url = nullptr;
+  if (curl_easy_getinfo(curl, CURLINFO_REDIRECT_URL, &redirect_url) ==
+      CURLE_OK) {
+    if (redirect_url)
+      fileInfo.redirect_url = redirect_url;
+  }
+
   int http_code = 0;
-  ret_code = curl_easy_getinfo(curl, CURLINFO_RESPONSE_CODE, &http_code);
-
-  if (ret_code != CURLE_OK)
+  if (curl_easy_getinfo(curl, CURLINFO_RESPONSE_CODE, &http_code) != CURLM_OK) {
     return false;
-
-  if (ret_code == CURLE_OK) {
-    if (http_code != 200 &&
-        // A 350 response code is sent by the server in response to a file-related command that
-        // requires further commands in order for the operation to be completed
-        http_code != 350) {
-      return false;
-    }
   }
 
-  file_size = 0L;
-  ret_code = curl_easy_getinfo(curl, CURLINFO_CONTENT_LENGTH_DOWNLOAD_T, &file_size);
-  if (ret_code != CURLE_OK) {
-    file_size = -1L;
+  if (http_code != 200 && http_code != 350) {
+    // A 350 response code is sent by the server in response to a file-related command that
+    // requires further commands in order for the operation to be completed
+    return false;
   }
-
-  outputVerbose("CURLINFO_CONTENT_LENGTH_DOWNLOAD_T: " + std::to_string((unsigned long)file_size));
 
   return true;
 }
 
+void EntryHandler::cancelFetchFileInfo() {
+  CURL* curl = fetch_file_info_curl_->GetCurl();
+  if (curl) {
+    curl_easy_setopt(curl, CURLOPT_TIMEOUT_MS, 1L);
+  }
+}
+
 void EntryHandler::outputVerbose(const utf8string& info) const {
-  if (options_->verbose_functor)
+  if (options_->verbose_functor) {
     options_->verbose_functor(info);
+  }
+#if defined(WIN32) || defined(_WIN32) || defined(__WIN32__) || defined(__NT__)
+  OutputDebugStringW(Utf8ToUnicode(info).c_str());
+  OutputDebugStringW(L"\r\n");
+#endif
 }
 
 void EntryHandler::calculateSliceInfo(int32_t concurrency_num,
@@ -363,7 +480,8 @@ void EntryHandler::calculateSliceInfo(int32_t concurrency_num,
 
     if (max_speed_per_slice) {
       *max_speed_per_slice =
-          (options_->max_speed == -1 ? -1 : (options_->max_speed / concurrency_num));
+          (options_->max_speed == -1 ? -1
+                                     : (options_->max_speed / concurrency_num));
     }
   }
 }

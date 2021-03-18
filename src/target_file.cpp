@@ -14,69 +14,158 @@
 #include "target_file.h"
 #include "file_util.h"
 #include <assert.h>
+#include "options.h"
+#include <windows.h>
+#include "md5.h"
+#include "crc32.h"
+#include "sha1.h"
+#include "sha256.h"
+#include "filesystem.hpp"
 
 namespace teemo {
 
-TargetFile::TargetFile() : f_(nullptr), file_opened_(false), fixed_size_(0L), file_seek_pos_(0L) {}
+TargetFile::TargetFile(const utf8string& file_path)
+    : file_path_(file_path), f_(nullptr), fixed_size_(0L), file_seek_pos_(0L) {}
 
 TargetFile::~TargetFile() {
-  assert(f_ == nullptr && file_opened_ == false);
+  close();
 }
 
-bool TargetFile::Create(const utf8string& file_path, int64_t fixed_size) {
+bool TargetFile::createNew(int64_t fixed_size) {
   std::lock_guard<std::recursive_mutex> lg(file_mutex_);
-
-  assert(f_ == nullptr && file_opened_ == false);
+  assert(f_ == nullptr);
+  if (f_)
+    return false;
 
   if (fixed_size < 0)
     fixed_size = 0;
 
-  if (!FileUtil::CreateFixedSizeFile(file_path, fixed_size))
+  f_ = FileUtil::CreateFixedSizeFile(file_path_, fixed_size);
+  if (!f_)
     return false;
 
-  f_ = FileUtil::OpenFile(file_path, "r+b");
   if (f_) {
-    file_path_ = file_path;
-    file_opened_ = true;
     file_seek_pos_ = 0L;
-    fseek(f_, (long)file_seek_pos_, SEEK_SET);
+    FileUtil::Seek(f_, 0L, SEEK_SET);
   }
 
   return (f_ != nullptr);
 }
 
-bool TargetFile::Open(const utf8string& file_path) {
+bool TargetFile::open() {
   std::lock_guard<std::recursive_mutex> lg(file_mutex_);
-
-  if (!FileUtil::FileIsExist(file_path)) {
+  assert(f_ == nullptr);
+  if (f_)
     return false;
-  }
 
-  assert(f_ == nullptr && file_opened_ == false);
-
-  f_ = FileUtil::OpenFile(file_path, "r+b");
+  f_ = FileUtil::Open(file_path_, "rb+");
   if (f_) {
-    file_path_ = file_path;
-    file_opened_ = true;
     file_seek_pos_ = 0L;
-    fseek(f_, (long)file_seek_pos_, SEEK_SET);
+    FileUtil::Seek(f_, 0L, SEEK_SET);
   }
   return (f_ != nullptr);
 }
 
-void TargetFile::Close() {
+void TargetFile::close() {
   std::lock_guard<std::recursive_mutex> lg(file_mutex_);
   if (f_) {
     fflush(f_);
-    fclose(f_);
+    FileUtil::Close(f_);
     f_ = nullptr;
-    file_opened_ = false;
   }
 }
 
-int64_t TargetFile::Write(int64_t pos, const void* data, int64_t data_size) {
+bool TargetFile::renameTo(Options* opt,
+                          const utf8string& new_file_path,
+                          bool need_reopen) {
   std::lock_guard<std::recursive_mutex> lg(file_mutex_);
-  assert(f_ && file_opened_);
+  bool reopen = false;
+  if (isOpened()) {
+    close();
+    reopen = need_reopen;
+  }
+
+#if defined(WIN32) || defined(_WIN32) || defined(__WIN32__) || defined(__NT__)
+  int retry_times = 0;
+  bool rename_ret = false;
+  do {
+    rename_ret = FileUtil::Rename(file_path_, new_file_path);
+    if (rename_ret)
+      break;
+    if (++retry_times > 3)
+      break;
+
+    if (GetLastError() == 32) {
+      if (opt && opt->internal_stop_event.wait(1000))
+        break;
+    }
+  } while (true);
+
+  if (!rename_ret) {
+    return false;
+  }
+#else
+  if (!FileUtil::Rename(file_path_, new_file_path)) {
+    return false;
+  }
+#endif
+
+  if (reopen && open()) {
+    FileUtil::Seek(f_, file_seek_pos_, SEEK_SET);
+  }
+
+  return true;
+}
+
+Result TargetFile::calculateFileHash(Options* opt, utf8string& str_hash) {
+  std::lock_guard<std::recursive_mutex> lg(file_mutex_);
+
+  Result ret = CALCULATE_HASH_FAILED;
+  if (opt->hash_type == MD5) {
+    ret = f_ ? CalculateFileMd5(f_, opt, str_hash)
+             : CalculateFileMd5(file_path_, opt, str_hash);
+  }
+  else if (opt->hash_type == CRC32) {
+    ret = f_ ? CalculateFileCRC32(f_, opt, str_hash)
+             : CalculateFileCRC32(file_path_, opt, str_hash);
+  }
+  else if (opt->hash_type == SHA1) {
+    ret = f_ ? CalculateFileSHA1(f_, opt, str_hash)
+             : CalculateFileSHA1(file_path_, opt, str_hash);
+  }
+  else if (opt->hash_type == SHA256) {
+    ret = f_ ? CalculateFileSHA256(f_, opt, str_hash)
+             : CalculateFileSHA256(file_path_, opt, str_hash);
+  }
+  return ret;
+}
+
+Result TargetFile::calculateFileMd5(Options* opt, utf8string& str_hash) {
+  std::lock_guard<std::recursive_mutex> lg(file_mutex_);
+  Result ret = CALCULATE_HASH_FAILED;
+
+  ret = f_ ? CalculateFileMd5(f_, opt, str_hash)
+           : CalculateFileMd5(file_path_, opt, str_hash);
+
+  return ret;
+}
+
+int64_t TargetFile::fileSize() {
+  std::lock_guard<std::recursive_mutex> lg(file_mutex_);
+  int64_t ret = 0L;
+  if (isOpened()) {
+    ret = FileUtil::GetFileSize(f_);
+    FileUtil::Seek(f_, file_seek_pos_, SEEK_SET);
+  }
+  else {
+    ret = FileUtil::GetFileSize(file_path_);
+  }
+  return ret;
+}
+
+int64_t TargetFile::write(int64_t pos, const void* data, int64_t data_size) {
+  std::lock_guard<std::recursive_mutex> lg(file_mutex_);
+  assert(f_);
   int64_t written = 0L;
   do {
     if (!f_)
@@ -85,16 +174,36 @@ int64_t TargetFile::Write(int64_t pos, const void* data, int64_t data_size) {
       break;
     if (pos < 0)
       break;
+
     if (file_seek_pos_ != pos) {
-      if (fseek(f_, (long)pos, SEEK_SET) != 0) {
+      if (FileUtil::Seek(f_, pos, SEEK_SET) != 0) {
+        assert(false);
         break;
       }
       file_seek_pos_ = pos;
     }
 
+#if 1
     written = fwrite(data, 1, (long)data_size, f_);
+    assert(written == data_size);
     fflush(f_);
     file_seek_pos_ += written;
+#else
+    const long write_unit = 1024;
+    long remain = data_size;
+    do {
+      long need_w = remain > write_unit ? write_unit : remain;
+      long w = fwrite(((char*)data + written), 1, need_w, f_);
+      fflush(f_);
+
+      assert(need_w == w);
+
+      remain -= w;
+      written += w;
+    } while (remain > 0);
+
+    file_seek_pos_ += written;
+#endif
   } while (false);
 
   return written;
@@ -108,8 +217,8 @@ int64_t TargetFile::fixedSize() const {
   return fixed_size_;
 }
 
-bool TargetFile::IsOpened() const {
-  return file_opened_;
+bool TargetFile::isOpened() const {
+  return f_ != nullptr;
 }
 
 }  // namespace teemo

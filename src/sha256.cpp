@@ -270,7 +270,7 @@ std::string sha256_digest(const struct sha256_ctx* ctx) {
 }  // namespace sha256_internal
 
 Result CalculateFileSHA256(const utf8string& file_path, Options* opt, utf8string& str_hash) {
-  FILE* f = FileUtil::OpenFile(file_path, "rb");
+  FILE* f = FileUtil::Open(file_path, "rb");
   if (!f)
     return CALCULATE_HASH_FAILED;
 
@@ -296,4 +296,30 @@ Result CalculateFileSHA256(const utf8string& file_path, Options* opt, utf8string
   return SUCCESSED;
 }
 
+Result CalculateFileSHA256(FILE* f, Options* opt, utf8string& str_hash) {
+  if (!f)
+    return CALCULATE_HASH_FAILED;
+
+  FileUtil::Seek(f, 0L, SEEK_SET);
+
+  sha256_internal::SHA256_CTX sha256Ctx;
+  sha256_internal::sha256_init(&sha256Ctx);
+
+  size_t dwReadBytes = 0;
+  unsigned char szData[1024] = {0};
+
+  while ((dwReadBytes = fread(szData, 1, 1024, f)) > 0) {
+    if (opt && (opt->internal_stop_event.isSetted() ||
+                (opt->user_stop_event && opt->user_stop_event->isSetted()))) {
+      return CANCELED;
+    }
+    sha256_internal::sha256_update(&sha256Ctx, szData, dwReadBytes);
+  }
+
+  sha256_internal::sha256_final(&sha256Ctx);
+
+  str_hash = sha256_internal::sha256_digest(&sha256Ctx);
+
+  return SUCCESSED;
+}
 }  // namespace teemo

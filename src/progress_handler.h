@@ -24,7 +24,8 @@ typedef struct _Options Options;
 
 class ProgressHandler {
  public:
-  ProgressHandler(Options* options, std::shared_ptr<SliceManager> slice_manager);
+  ProgressHandler(Options* options,
+                  std::shared_ptr<SliceManager> slice_manager);
   virtual ~ProgressHandler();
 
  protected:
@@ -36,4 +37,4 @@ class ProgressHandler {
   std::shared_ptr<SliceManager> slice_manager_;
 };
 }  // namespace teemo
-#endif // !TEEMO_PROGRESS_HANDLER_H_
+#endif  // !TEEMO_PROGRESS_HANDLER_H_

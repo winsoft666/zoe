@@ -65,7 +65,7 @@ void crc32Finish(uint32_t* pCrc32) {
 }  // namespace crc32_internal
 
 Result CalculateFileCRC32(const utf8string& file_path, Options* opt, utf8string& str_hash) {
-  FILE* f = FileUtil::OpenFile(file_path, "rb");
+  FILE* f = FileUtil::Open(file_path, "rb");
   if (!f)
     return CALCULATE_HASH_FAILED;
 
@@ -83,6 +83,34 @@ Result CalculateFileCRC32(const utf8string& file_path, Options* opt, utf8string&
     crc32_internal::crc32Update(&ulCRC32, szData, dwReadBytes);
   }
   fclose(f);
+
+  crc32_internal::crc32Finish(&ulCRC32);
+
+  char szCRC[10] = {0};
+  snprintf(szCRC, sizeof(szCRC), "%08x", ulCRC32);
+  str_hash = szCRC;
+  return SUCCESSED;
+}
+
+Result CalculateFileCRC32(FILE* f, Options* opt, utf8string& str_hash) {
+  if (!f)
+    return CALCULATE_HASH_FAILED;
+
+  FileUtil::Seek(f, 0L, SEEK_SET);
+
+  uint32_t ulCRC32 = 0;
+  crc32_internal::crc32Init(&ulCRC32);
+
+  size_t dwReadBytes = 0;
+  unsigned char szData[1024] = {0};
+
+  while ((dwReadBytes = fread(szData, 1, 1024, f)) > 0) {
+    if (opt && (opt->internal_stop_event.isSetted() ||
+                (opt->user_stop_event && opt->user_stop_event->isSetted()))) {
+      return CANCELED;
+    }
+    crc32_internal::crc32Update(&ulCRC32, szData, dwReadBytes);
+  }
 
   crc32_internal::crc32Finish(&ulCRC32);
 

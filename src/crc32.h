@@ -27,5 +27,6 @@ void crc32Finish(uint32_t* pCrc32);
 }  // namespace crc32_internal
 
 Result CalculateFileCRC32(const utf8string& file_path, Options* opt, utf8string &str_hash);
+Result CalculateFileCRC32(FILE* f, Options* opt, utf8string& str_hash);
 }  // namespace teemo
 #endif /* ___CRC32_H___ */

@@ -54,8 +54,8 @@ const char* GetResultString(int enumVal) {
                                       u8"HASH_VERIFY_NOT_PASS",
                                       u8"CALCULATE_HASH_FAILED",
                                       u8"FETCH_FILE_INFO_FAILED",
-                                      u8"UNSURE_DOWNLOAD_COMPLETED"
-  };
+                                      u8"UNSURE_DOWNLOAD_COMPLETED",
+                                      u8"REDIRECT_URL_DIFFERENT"};
   return EnumStrings[enumVal];
 }
 
@@ -64,8 +64,11 @@ class Teemo::TeemoImpl {
   TeemoImpl() {}
   ~TeemoImpl() {}
 
-  bool isDownloading() { return (entry_handler_ && entry_handler_->isDownloading()); }
-
+  bool isDownloading() {
+    if (!entry_handler_)
+      return false;
+    return entry_handler_->state() != DownloadState::STOPPED;
+  }
  public:
   Options options_;
   std::shared_ptr<EntryHandler> entry_handler_;
@@ -134,10 +137,15 @@ int64_t Teemo::originFileSize() const noexcept {
   return ret;
 }
 
+DownloadState Teemo::state() const noexcept {
+  assert(impl_);
+  if (impl_ && impl_->entry_handler_)
+    return impl_->entry_handler_->state();
+  return DownloadState::STOPPED;
+}
+
 Result Teemo::setNetworkConnectionTimeout(int32_t milliseconds) noexcept {
   assert(impl_);
-  if (impl_->isDownloading())
-    return ALREADY_DOWNLOADING;
   if (milliseconds <= 0)
     milliseconds = TEEMO_DEFAULT_NETWORK_CONN_TIMEOUT_MS;
   impl_->options_.network_conn_timeout = milliseconds;
@@ -151,8 +159,6 @@ int32_t Teemo::networkConnectionTimeout() const noexcept {
 
 Result Teemo::setFetchFileInfoRetryTimes(int32_t retry_times) noexcept {
   assert(impl_);
-  if (impl_->isDownloading())
-    return ALREADY_DOWNLOADING;
   if (retry_times <= 0)
     retry_times = TEEMO_DEFAULT_FETCH_FILE_INFO_RETRY_TIMES;
   impl_->options_.fetch_file_info_retry = retry_times;
@@ -166,8 +172,6 @@ int32_t Teemo::fetchFileInfoRetryTimes() const noexcept {
 
 Result Teemo::setTmpFileExpiredTime(int32_t seconds) noexcept {
   assert(impl_);
-  if (impl_->isDownloading())
-    return ALREADY_DOWNLOADING;
   impl_->options_.tmp_file_expired_time = seconds;
 
   return SUCCESSED;
@@ -211,8 +215,6 @@ int32_t Teemo::diskCacheSize() const noexcept {
 
 Result Teemo::setStopEvent(Event* stop_event) noexcept {
   assert(impl_);
-  if (impl_->isDownloading())
-    return ALREADY_DOWNLOADING;
   impl_->options_.user_stop_event = stop_event;
   return SUCCESSED;
 }
@@ -222,19 +224,30 @@ Event* Teemo::stopEvent() noexcept {
   return impl_->options_.user_stop_event;
 }
 
-Result Teemo::setSkippingUrlCheck(bool skip) noexcept {
+Result Teemo::setRedirectedUrlCheckEnabled(bool enabled) noexcept {
   assert(impl_);
-  if (impl_->isDownloading())
-    return ALREADY_DOWNLOADING;
-  impl_->options_.skipping_url_check = skip;
+  impl_->options_.redirected_url_check_enabled = enabled;
   return SUCCESSED;
 }
 
-bool Teemo::skippingUrlCheck() const noexcept {
-  return impl_->options_.skipping_url_check;
+bool Teemo::redirectedUrlCheckEnabled() const noexcept {
+  assert(impl_);
+  return impl_->options_.redirected_url_check_enabled;
 }
 
-Result Teemo::setSlicePolicy(SlicePolicy policy, int64_t policy_value) noexcept {
+Result Teemo::setContentMd5Enabled(bool enabled) noexcept {
+  assert(impl_);
+  impl_->options_.content_md5_enabled = enabled;
+  return SUCCESSED;
+}
+
+bool Teemo::contentMd5Enabled() const noexcept {
+  assert(impl_);
+  return impl_->options_.content_md5_enabled;
+}
+
+Result Teemo::setSlicePolicy(SlicePolicy policy,
+                             int64_t policy_value) noexcept {
   assert(impl_);
   if (policy == FixedSize) {
     if (policy_value <= 0)
@@ -259,7 +272,8 @@ Result Teemo::setSlicePolicy(SlicePolicy policy, int64_t policy_value) noexcept 
   return INVALID_SLICE_POLICY;
 }
 
-void Teemo::slicePolicy(SlicePolicy& policy, int64_t& policy_value) const noexcept {
+void Teemo::slicePolicy(SlicePolicy& policy, int64_t& policy_value) const
+    noexcept {
   assert(impl_);
   policy = impl_->options_.slice_policy;
   policy_value = impl_->options_.slice_policy_value;
@@ -288,11 +302,12 @@ void Teemo::hashVerifyPolicy(HashVerifyPolicy& policy,
   hash_value = impl_->options_.hash_value;
 }
 
-std::shared_future<Result> Teemo::start(const utf8string& url,
-                                        const utf8string& target_file_path,
-                                        ResultFunctor result_functor,
-                                        ProgressFunctor progress_functor,
-                                        RealtimeSpeedFunctor realtime_speed_functor) noexcept {
+std::shared_future<Result> Teemo::start(
+    const utf8string& url,
+    const utf8string& target_file_path,
+    ResultFunctor result_functor,
+    ProgressFunctor progress_functor,
+    RealtimeSpeedFunctor realtime_speed_functor) noexcept {
   assert(impl_);
   Result ret = SUCCESSED;
 
@@ -325,19 +340,25 @@ std::shared_future<Result> Teemo::start(const utf8string& url,
   return impl_->entry_handler_->start(&impl_->options_);
 }
 
+void Teemo::pause() noexcept {
+  assert(impl_);
+  if (impl_ && impl_->entry_handler_) {
+    impl_->entry_handler_->pause();
+  }
+}
+
+void Teemo::resume() noexcept {
+  assert(impl_);
+  if (impl_ && impl_->entry_handler_) {
+    impl_->entry_handler_->resume();
+  }
+}
+
 void Teemo::stop() noexcept {
   assert(impl_);
   if (impl_ && impl_->entry_handler_) {
     impl_->entry_handler_->stop();
   }
-}
-
-bool Teemo::isDownloading() noexcept {
-  assert(impl_);
-  if (impl_ && impl_->entry_handler_) {
-    return impl_->entry_handler_->isDownloading();
-  }
-  return false;
 }
 
 class Event::EventImpl {

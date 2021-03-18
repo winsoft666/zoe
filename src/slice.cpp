@@ -19,6 +19,7 @@
 #include "curl_utils.h"
 #include "curl/curl.h"
 #include "options.h"
+#include "string_encode.h"
 
 namespace teemo {
 
@@ -73,12 +74,15 @@ int32_t Slice::index() const {
   return index_;
 }
 
-static size_t DownloadWriteCallback(char* buffer, size_t size, size_t nitems, void* outstream) {
+static size_t __SliceWriteBodyCallback(char* buffer,
+                                       size_t size,
+                                       size_t nitems,
+                                       void* outstream) {
   Slice* pThis = (Slice*)outstream;
 
   size_t write_size = size * nitems;
   if (!pThis->onNewData(buffer, write_size)) {
-    // TODO
+    assert(false);
   }
 
   return write_size;
@@ -97,39 +101,46 @@ Result Slice::start(void* multi, int64_t disk_cache_size, int32_t max_speed) {
 
   curl_ = curl_easy_init();
   if (!curl_) {
-    outputVerbose(u8"curl_easy_init failed");
+    outputVerbose(u8"[teemo] curl_easy_init failed");
     tryFreeDiskCacheBuffer();
     status_ = DOWNLOAD_FAILED;
     return INIT_CURL_FAILED;
   }
 
-  curl_easy_setopt(curl_, CURLOPT_VERBOSE, 0);
-  curl_easy_setopt(curl_, CURLOPT_URL, slice_manager_->options()->url.c_str());
+  curl_easy_setopt(curl_, CURLOPT_VERBOSE, 0L);
+  utf8string redirect_url = slice_manager_->redirectUrl();
+  utf8string url = slice_manager_->options()->url;
+  curl_easy_setopt(
+      curl_, CURLOPT_URL,
+      (redirect_url.length() > 0 ? redirect_url.c_str() : url.c_str()));
+
   curl_easy_setopt(curl_, CURLOPT_NOSIGNAL, 1L);
-  curl_easy_setopt(curl_, CURLOPT_FOLLOWLOCATION, 1);
-  curl_easy_setopt(curl_, CURLOPT_SSL_VERIFYHOST, 0);
-  curl_easy_setopt(curl_, CURLOPT_SSL_VERIFYPEER, 0);
+  curl_easy_setopt(curl_, CURLOPT_FOLLOWLOCATION, 1L);
+  curl_easy_setopt(curl_, CURLOPT_SSL_VERIFYHOST, 0L);
+  curl_easy_setopt(curl_, CURLOPT_SSL_VERIFYPEER, 0L);
   //if (ca_path_.length() > 0)
   //    curl_easy_setopt(curl_, CURLOPT_CAINFO, ca_path_.c_str());
-  curl_easy_setopt(curl_, CURLOPT_LOW_SPEED_LIMIT, 10L);
-  curl_easy_setopt(curl_, CURLOPT_LOW_SPEED_TIME, 30L);
-
-  curl_easy_setopt(curl_, CURLOPT_NOPROGRESS, 1);
+  curl_easy_setopt(curl_, CURLOPT_LOW_SPEED_LIMIT, 0L);  // disabled
+  curl_easy_setopt(curl_, CURLOPT_LOW_SPEED_TIME, 0L);   // disabled
+  curl_easy_setopt(curl_, CURLOPT_NOPROGRESS, 1L);
 
   if (max_speed > 0) {
-    curl_easy_setopt(curl_, CURLOPT_MAX_RECV_SPEED_LARGE, (curl_off_t)max_speed);
+    curl_easy_setopt(curl_, CURLOPT_MAX_RECV_SPEED_LARGE,
+                     (curl_off_t)max_speed);
   }
   curl_easy_setopt(curl_, CURLOPT_FORBID_REUSE, 0L);
-  curl_easy_setopt(curl_, CURLOPT_WRITEFUNCTION, DownloadWriteCallback);
+  curl_easy_setopt(curl_, CURLOPT_WRITEFUNCTION, __SliceWriteBodyCallback);
   curl_easy_setopt(curl_, CURLOPT_WRITEDATA, this);
   if (end_ != -1) {
-    char range[64] = { 0 };
-    snprintf(range, sizeof(range), "%ld-%ld", (long)(begin_ + capacity_), (long)end_);
+    char range[64] = {0};
+    snprintf(range, sizeof(range), "%ld-%ld", (long)(begin_ + capacity_),
+             (long)end_);
     if (strlen(range) > 0) {
       CURLcode err = curl_easy_setopt(curl_, CURLOPT_RANGE, range);
-      outputVerbose(u8"CURLOPT_RANGE: " + std::string(range));
+      outputVerbose(u8"[teemo] CURLOPT_RANGE: " + std::string(range));
       if (err != CURLE_OK) {
-        outputVerbose(u8"CURLOPT_RANGE failed: " + std::to_string((unsigned long)err));
+        outputVerbose(u8"[teemo] CURLOPT_RANGE failed: " +
+                      std::to_string((unsigned long)err));
         curl_easy_cleanup(curl_);
         curl_ = nullptr;
         tryFreeDiskCacheBuffer();
@@ -141,9 +152,11 @@ Result Slice::start(void* multi, int64_t disk_cache_size, int32_t max_speed) {
   else {
     curl_off_t offset = begin_ + capacity_;
     CURLcode err = curl_easy_setopt(curl_, CURLOPT_RESUME_FROM_LARGE, offset);
-    outputVerbose(u8"CURLOPT_RESUME_FROM_LARGE: " + std::to_string((unsigned long)offset));
+    outputVerbose(u8"[teemo] CURLOPT_RESUME_FROM_LARGE: " +
+                  std::to_string((unsigned long)offset));
     if (err != CURLE_OK) {
-      outputVerbose(u8"CURLOPT_RESUME_FROM_LARGE failed: " + std::to_string((unsigned long)err));
+      outputVerbose(u8"[teemo] CURLOPT_RESUME_FROM_LARGE failed: " +
+                    std::to_string((unsigned long)err));
       curl_easy_cleanup(curl_);
       curl_ = nullptr;
       tryFreeDiskCacheBuffer();
@@ -154,7 +167,8 @@ Result Slice::start(void* multi, int64_t disk_cache_size, int32_t max_speed) {
 
   CURLMcode m_code = curl_multi_add_handle(multi, curl_);
   if (m_code != CURLM_OK) {
-    outputVerbose(u8"curl_multi_add_handle failed: " + std::to_string((unsigned long)m_code));
+    outputVerbose(u8"[teemo] curl_multi_add_handle failed: " +
+                  std::to_string((unsigned long)m_code));
     curl_easy_cleanup(curl_);
     curl_ = nullptr;
     tryFreeDiskCacheBuffer();
@@ -170,7 +184,8 @@ void Slice::stop(void* multi) {
     if (multi) {
       CURLMcode code = curl_multi_remove_handle(multi, curl_);
       if (code != CURLM_CALL_MULTI_PERFORM && code != CURLM_OK) {
-        outputVerbose(u8"curl_multi_remove_handle failed: " + std::to_string((unsigned long)code));
+        outputVerbose(u8"[teemo] curl_multi_remove_handle failed: " +
+                      std::to_string((unsigned long)code));
       }
     }
     curl_easy_cleanup(curl_);
@@ -193,7 +208,8 @@ bool Slice::isCompleted() {
   if (end_ == -1)
     return false;
 
-  return ((end_ - begin_ + 1) == capacity_.load() + disk_cache_capacity_.load());
+  return ((end_ - begin_ + 1) ==
+          capacity_.load() + disk_cache_capacity_.load());
 }
 
 bool Slice::flushToDisk() {
@@ -204,11 +220,18 @@ bool Slice::flushToDisk() {
     disk_cache_capacity_ = 0L;
     std::shared_ptr<TargetFile> target_file = slice_manager_->targetFile();
     if (target_file) {
-      written = target_file->Write(begin_ + capacity_.load(), disk_cache_buffer_, need_write);
+      written = target_file->write(begin_ + capacity_.load(),
+                                   disk_cache_buffer_, need_write);
     }
     std::atomic_fetch_add(&capacity_, written);
     bret = (written == need_write);
     assert(bret);
+    if (!bret) {
+      char buf[100] = {0};
+      sprintf_s(buf, 100, "[teemo] Slice[%d] flush to disk failed: %lld/%lld",
+                index_, written, need_write);
+      outputVerbose(buf);
+    }
   }
   return bret;
 }
@@ -236,7 +259,8 @@ bool Slice::onNewData(const char* p, long data_size) {
     }
 
     if (!disk_cache_buffer_) {
-      int64_t written = target_file->Write(begin_ + capacity_.load(), p, data_size);
+      int64_t written =
+          target_file->write(begin_ + capacity_.load(), p, data_size);
       std::atomic_fetch_add(&capacity_, written);
 
       bret = (written == data_size);
@@ -244,7 +268,8 @@ bool Slice::onNewData(const char* p, long data_size) {
     }
 
     if (disk_cache_size_ - disk_cache_capacity_ >= data_size) {
-      memcpy((char*)(disk_cache_buffer_ + disk_cache_capacity_.load()), p, data_size);
+      memcpy((char*)(disk_cache_buffer_ + disk_cache_capacity_.load()), p,
+             data_size);
       disk_cache_capacity_ += data_size;
       bret = true;
       break;
@@ -254,23 +279,26 @@ bool Slice::onNewData(const char* p, long data_size) {
 
     disk_cache_capacity_.store(0L);
 
-    int64_t written = target_file->Write(begin_ + capacity_, disk_cache_buffer_, need_write);
+    int64_t written =
+        target_file->write(begin_ + capacity_, disk_cache_buffer_, need_write);
     std::atomic_fetch_add(&capacity_, written);
     if (written != need_write) {
       break;
     }
 
     if (disk_cache_size_ - disk_cache_capacity_ >= data_size) {
-      memcpy((char*)(disk_cache_buffer_ + disk_cache_capacity_.load()), p, data_size);
+      memcpy((char*)(disk_cache_buffer_ + disk_cache_capacity_.load()), p,
+             data_size);
       std::atomic_fetch_add(&disk_cache_capacity_, data_size);
       bret = true;
       break;
     }
 
-    written = target_file->Write(begin_ + capacity_.load(), p, data_size);
+    written = target_file->write(begin_ + capacity_.load(), p, data_size);
     if (written != data_size) {
-      outputVerbose(u8"warning: only write a part of buffer to file: " + 
-        std::to_string((unsigned long)written) + u8"," + std::to_string((unsigned long)data_size));
+      outputVerbose(u8"[teemo] Warning: only write a part of buffer to file: " +
+                    std::to_string((unsigned long)written) + u8"," +
+                    std::to_string((unsigned long)data_size));
     }
     std::atomic_fetch_add(&capacity_, written);
 
@@ -288,5 +316,9 @@ void Slice::outputVerbose(const utf8string& info) const {
       opt->verbose_functor(info);
     }
   }
+#if defined(WIN32) || defined(_WIN32) || defined(__WIN32__) || defined(__NT__)
+  OutputDebugStringW(Utf8ToUnicode(info).c_str());
+  OutputDebugStringW(L"\r\n");
+#endif
 }
 }  // namespace teemo

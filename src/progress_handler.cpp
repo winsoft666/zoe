@@ -17,11 +17,13 @@
 #include "options.h"
 
 namespace teemo {
-ProgressHandler::ProgressHandler(Options* options, std::shared_ptr<SliceManager> slice_manager)
+ProgressHandler::ProgressHandler(Options* options,
+                                 std::shared_ptr<SliceManager> slice_manager)
     : options_(options), slice_manager_(slice_manager) {
   if (options_ && slice_manager_) {
     async_task_ =
-        std::async(std::launch::async, std::bind(&ProgressHandler::asyncTaskProcess, this));
+        std::async(std::launch::async,
+                   std::bind(&ProgressHandler::asyncTaskProcess, this));
   }
 }
 
@@ -32,9 +34,9 @@ ProgressHandler::~ProgressHandler() {
 
 void ProgressHandler::asyncTaskProcess() {
   while (true) {
-    if(options_->internal_stop_event.wait(500))
+    if (options_->internal_stop_event.wait(500))
       break;
-    if(options_->user_stop_event && options_->user_stop_event->isSetted())
+    if (options_->user_stop_event && options_->user_stop_event->isSetted())
       break;
     if (options_ && options_->progress_functor && slice_manager_) {
       options_->progress_functor(slice_manager_->originFileSize(),

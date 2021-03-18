@@ -335,7 +335,7 @@ void CSHA1::GetHash(unsigned char* uDest) {
 }
 
 Result CalculateFileSHA1(const utf8string& file_path, Options* opt, utf8string& str_hash) {
-  FILE* f = FileUtil::OpenFile(file_path, "rb");
+  FILE* f = FileUtil::Open(file_path, "rb");
   if (!f)
     return CALCULATE_HASH_FAILED;
 
@@ -364,4 +364,33 @@ Result CalculateFileSHA1(const utf8string& file_path, Options* opt, utf8string& 
   return SUCCESSED;
 }
 
+Result CalculateFileSHA1(FILE* f, Options* opt, utf8string& str_hash) {
+  if (!f)
+    return CALCULATE_HASH_FAILED;
+
+  FileUtil::Seek(f, 0L, SEEK_SET);
+
+  CSHA1 sha1;
+  sha1.Reset();
+
+  size_t dwReadBytes = 0;
+  unsigned char szData[1024] = {0};
+
+  while ((dwReadBytes = fread(szData, 1, 1024, f)) > 0) {
+    if (opt && (opt->internal_stop_event.isSetted() ||
+                (opt->user_stop_event && opt->user_stop_event->isSetted()))) {
+      return CANCELED;
+    }
+    sha1.Update(szData, dwReadBytes);
+  }
+
+  sha1.Final();
+
+  char szSHA1[256] = {0};
+  sha1.ReportHash(szSHA1, CSHA1::REPORT_HEX);
+
+  str_hash = szSHA1;
+
+  return SUCCESSED;
+}
 }  // namespace teemo

@@ -20,23 +20,49 @@
 #include "progress_handler.h"
 #include "speed_handler.h"
 #include "options.h"
+#include "curl_utils.h"
 
 namespace teemo {
-typedef struct _Options Options;
+
 class EntryHandler {
  public:
+  typedef struct _FileInfo {
+    bool acceptRanges;
+    int64_t fileSize;
+    utf8string contentMd5;
+    utf8string redirect_url;
+
+    void clear() {
+      acceptRanges = true;
+      fileSize = -1;
+      contentMd5.clear();
+      redirect_url.clear();
+    }
+    _FileInfo() {
+      acceptRanges = true;
+      fileSize = -1L;
+    }
+  } FileInfo;
+
   EntryHandler();
   virtual ~EntryHandler();
 
   std::shared_future<Result> start(Options* options);
+  void pause();
+  void resume();
   void stop();
 
-  bool isDownloading();
   int64_t originFileSize() const;
+
+  DownloadState state() const;
+
  protected:
   Result asyncTaskProcess();
   Result _asyncTaskProcess();
-  bool fetchFileInfo(int64_t& file_size) const;
+  
+  bool fetchFileInfo(FileInfo& fileInfo);
+  bool requestFileInfo(const utf8string &url, FileInfo& fileInfo);
+  void cancelFetchFileInfo();
   void outputVerbose(const utf8string& info) const;
   void calculateSliceInfo(int32_t concurrency_num, int32_t* disk_cache_per_slice, int32_t* max_speed_per_slice);
 
@@ -49,7 +75,12 @@ class EntryHandler {
 
   void* multi_;
 
-  std::atomic_bool user_stop_;
+  std::shared_ptr<ScopedCurl> fetch_file_info_curl_;
+
+  std::atomic_bool user_stopped_;
+  std::atomic_bool user_paused_;
+
+  std::atomic<DownloadState> state_;
 };
 }  // namespace teemo
-#endif // !TEEMO_ENTRY_HANDLER_H__
+#endif  // !TEEMO_ENTRY_HANDLER_H__

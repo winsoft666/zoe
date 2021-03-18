@@ -27,7 +27,8 @@ namespace teemo {
 #define TEEMO_DEFAULT_THREAD_NUM 1
 
 typedef struct _Options {
-  bool skipping_url_check;
+  bool redirected_url_check_enabled;
+  bool content_md5_enabled;
   int32_t thread_num;
   int32_t disk_cache_size;
   int32_t max_speed;
@@ -54,7 +55,8 @@ typedef struct _Options {
   utf8string target_file_path;
 
   _Options() : internal_stop_event(true) {
-    skipping_url_check = false;
+    redirected_url_check_enabled = true;
+    content_md5_enabled = false;
     thread_num = TEEMO_DEFAULT_THREAD_NUM;
     disk_cache_size = TEEMO_DEFAULT_TOTAL_DISK_CACHE_SIZE_BYTE;
 

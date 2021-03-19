@@ -18,6 +18,7 @@
 #include "file_util.h"
 #include "string_helper.hpp"
 #include "string_encode.h"
+#include "verbose.h"
 
 namespace teemo {
 
@@ -119,6 +120,10 @@ int64_t EntryHandler::originFileSize() const {
   return -1;
 }
 
+teemo::Options* EntryHandler::options() {
+  return options_;
+}
+
 DownloadState EntryHandler::state() const {
   return state_.load();
 }
@@ -156,29 +161,30 @@ Result EntryHandler::_asyncTaskProcess() {
   } while (++try_times <= options_->fetch_file_info_retry);
 
   if (!fetch_size_ret) {
-    outputVerbose(u8"[teemo] Fetch file size failed");
+    OutputVerbose(options_->verbose_functor, "[teemo] Fetch file size failed.");
     return FETCH_FILE_INFO_FAILED;
   }
 
   // If target file is an empty file, create it.
   if (file_info.fileSize == 0) {
-    outputVerbose(u8"[teemo] File size is 0");
-    if (slice_manager_)
-      slice_manager_.reset();
+    OutputVerbose(options_->verbose_functor, "[teemo] File size is 0.");
     return FileUtil::CreateFixedSizeFile(options_->target_file_path, 0)
                ? SUCCESSED
                : CREATE_TARGET_FILE_FAILED;
   }
 
-  outputVerbose(u8"[teemo] URL: " + options_->url);
-  outputVerbose(u8"[teemo] Content MD5: " + file_info.contentMd5);
-  outputVerbose(u8"[teemo] Redirect URL: " + file_info.redirect_url);
-  outputVerbose(u8"[teemo] Thread number: " +
-                std::to_string((unsigned long)options_->thread_num));
-
-  outputVerbose(u8"[teemo] Disk Cache Size: " +
-                std::to_string((unsigned long)options_->disk_cache_size));
-  outputVerbose(u8"[teemo] Target file path: " + options_->target_file_path);
+  OutputVerbose(options_->verbose_functor, "[teemo] URL: %s.",
+                options_->url.c_str());
+  OutputVerbose(options_->verbose_functor, "[teemo] Content MD5: %s.",
+                file_info.contentMd5.c_str());
+  OutputVerbose(options_->verbose_functor, "[teemo] Redirect URL: %s.",
+                file_info.redirect_url.c_str());
+  OutputVerbose(options_->verbose_functor, "[teemo] Thread number: %d.",
+                options_->thread_num);
+  OutputVerbose(options_->verbose_functor, "[teemo] Disk Cache Size: %ld.",
+                options_->disk_cache_size);
+  OutputVerbose(options_->verbose_functor, "[teemo] Target file path: %s.",
+                options_->target_file_path.c_str());
 
   assert(!slice_manager_.get());
   if (slice_manager_)
@@ -200,17 +206,16 @@ Result EntryHandler::_asyncTaskProcess() {
 
   Result all_completed_ret = slice_manager_->isAllSliceCompleted(false);
   if (all_completed_ret == SUCCESSED) {
-    outputVerbose(u8"[teemo] All of slices been downloaded");
+    OutputVerbose(options_->verbose_functor,
+                  "[teemo] All of slices been downloaded.");
     Result ret = slice_manager_->finishDownloadProgress(false);
     slice_manager_.reset();
     return ret;
   }
-  outputVerbose(u8"[teemo] Slice download failed: " +
-                utf8string(GetResultString(all_completed_ret)));
 
   multi_ = curl_multi_init();
   if (!multi_) {
-    outputVerbose(u8"[teemo] curl_multi_init failed");
+    OutputVerbose(options_->verbose_functor, "[teemo] curl_multi_init failed.");
     slice_manager_.reset();
     return INIT_CURL_MULTI_FAILED;
   }
@@ -220,6 +225,11 @@ Result EntryHandler::_asyncTaskProcess() {
   calculateSliceInfo(
       std::min(slice_manager_->usefulSliceNum(), options_->thread_num),
       &disk_cache_per_slice, &max_speed_per_slice);
+
+  OutputVerbose(options_->verbose_functor, "[teemo] Disk cache per slice: %ld.",
+                disk_cache_per_slice);
+  OutputVerbose(options_->verbose_functor, "[teemo] Max speed per slice: %ld.",
+                max_speed_per_slice);
 
   Result ss_ret = SUCCESSED;
   int32_t selected = 0;
@@ -232,15 +242,15 @@ Result EntryHandler::_asyncTaskProcess() {
       break;
     ss_ret = slice->start(multi_, disk_cache_per_slice, max_speed_per_slice);
     if (ss_ret != SUCCESSED) {
-      outputVerbose(u8"[teemo] Start slice failed: " +
-                    utf8string(GetResultString(ss_ret)));
+      OutputVerbose(options_->verbose_functor,
+                    "[teemo] Start slice failed: %s.", GetResultString(ss_ret));
       continue;
     }
     selected++;
   }
 
   if (selected == 0) {
-    outputVerbose(u8"[teemo] No available slice");
+    OutputVerbose(options_->verbose_functor, "[teemo] No available slice.");
     curl_multi_cleanup(multi_);
     multi_ = nullptr;
     slice_manager_.reset();
@@ -284,7 +294,7 @@ Result EntryHandler::_asyncTaskProcess() {
   int still_running = 0;
 
   CURLMcode mcode = curl_multi_perform(multi_, &still_running);
-  outputVerbose(u8"[teemo] Start downloading");
+  OutputVerbose(options_->verbose_functor, "[teemo] Start downloading.");
 
   do {
     if (user_paused_.load()) {
@@ -317,8 +327,8 @@ Result EntryHandler::_asyncTaskProcess() {
     */
     mcode = curl_multi_fdset(multi_, &fdread, &fdwrite, &fdexcep, &maxfd);
     if (mcode != CURLM_CALL_MULTI_PERFORM && mcode != CURLM_OK) {
-      outputVerbose("[teemo] curl_multi_fdset failed, code: " +
-                    std::to_string((int)mcode));
+      OutputVerbose(options_->verbose_functor,
+                    "[teemo] curl_multi_fdset failed, code: %ld.", (long)mcode);
       break;
     }
 
@@ -358,15 +368,16 @@ Result EntryHandler::_asyncTaskProcess() {
           }
           else {
             still_running = 1;
-            outputVerbose(u8"[teemo] Start slice downloading failed: " +
-                          std::to_string((unsigned long)start_ret));
+            OutputVerbose(options_->verbose_functor,
+                          "[teemo] Start slice downloading failed: %s.",
+                          GetResultString(start_ret));
           }
         }
       }
     }
   } while (still_running > 0 || user_paused_.load());
 
-  outputVerbose(u8"[teemo] Downloading end");
+  OutputVerbose(options_->verbose_functor, "[teemo] Downloading end.");
 
   Result ret = slice_manager_->finishDownloadProgress(true);
   slice_manager_.reset();
@@ -374,7 +385,7 @@ Result EntryHandler::_asyncTaskProcess() {
   state_.store(DownloadState::STOPPED);
 
   if (ret == SUCCESSED) {
-    outputVerbose(u8"[teemo] All success!");
+    OutputVerbose(options_->verbose_functor, u8"[teemo] All success!");
     return ret;
   }
 
@@ -418,8 +429,9 @@ bool EntryHandler::requestFileInfo(const utf8string& url, FileInfo& fileInfo) {
 
   CURLcode ret_code = curl_easy_perform(curl);
   if (ret_code != CURLE_OK) {
-    outputVerbose(u8"[teemo] curl_easy_perform failed, CURLcode: " +
-                  std::to_string((long)ret_code));
+    OutputVerbose(options_->verbose_functor,
+                  "[teemo] curl_easy_perform failed, CURLcode: %ld.",
+                  (long)ret_code);
     return false;
   }
 
@@ -433,16 +445,18 @@ bool EntryHandler::requestFileInfo(const utf8string& url, FileInfo& fileInfo) {
   int http_code = 0;
   if ((ret_code = curl_easy_getinfo(curl, CURLINFO_RESPONSE_CODE,
                                     &http_code)) != CURLE_OK) {
-    outputVerbose(u8"[teemo] Get CURLINFO_RESPONSE_CODE failed, CURLcode: " +
-                  std::to_string((long)ret_code));
+    OutputVerbose(options_->verbose_functor,
+                  "[teemo] Get CURLINFO_RESPONSE_CODE failed, CURLcode: %ld.",
+                  (long)ret_code);
     return false;
   }
 
   if (http_code != 200 && http_code != 350) {
     // A 350 response code is sent by the server in response to a file-related command that
     // requires further commands in order for the operation to be completed
-    outputVerbose(u8"[teemo] HTTP response code error, code: " +
-                  std::to_string((long)http_code));
+    OutputVerbose(options_->verbose_functor,
+                  u8"[teemo] HTTP response code error, code: %ld.",
+                  (long)http_code);
     return false;
   }
 
@@ -454,16 +468,6 @@ void EntryHandler::cancelFetchFileInfo() {
   if (curl) {
     curl_easy_setopt(curl, CURLOPT_TIMEOUT_MS, 1L);
   }
-}
-
-void EntryHandler::outputVerbose(const utf8string& info) const {
-  if (options_->verbose_functor) {
-    options_->verbose_functor(info);
-  }
-#if defined(WIN32) || defined(_WIN32) || defined(__WIN32__) || defined(__NT__)
-  OutputDebugStringW(Utf8ToUnicode(info).c_str());
-  OutputDebugStringW(L"\r\n");
-#endif
 }
 
 void EntryHandler::calculateSliceInfo(int32_t concurrency_num,

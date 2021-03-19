@@ -12,17 +12,15 @@
 * file.
 *******************************************************************************/
 
-#ifndef TEEMO_STRING_ENCODE_H_
-#define TEEMO_STRING_ENCODE_H_
+
+#ifndef TEEMO_VERBOSE_H_
+#define TEEMO_VERBOSE_H_
 #pragma once
 
-#include <string>
+#include "teemo/teemo.h"
 
 namespace teemo {
-#if defined(WIN32) || defined(_WIN32) || defined(__WIN32__) || defined(__NT__)
-std::wstring Utf8ToUnicode(const std::string& str);
-std::string UnicodeToUtf8(const std::wstring& str);
-#endif
-}  // namespace teemo
+  void OutputVerbose(VerboseOuputFunctor functor, const char* fmt, ...);
+}
 
 #endif

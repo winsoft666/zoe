@@ -24,6 +24,7 @@
 #include "curl_utils.h"
 #include "options.h"
 #include "string_encode.h"
+#include "verbose.h"
 
 using json = nlohmann::json;
 
@@ -105,17 +106,20 @@ Result SliceManager::loadExistSlice(int64_t cur_file_size,
 
     int64_t pre_file_size = j["file_size"];
     if (pre_file_size != cur_file_size) {
-      outputVerbose(u8"[teemo] File size has changed, tmp file expired: " +
-                    std::to_string(pre_file_size) + u8" -> " +
-                    std::to_string(cur_file_size));
+      OutputVerbose(
+          options_->verbose_functor,
+          "[teemo] File size has changed, tmp file expired: %lld -> %lld.",
+          pre_file_size, cur_file_size);
       return TMP_FILE_EXPIRED;
     }
     utf8string pre_content_md5 = j["content_md5"].get<utf8string>();
     if (StringCaseConvert(pre_content_md5, EasyCharToLowerA) !=
             StringCaseConvert(cur_content_md5, EasyCharToLowerA) &&
         options_->content_md5_enabled) {
-      outputVerbose(u8"[teemo] Content md5 has changed, tmp file expired: " +
-                    pre_content_md5 + u8" -> " + cur_content_md5);
+      OutputVerbose(
+          options_->verbose_functor,
+          "[teemo] Content md5 has changed, tmp file expired: %s -> %s.",
+          pre_content_md5.c_str(), cur_content_md5.c_str());
       return TMP_FILE_EXPIRED;
     }
     utf8string tmp_file_path = j["target_tmp_file_path"].get<utf8string>();
@@ -153,15 +157,16 @@ Result SliceManager::loadExistSlice(int64_t cur_file_size,
 
     target_file_ = target_file;
   } catch (const std::exception& e) {
-    outputVerbose(u8"[teemo] Load exist slice exception: " +
-                  (e.what() ? std::string(e.what()) : ""));
+    OutputVerbose(options_->verbose_functor,
+                  "[teemo] Load exist slice exception: %s.",
+                  e.what() ? e.what() : "");
     slices_.clear();
     return INVALID_INDEX_FORMAT;
   }
 
   content_md5_ = cur_content_md5;
   origin_file_size_ = cur_file_size;
-  outputVerbose(u8"[teemo] Load exist slice success");
+  OutputVerbose(options_->verbose_functor, "[teemo] Load exist slice success.");
   dumpSlice();
   return SUCCESSED;
 }
@@ -264,12 +269,12 @@ int64_t SliceManager::totalDownloaded() const {
 
 Result SliceManager::isAllSliceCompleted(bool need_check_hash) const {
   if (origin_file_size_ != -1L && totalDownloaded() != origin_file_size_) {
-    outputVerbose(u8"[teemo] Slice total size error");
+    OutputVerbose(options_->verbose_functor, "[teemo] Slice total size error.");
     return SLICE_DOWNLOAD_FAILED;
   }
 
   if (!need_check_hash) {
-    outputVerbose(u8"[teemo] Do not need check hash");
+    OutputVerbose(options_->verbose_functor, "[teemo] Do not need check hash.");
     return SUCCESSED;
   }
 
@@ -279,33 +284,39 @@ Result SliceManager::isAllSliceCompleted(bool need_check_hash) const {
          origin_file_size_ == -1L)) {
       if (target_file_) {
         utf8string str_hash;
-        outputVerbose(u8"[teemo] Start calculate temp file hash");
+        OutputVerbose(options_->verbose_functor,
+                      u8"[teemo] Start calculate temp file hash.");
         if (target_file_->calculateFileHash(options_, str_hash) == SUCCESSED) {
           str_hash = StringCaseConvert(str_hash, EasyCharToLowerA);
-          outputVerbose(u8"[teemo] Temp file hash: " + str_hash);
+          OutputVerbose(options_->verbose_functor, "[teemo] Temp file hash: %s",
+                        str_hash.c_str());
           if (str_hash !=
               StringCaseConvert(options_->hash_value, EasyCharToLowerA))
             return HASH_VERIFY_NOT_PASS;
         }
         else {
-          outputVerbose(u8"[teemo] Calculate temp file hash failed");
+          OutputVerbose(options_->verbose_functor,
+                        "[teemo] Calculate temp file hash failed.");
           return CALCULATE_HASH_FAILED;
         }
       }
     }
   }
   else if (content_md5_.length() > 0 && options_->content_md5_enabled) {
-    outputVerbose(u8"[teemo] Start calculate temp file md5");
+    OutputVerbose(options_->verbose_functor,
+                  "[teemo] Start calculate temp file md5.");
     utf8string str_md5;
     if (target_file_->calculateFileMd5(options_, str_md5) == SUCCESSED) {
       str_md5 = StringCaseConvert(str_md5, EasyCharToLowerA);
-      outputVerbose(u8"[teemo] Temp file md5: " + str_md5);
+      OutputVerbose(options_->verbose_functor, "[teemo] Temp file md5: %s.",
+                    str_md5.c_str());
 
       if (str_md5 != StringCaseConvert(content_md5_, EasyCharToLowerA))
         return HASH_VERIFY_NOT_PASS;
     }
     else {
-      outputVerbose(u8"[teemo] Calculate temp file md5 failed");
+      OutputVerbose(options_->verbose_functor,
+                    "[teemo] Calculate temp file md5 failed.");
       return CALCULATE_HASH_FAILED;
     }
   }
@@ -315,7 +326,8 @@ Result SliceManager::isAllSliceCompleted(bool need_check_hash) const {
 
 Result SliceManager::finishDownloadProgress(bool need_check_completed) {
   // first of all, flush buffer to disk
-  outputVerbose(u8"[teemo] Start flushing cache to disk");
+  OutputVerbose(options_->verbose_functor,
+                "[teemo] Start flushing cache to disk.");
   Result flush_disk_ret = SUCCESSED;
   for (auto& s : slices_) {
     if (!s->flushToDisk()) {
@@ -325,7 +337,8 @@ Result SliceManager::finishDownloadProgress(bool need_check_completed) {
 
   // then flush index file.
   if (!flushIndexFile()) {
-    outputVerbose(u8"[teemo] Flush index file failed");
+    OutputVerbose(options_->verbose_functor,
+                  "[teemo] Flush index file failed.");
   }
 
   // check flush disk result
@@ -343,21 +356,21 @@ Result SliceManager::finishDownloadProgress(bool need_check_completed) {
   }
 
   if (!target_file_->renameTo(options_, options_->target_file_path, false)) {
-    char buf[512] = {0};
     unsigned int error_code = 0;
 #if defined(WIN32) || defined(_WIN32) || defined(__WIN32__) || defined(__NT__)
     error_code = GetLastError();
 #endif
-    sprintf_s(buf, 512, "[teemo] Rename file failed, GLE: %u, %s => %s",
-              error_code, target_file_->filePath().c_str(),
-              options_->target_file_path.c_str());
-    outputVerbose(buf);
+    OutputVerbose(options_->verbose_functor,
+                  "[teemo] Rename file failed, GLE: %u, %s => %s.", error_code,
+                  target_file_->filePath().c_str(),
+                  options_->target_file_path.c_str());
     return RENAME_TMP_FILE_FAILED;
   }
 
   if (!FileUtil::RemoveFile(index_file_path_)) {
     // not failed
-    outputVerbose(u8"[teemo] Remove index file failed");
+    OutputVerbose(options_->verbose_functor,
+                  u8"[teemo] Remove index file failed.");
   }
 
   return SUCCESSED;
@@ -410,26 +423,20 @@ utf8string SliceManager::makeIndexFilePath() const {
 }
 
 void SliceManager::dumpSlice() const {
-  if (options_->verbose_functor) {
-    std::stringstream ss;
-    int32_t s_index = 0;
-    for (auto& s : slices_) {
-      ss << "<" << s_index++ << "> [" << s->begin() << "~" << s->end()
-         << "], Disk: " << s->capacity()
+  std::stringstream ss;
+  int32_t s_index = 0;
+  for (auto& s : slices_) {
+    ss << "<" << s_index++ << "> [" << s->begin() << "~" << s->end();
+    if (s->end() == -1) {
+      ss << "] (*), Disk: " << s->capacity()
          << ", Buffer: " << s->diskCacheCapacity() << "\r\n";
     }
-
-    options_->verbose_functor(ss.str());
+    else {
+      ss << "] (" << s->end() - s->begin() << "), Disk: " << s->capacity()
+         << ", Buffer: " << s->diskCacheCapacity() << "\r\n";
+    }
   }
-}
 
-void SliceManager::outputVerbose(const utf8string& info) const {
-  if (options_ && options_->verbose_functor) {
-    options_->verbose_functor(info);
-  }
-#if defined(WIN32) || defined(_WIN32) || defined(__WIN32__) || defined(__NT__)
-  OutputDebugStringW(Utf8ToUnicode(info).c_str());
-  OutputDebugStringW(L"\r\n");
-#endif
+  OutputVerbose(options_->verbose_functor, ss.str().c_str());
 }
 }  // namespace teemo

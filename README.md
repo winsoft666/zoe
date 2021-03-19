@@ -15,11 +15,15 @@ So I developed this download library named `"teemo"` based on libcurl, which can
 
 ✅ Support breakpoint resume.
 
+✅ Support downloading pause/resume.
+
 ✅ Support for obtaining real-time download rate.
 
 ✅ Support download speed limit.
 
 ✅ Support disk cache.
+
+✅ Support hash checksum verify.
 
 ---
 

@@ -53,18 +53,20 @@ class EntryHandler {
   void stop();
 
   int64_t originFileSize() const;
+  Options* options();
 
   DownloadState state() const;
 
  protected:
   Result asyncTaskProcess();
   Result _asyncTaskProcess();
-  
+
   bool fetchFileInfo(FileInfo& fileInfo);
-  bool requestFileInfo(const utf8string &url, FileInfo& fileInfo);
+  bool requestFileInfo(const utf8string& url, FileInfo& fileInfo);
   void cancelFetchFileInfo();
-  void outputVerbose(const utf8string& info) const;
-  void calculateSliceInfo(int32_t concurrency_num, int32_t* disk_cache_per_slice, int32_t* max_speed_per_slice);
+  void calculateSliceInfo(int32_t concurrency_num,
+                          int32_t* disk_cache_per_slice,
+                          int32_t* max_speed_per_slice);
 
  protected:
   std::shared_future<Result> async_task_;

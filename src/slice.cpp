@@ -20,6 +20,7 @@
 #include "curl/curl.h"
 #include "options.h"
 #include "string_encode.h"
+#include "verbose.h"
 
 namespace teemo {
 
@@ -101,7 +102,8 @@ Result Slice::start(void* multi, int64_t disk_cache_size, int32_t max_speed) {
 
   curl_ = curl_easy_init();
   if (!curl_) {
-    outputVerbose(u8"[teemo] curl_easy_init failed");
+    OutputVerbose(slice_manager_->options()->verbose_functor,
+                  "[teemo] curl_easy_init failed.");
     tryFreeDiskCacheBuffer();
     status_ = DOWNLOAD_FAILED;
     return INIT_CURL_FAILED;
@@ -137,10 +139,11 @@ Result Slice::start(void* multi, int64_t disk_cache_size, int32_t max_speed) {
              (long)end_);
     if (strlen(range) > 0) {
       CURLcode err = curl_easy_setopt(curl_, CURLOPT_RANGE, range);
-      outputVerbose(u8"[teemo] CURLOPT_RANGE: " + std::string(range));
+      OutputVerbose(slice_manager_->options()->verbose_functor,
+                    "[teemo] CURLOPT_RANGE: %s.", range);
       if (err != CURLE_OK) {
-        outputVerbose(u8"[teemo] CURLOPT_RANGE failed: " +
-                      std::to_string((unsigned long)err));
+        OutputVerbose(slice_manager_->options()->verbose_functor,
+                      "[teemo] CURLOPT_RANGE failed: %ld.", (long)err);
         curl_easy_cleanup(curl_);
         curl_ = nullptr;
         tryFreeDiskCacheBuffer();
@@ -152,11 +155,12 @@ Result Slice::start(void* multi, int64_t disk_cache_size, int32_t max_speed) {
   else {
     curl_off_t offset = begin_ + capacity_;
     CURLcode err = curl_easy_setopt(curl_, CURLOPT_RESUME_FROM_LARGE, offset);
-    outputVerbose(u8"[teemo] CURLOPT_RESUME_FROM_LARGE: " +
-                  std::to_string((unsigned long)offset));
+    OutputVerbose(slice_manager_->options()->verbose_functor,
+                  "[teemo] CURLOPT_RESUME_FROM_LARGE: %ld.", offset);
     if (err != CURLE_OK) {
-      outputVerbose(u8"[teemo] CURLOPT_RESUME_FROM_LARGE failed: " +
-                    std::to_string((unsigned long)err));
+      OutputVerbose(slice_manager_->options()->verbose_functor,
+                    "[teemo] CURLOPT_RESUME_FROM_LARGE failed: %ld.",
+                    (long)err);
       curl_easy_cleanup(curl_);
       curl_ = nullptr;
       tryFreeDiskCacheBuffer();
@@ -167,8 +171,8 @@ Result Slice::start(void* multi, int64_t disk_cache_size, int32_t max_speed) {
 
   CURLMcode m_code = curl_multi_add_handle(multi, curl_);
   if (m_code != CURLM_OK) {
-    outputVerbose(u8"[teemo] curl_multi_add_handle failed: " +
-                  std::to_string((unsigned long)m_code));
+    OutputVerbose(slice_manager_->options()->verbose_functor,
+                  "[teemo] curl_multi_add_handle failed: %ld.", (long)m_code);
     curl_easy_cleanup(curl_);
     curl_ = nullptr;
     tryFreeDiskCacheBuffer();
@@ -184,8 +188,9 @@ void Slice::stop(void* multi) {
     if (multi) {
       CURLMcode code = curl_multi_remove_handle(multi, curl_);
       if (code != CURLM_CALL_MULTI_PERFORM && code != CURLM_OK) {
-        outputVerbose(u8"[teemo] curl_multi_remove_handle failed: " +
-                      std::to_string((unsigned long)code));
+        OutputVerbose(slice_manager_->options()->verbose_functor,
+                      "[teemo] curl_multi_remove_handle failed: %ld.",
+                      (long)code);
       }
     }
     curl_easy_cleanup(curl_);
@@ -227,10 +232,9 @@ bool Slice::flushToDisk() {
     bret = (written == need_write);
     assert(bret);
     if (!bret) {
-      char buf[100] = {0};
-      sprintf_s(buf, 100, "[teemo] Slice[%d] flush to disk failed: %lld/%lld",
-                index_, written, need_write);
-      outputVerbose(buf);
+      OutputVerbose(slice_manager_->options()->verbose_functor,
+                    "[teemo] Slice[%d] flush to disk failed: %lld/%lld", index_,
+                    written, need_write);
     }
   }
   return bret;
@@ -296,9 +300,10 @@ bool Slice::onNewData(const char* p, long data_size) {
 
     written = target_file->write(begin_ + capacity_.load(), p, data_size);
     if (written != data_size) {
-      outputVerbose(u8"[teemo] Warning: only write a part of buffer to file: " +
-                    std::to_string((unsigned long)written) + u8"," +
-                    std::to_string((unsigned long)data_size));
+      OutputVerbose(
+          slice_manager_->options()->verbose_functor,
+          "[teemo] Warning: only write a part of buffer to file: %lld/%lld.",
+          written, data_size);
     }
     std::atomic_fetch_add(&capacity_, written);
 
@@ -307,18 +312,5 @@ bool Slice::onNewData(const char* p, long data_size) {
   } while (false);
 
   return bret;
-}
-
-void Slice::outputVerbose(const utf8string& info) const {
-  if (slice_manager_) {
-    const Options* opt = slice_manager_->options();
-    if (opt && opt->verbose_functor) {
-      opt->verbose_functor(info);
-    }
-  }
-#if defined(WIN32) || defined(_WIN32) || defined(__WIN32__) || defined(__NT__)
-  OutputDebugStringW(Utf8ToUnicode(info).c_str());
-  OutputDebugStringW(L"\r\n");
-#endif
 }
 }  // namespace teemo

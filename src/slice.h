@@ -62,8 +62,6 @@ class Slice {
   bool flushToDisk();
  protected:
   void tryFreeDiskCacheBuffer();
-  void outputVerbose(const utf8string& info) const;
-
  protected:
   int32_t index_;
   int64_t begin_;

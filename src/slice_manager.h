@@ -63,10 +63,8 @@ class SliceManager : public std::enable_shared_from_this<SliceManager> {
  protected:
   utf8string makeIndexFilePath() const;
   void dumpSlice() const;
-  void outputVerbose(const utf8string& info) const;
 
  protected:
-  Options* options_;
   utf8string redirect_url_;
   int64_t origin_file_size_;
   utf8string content_md5_;
@@ -75,6 +73,8 @@ class SliceManager : public std::enable_shared_from_this<SliceManager> {
 
   std::vector<std::shared_ptr<Slice>> slices_;
   std::shared_ptr<TargetFile> target_file_;
+
+  Options* options_;
 };
 }  // namespace teemo
 

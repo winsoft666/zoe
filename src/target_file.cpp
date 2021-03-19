@@ -15,7 +15,6 @@
 #include "file_util.h"
 #include <assert.h>
 #include "options.h"
-#include <windows.h>
 #include "md5.h"
 #include "crc32.h"
 #include "sha1.h"
@@ -85,36 +84,13 @@ bool TargetFile::renameTo(Options* opt,
     reopen = need_reopen;
   }
 
-#if defined(WIN32) || defined(_WIN32) || defined(__WIN32__) || defined(__NT__)
-  int retry_times = 0;
-  bool rename_ret = false;
-  do {
-    rename_ret = FileUtil::Rename(file_path_, new_file_path);
-    if (rename_ret)
-      break;
-    if (++retry_times > 3)
-      break;
-
-    if (GetLastError() == 32) {
-      if (opt && opt->internal_stop_event.wait(1000))
-        break;
-    }
-  } while (true);
-
-  if (!rename_ret) {
-    return false;
-  }
-#else
-  if (!FileUtil::Rename(file_path_, new_file_path)) {
-    return false;
-  }
-#endif
+  bool ret = FileUtil::Rename(file_path_, new_file_path);
 
   if (reopen && open()) {
     FileUtil::Seek(f_, file_seek_pos_, SEEK_SET);
   }
 
-  return true;
+  return ret;
 }
 
 Result TargetFile::calculateFileHash(Options* opt, utf8string& str_hash) {
@@ -183,27 +159,10 @@ int64_t TargetFile::write(int64_t pos, const void* data, int64_t data_size) {
       file_seek_pos_ = pos;
     }
 
-#if 1
     written = fwrite(data, 1, (long)data_size, f_);
     assert(written == data_size);
     fflush(f_);
     file_seek_pos_ += written;
-#else
-    const long write_unit = 1024;
-    long remain = data_size;
-    do {
-      long need_w = remain > write_unit ? write_unit : remain;
-      long w = fwrite(((char*)data + written), 1, need_w, f_);
-      fflush(f_);
-
-      assert(need_w == w);
-
-      remain -= w;
-      written += w;
-    } while (remain > 0);
-
-    file_seek_pos_ += written;
-#endif
   } while (false);
 
   return written;

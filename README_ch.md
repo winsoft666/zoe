@@ -88,7 +88,11 @@ int main(int argc, char** argv) {
   efd.setVerboseOutput([](const utf8string& verbose) { // Optional
     printf("%s\n", verbose.c_str());
   });
-
+  efd.setHttpHeaders({  // Optional
+    {u8"Origin", u8"http://xxx.xxx.com"},
+    {u8"User-Agent", u8"Mozilla/4.0 (compatible; MSIE 7.0; Windows NT 5.1)"}
+   });
+  
   std::shared_future<Result> async_task = efd.start(
       u8"http://xxx.xxx.com/test.exe", u8"D:\\test.exe",
       [](Result result) {  // Optional

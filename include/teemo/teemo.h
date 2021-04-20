@@ -18,6 +18,7 @@
 #include <string>
 #include <memory>
 #include <future>
+#include <map>
 
 #ifdef TEEMO_STATIC
 #define TEEMO_API
@@ -107,6 +108,7 @@ typedef std::function<void(Result ret)> ResultFunctor;
 typedef std::function<void(int64_t total, int64_t downloaded)> ProgressFunctor;
 typedef std::function<void(int64_t byte_per_sec)> RealtimeSpeedFunctor;
 typedef std::function<void(const utf8string& verbose)> VerboseOuputFunctor;
+typedef std::multimap<utf8string, utf8string> HttpHeaders;
 
 class TEEMO_API Teemo {
  public:
@@ -198,6 +200,9 @@ class TEEMO_API Teemo {
   void hashVerifyPolicy(HashVerifyPolicy& policy,
                         HashType& hash_type,
                         utf8string& hash_value) const noexcept;
+
+  Result setHttpHeaders(const HttpHeaders& headers) noexcept;
+  HttpHeaders httpHeaders() const noexcept;
 
   // Start to download and state change to DOWNLOADING.
   // Supported url protocol is the same as libcurl.

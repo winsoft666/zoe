@@ -54,6 +54,8 @@ typedef struct _Options {
   utf8string url;
   utf8string target_file_path;
 
+  HttpHeaders http_headers;
+
   _Options() : internal_stop_event(true) {
     redirected_url_check_enabled = true;
     content_md5_enabled = false;

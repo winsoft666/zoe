@@ -427,7 +427,23 @@ bool EntryHandler::requestFileInfo(const utf8string& url, FileInfo& fileInfo) {
 
   //curl_easy_setopt(curl, CURLOPT_PROXY, "127.0.0.1:8888");
 
+  struct curl_slist* headerChunk = nullptr;
+  const HttpHeaders& headers = options_->http_headers;
+  if (headers.size() > 0) {
+    for (const auto& it : headers) {
+      utf8string headerStr = it.first + u8": " + it.second;
+      headerChunk = curl_slist_append(headerChunk, headerStr.c_str());
+    }
+    curl_easy_setopt(curl, CURLOPT_HTTPHEADER, headerChunk);
+  }
+
   CURLcode ret_code = curl_easy_perform(curl);
+
+  if (headerChunk) {
+    curl_slist_free_all(headerChunk);
+    headerChunk = nullptr;
+  }
+
   if (ret_code != CURLE_OK) {
     OutputVerbose(options_->verbose_functor,
                   "[teemo] curl_easy_perform failed, CURLcode: %ld.",

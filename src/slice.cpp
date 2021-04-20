@@ -35,6 +35,7 @@ Slice::Slice(int32_t index,
     , disk_cache_size_(0L)
     , disk_cache_buffer_(nullptr)
     , curl_(nullptr)
+    , header_chunk_(nullptr)
     , status_(UNFETCH)
     , slice_manager_(slice_manager) {
   capacity_.store(init_capacity);
@@ -100,6 +101,9 @@ Result Slice::start(void* multi, int64_t disk_cache_size, int32_t max_speed) {
     }
   }
 
+  assert(curl_ == nullptr);
+  assert(header_chunk_ == nullptr);
+
   curl_ = curl_easy_init();
   if (!curl_) {
     OutputVerbose(slice_manager_->options()->verbose_functor,
@@ -133,6 +137,18 @@ Result Slice::start(void* multi, int64_t disk_cache_size, int32_t max_speed) {
   curl_easy_setopt(curl_, CURLOPT_FORBID_REUSE, 0L);
   curl_easy_setopt(curl_, CURLOPT_WRITEFUNCTION, __SliceWriteBodyCallback);
   curl_easy_setopt(curl_, CURLOPT_WRITEDATA, this);
+
+  if (slice_manager_->options()) {
+    const HttpHeaders& headers = slice_manager_->options()->http_headers;
+    if (headers.size() > 0) {
+      for (const auto& it : headers) {
+        utf8string headerStr = it.first + u8": " + it.second;
+        header_chunk_ = curl_slist_append(header_chunk_, headerStr.c_str());
+      }
+      curl_easy_setopt(curl_, CURLOPT_HTTPHEADER, header_chunk_);
+    }
+  }
+
   if (end_ != -1) {
     char range[64] = {0};
     snprintf(range, sizeof(range), "%ld-%ld", (long)(begin_ + capacity_),
@@ -192,6 +208,10 @@ void Slice::stop(void* multi) {
                       "[teemo] curl_multi_remove_handle failed: %ld.",
                       (long)code);
       }
+    }
+    if (header_chunk_) {
+      curl_slist_free_all(header_chunk_);
+      header_chunk_ = nullptr;
     }
     curl_easy_cleanup(curl_);
     curl_ = nullptr;

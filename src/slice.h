@@ -23,6 +23,7 @@
 #include "slice_manager.h"
 #include "target_file.h"
 
+struct curl_slist;
 namespace teemo {
 class SliceManager;
 class Slice {
@@ -69,6 +70,7 @@ class Slice {
   std::atomic<int64_t> capacity_;  // data size in disk file
 
   void* curl_;
+  struct curl_slist* header_chunk_;
 
   int64_t disk_cache_size_;  // byte
   std::atomic<int64_t> disk_cache_capacity_;

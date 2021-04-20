@@ -302,6 +302,18 @@ void Teemo::hashVerifyPolicy(HashVerifyPolicy& policy,
   hash_value = impl_->options_.hash_value;
 }
 
+Result Teemo::setHttpHeaders(const HttpHeaders& headers) noexcept {
+  assert(impl_);
+  impl_->options_.http_headers = headers;
+
+  return SUCCESSED;
+}
+
+HttpHeaders Teemo::httpHeaders() const noexcept {
+  assert(impl_);
+  return impl_->options_.http_headers;
+}
+
 std::shared_future<Result> Teemo::start(
     const utf8string& url,
     const utf8string& target_file_path,

@@ -16,7 +16,7 @@ TEST(SingleTest, test1) {
 
   efd.start(
       "https://cdn.mysql.com//Downloads/MySQL-8.0/mysql-8.0.23-winx64-debug-test.zip",
-      "d:\\mysql.zip",
+      "mysql.zip",
       [](Result result) {
         printf("\nResult: %s\n", GetResultString(result));
         EXPECT_TRUE(result == SUCCESSED || result == CANCELED);

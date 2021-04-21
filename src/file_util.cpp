@@ -38,7 +38,7 @@ namespace teemo {
 
 int64_t FileUtil::GetFileSize(FILE* f) {
   if (!f)
-    return 0;
+    return -1;
 #if defined(WIN32) || defined(_WIN32) || defined(__WIN32__) || defined(__NT__)
   _fseeki64(f, 0L, SEEK_END);
   int64_t fsize = _ftelli64(f);
@@ -211,7 +211,7 @@ bool FileUtil::CreateFixedSizeFile(const utf8string& path, int64_t fixed_size) {
     if (SetFilePointerEx(h, offset, NULL, FILE_BEGIN) == 0)
       break;
 
-    if(!SetEndOfFile(h))
+    if (!SetEndOfFile(h))
       break;
 
     prealloc = true;
@@ -260,12 +260,16 @@ bool FileUtil::CreateFixedSizeFile(const utf8string& path, int64_t fixed_size) {
 
   return prealloc;
 #else
-  int fd = open(path.c_str(), O_RDWR | O_CREAT, S_IRUSR | S_IWUSR);
-  if (fd < 0)
+  int fd = open(path.c_str(), O_RDWR | O_CREAT,
+                S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH);
+  if (fd == -1) {
     return false;
-  if (fallocate(fd, 0, 0, fixed_size) != 0) {
-    close(fd);
-    return false;
+  }
+  if (fixed_size > 0) {
+    if (fallocate(fd, 0, 0, fixed_size) != 0) {
+      close(fd);
+      return false;
+    }
   }
   close(fd);
 

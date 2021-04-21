@@ -39,7 +39,9 @@ bool TargetFile::createNew(int64_t fixed_size) {
   if (fixed_size < 0)
     fixed_size = 0;
 
-  f_ = FileUtil::CreateFixedSizeFile(file_path_, fixed_size);
+  if (!FileUtil::CreateFixedSizeFile(file_path_, fixed_size))
+    return false;
+  f_ = FileUtil::Open(file_path_, "wb+");
   if (!f_)
     return false;
 

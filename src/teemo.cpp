@@ -69,6 +69,7 @@ class Teemo::TeemoImpl {
       return false;
     return entry_handler_->state() != DownloadState::STOPPED;
   }
+
  public:
   Options options_;
   std::shared_ptr<EntryHandler> entry_handler_;
@@ -272,8 +273,8 @@ Result Teemo::setSlicePolicy(SlicePolicy policy,
   return INVALID_SLICE_POLICY;
 }
 
-void Teemo::slicePolicy(SlicePolicy& policy, int64_t& policy_value) const
-    noexcept {
+void Teemo::slicePolicy(SlicePolicy& policy,
+                        int64_t& policy_value) const noexcept {
   assert(impl_);
   policy = impl_->options_.slice_policy;
   policy_value = impl_->options_.slice_policy_value;
@@ -323,12 +324,18 @@ std::shared_future<Result> Teemo::start(
   assert(impl_);
   Result ret = SUCCESSED;
 
-  if (impl_->isDownloading())
+  utf8string target_path_formatted;
+
+  if (impl_->isDownloading()) {
     ret = ALREADY_DOWNLOADING;
-  else if (url.length() == 0)
+  }
+  else if (url.length() == 0) {
     ret = INVALID_URL;
-  else if (target_file_path.length() == 0)
-    ret = INVALID_TARGET_FILE_PATH;
+  }
+  else {
+    if(!FileUtil::PathFormatting(target_file_path, target_path_formatted))
+      ret = INVALID_TARGET_FILE_PATH;
+  }
 
   if (ret != SUCCESSED) {
     return std::async(std::launch::async, [result_functor, ret]() {
@@ -339,7 +346,7 @@ std::shared_future<Result> Teemo::start(
   }
 
   impl_->options_.url = url;
-  impl_->options_.target_file_path = target_file_path;
+  impl_->options_.target_file_path = target_path_formatted;
   impl_->options_.result_functor = result_functor;
   impl_->options_.progress_functor = progress_functor;
   impl_->options_.speed_functor = realtime_speed_functor;

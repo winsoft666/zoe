@@ -34,7 +34,8 @@ if (NOT BUILD_SHARED_LIBS)
 	add_definitions(-DTEEMO_STATIC)
 endif()
 
-file(GLOB SOURCE_FILES 			./*.cpp)
+include_directories(../../src)
+file(GLOB SOURCE_FILES 			./*.cpp ../../src/file_util.cpp)
 
 add_executable(
 	${EXE_NAME}

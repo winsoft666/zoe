@@ -36,7 +36,8 @@ namespace teemo {
     static FILE* Open(const utf8string& path, const utf8string& mode);
     static int Seek(FILE* f, int64_t offset, int origin);
     static void Close(FILE* f);
-    static FILE* CreateFixedSizeFile(const utf8string& path, int64_t fixed_size);
+    static bool CreateFixedSizeFile(const utf8string& path, int64_t fixed_size);
+    static bool PathFormatting(const utf8string& path, utf8string& formatted);
   };
 }  // namespace teemo
 

@@ -22,6 +22,8 @@
 #include <windows.h>
 #else
 #include <unistd.h>
+#include <sys/stat.h>
+#include <fcntl.h>
 #endif
 #include "string_encode.h"
 #include "filesystem.hpp"
@@ -103,7 +105,8 @@ utf8string FileUtil::GetFileName(const utf8string& path) {
   return path.substr(pos);
 }
 
-utf8string FileUtil::AppendFileName(const utf8string& dir, const utf8string& filename) {
+utf8string FileUtil::AppendFileName(const utf8string& dir,
+                                    const utf8string& filename) {
   utf8string result = dir;
   if (result.length() > 0) {
     if (result[result.length() - 1] != PATH_SEPARATOR)
@@ -149,7 +152,9 @@ bool FileUtil::RemoveFile(const utf8string& filepath) {
 
 bool FileUtil::Rename(const utf8string& from, const utf8string& to) {
 #if defined(WIN32) || defined(_WIN32) || defined(__WIN32__) || defined(__NT__)
-  return ::MoveFileExW(Utf8ToUnicode(from).c_str(), Utf8ToUnicode(to).c_str(), MOVEFILE_REPLACE_EXISTING | MOVEFILE_WRITE_THROUGH | MOVEFILE_COPY_ALLOWED);
+  return ::MoveFileExW(Utf8ToUnicode(from).c_str(), Utf8ToUnicode(to).c_str(),
+                       MOVEFILE_REPLACE_EXISTING | MOVEFILE_WRITE_THROUGH |
+                           MOVEFILE_COPY_ALLOWED);
 #else
   return 0 == rename(from.c_str(), to.c_str());
 #endif
@@ -186,43 +191,98 @@ void FileUtil::Close(FILE* f) {
   }
 }
 
-FILE* FileUtil::CreateFixedSizeFile(const utf8string& path, int64_t fixed_size) {
+bool FileUtil::CreateFixedSizeFile(const utf8string& path, int64_t fixed_size) {
   utf8string str_dir = GetDirectory(path);
   if (str_dir.length() > 0 && !CreateDirectories(str_dir))
-    return nullptr;
+    return false;
 
-  FILE* f = Open(path, "wb+");
-  if (!f)
-    return nullptr;
+#if defined(WIN32) || defined(_WIN32) || defined(__WIN32__) || defined(__NT__)
+  bool prealloc = false;
+  HANDLE h = INVALID_HANDLE_VALUE;
+  do {
+    break;
+    h = CreateFileW(Utf8ToUnicode(path).c_str(), GENERIC_READ | GENERIC_WRITE,
+                    FILE_SHARE_READ | FILE_SHARE_WRITE, NULL, OPEN_ALWAYS,
+                    FILE_ATTRIBUTE_NORMAL, NULL);
+    if (h == INVALID_HANDLE_VALUE)
+      break;
 
-  if (fixed_size == 0) {
+    LARGE_INTEGER offset;
+    offset.QuadPart = fixed_size;
+    if (SetFilePointerEx(h, offset, NULL, FILE_BEGIN) == 0)
+      break;
+
+    if(!SetEndOfFile(h))
+      break;
+
+    prealloc = true;
+  } while (false);
+
+  if (h != INVALID_HANDLE_VALUE) {
+    CloseHandle(h);
+    h = INVALID_HANDLE_VALUE;
+  }
+
+  if (prealloc) {
+    return true;
+  }
+
+  // Candidacy
+  //
+  FILE* f = nullptr;
+  do {
+    f = Open(path, "wb+");
+    if (!f)
+      break;
+
+    if (fixed_size == 0) {
+      fflush(f);
+      prealloc = true;
+      break;
+    }
+
+    if (Seek(f, fixed_size - 1, SEEK_SET) != 0)
+      break;
+
+    if (fwrite("", 1, 1, f) != 1)
+      break;
     fflush(f);
-    Close(f);
-    return nullptr;
+
+    int64_t size = GetFileSize(f);
+    if (size != fixed_size)
+      break;
+    prealloc = true;
+  } while (false);
+
+  if (f) {
+    fclose(f);
+    f = nullptr;
   }
 
-  if (Seek(f, fixed_size - 1, SEEK_SET) != 0) {
-    Close(f);
-    return nullptr;
+  return prealloc;
+#else
+  int fd = open(path.c_str(), O_RDWR | O_CREAT, S_IRUSR | S_IWUSR);
+  if (fd < 0)
+    return false;
+  if (fallocate(fd, 0, 0, fixed_size) != 0) {
+    close(fd);
+    return false;
   }
+  close(fd);
 
-  if (fwrite("", 1, 1, f) != 1) {
-    Close(f);
-    return nullptr;
-  }
-  fflush(f);
+  return true;
+#endif
+}
 
-  int64_t size = GetFileSize(f);
-  if (size != fixed_size) {
-    Close(f);
-    return nullptr;
-  }
-  if (Seek(f, 0L, SEEK_SET) != 0) {
-    Close(f);
-    return nullptr;
-  }
-
-  return f;
+bool FileUtil::PathFormatting(const utf8string& path, utf8string& formatted) {
+  // TODO
+#if defined(WIN32) || defined(_WIN32) || defined(__WIN32__) || defined(__NT__)
+  formatted = path;
+  return true;
+#else
+  formatted = path;
+  return true;
+#endif
 }
 
 }  // namespace teemo

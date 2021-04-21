@@ -57,12 +57,18 @@ vcpkg install teemo:x86-windows
 
 ### 2. 编译
 使用CMake生成相应的工程，然后编译即可。
+**Windows示例**
 ```bash
-# Windows示例
 cmake.exe -G "Visual Studio 15 2017" -DBUILD_SHARED_LIBS=ON -DBUILD_TESTS=ON -S %~dp0 -B %~dp0build
+```
 
-# Linux
+**Linux示例**
+```bash
 cmake -DBUILD_SHARED_LIBS=ON -DBUILD_TESTS=ON
+
+# 如果使用vcpkg安装依赖库，需要指定CMAKE_TOOLCHAIN_FILE
+cmake -DCMAKE_TOOLCHAIN_FILE=/xxx/vcpkg/scripts/buildsystems/vcpkg.cmake -DVCPKG_TARGET_TRIPLET=x64-linux -DBUILD_SHARED_LIBS=ON -DBUILD_TESTS=ON
+
 make
 ```
 

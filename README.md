@@ -61,14 +61,20 @@ vcpkg install gtest:x86-windows
 ### Step 2: Compile teemo
 Firstly using CMake to generate project or makefile, then comiple it:
 
+**Windows Sample**
 ```bash
-# Windows Sample
 cmake.exe -G "Visual Studio 15 2017" -DBUILD_SHARED_LIBS=ON -DBUILD_TESTS=ON -S %~dp0 -B %~dp0build
 
-# Linux Sample
+```
+
+**Linux Sample**
+```bash
 cmake -DBUILD_SHARED_LIBS=ON -DBUILD_TESTS=ON
+
+# If using vcpkg to install dependencies, you have to special CMAKE_TOOLCHAIN_FILE
+cmake -DCMAKE_TOOLCHAIN_FILE=/xxx/vcpkg/scripts/buildsystems/vcpkg.cmake -DVCPKG_TARGET_TRIPLET=x64-linux -DBUILD_SHARED_LIBS=ON -DBUILD_TESTS=ON
+
 make
-make install
 ```
 
 ---

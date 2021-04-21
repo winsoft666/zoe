@@ -38,6 +38,11 @@ Slice::Slice(int32_t index,
     , header_chunk_(nullptr)
     , status_(UNFETCH)
     , slice_manager_(slice_manager) {
+#if defined(WIN32) || defined(_WIN32) || defined(__WIN32__) || defined(__NT__)
+  InitializeCriticalSection(&crit_);
+#else
+  mutex_ = PTHREAD_MUTEX_INITIALIZER;
+#endif
   capacity_.store(init_capacity);
   disk_cache_capacity_.store(0L);
 
@@ -46,6 +51,9 @@ Slice::Slice(int32_t index,
 
 Slice::~Slice() {
   tryFreeDiskCacheBuffer();
+#if defined(WIN32) || defined(_WIN32) || defined(__WIN32__) || defined(__NT__)
+  DeleteCriticalSection(&crit_);
+#endif
 }
 
 int64_t Slice::begin() const {
@@ -85,6 +93,7 @@ static size_t __SliceWriteBodyCallback(char* buffer,
   size_t write_size = size * nitems;
   if (!pThis->onNewData(buffer, write_size)) {
     assert(false);
+    return 0;  // cause CURLE_WRITE_ERROR
   }
 
   return write_size;
@@ -240,6 +249,11 @@ bool Slice::isCompleted() {
 bool Slice::flushToDisk() {
   bool bret = true;
   if (disk_cache_buffer_) {
+#if defined(WIN32) || defined(_WIN32) || defined(__WIN32__) || defined(__NT__)
+    EnterCriticalSection(&crit_);
+#else
+    pthread_mutex_lock(&mutex_);
+#endif
     int64_t written = 0;
     int64_t need_write = disk_cache_capacity_.load();
     disk_cache_capacity_ = 0L;
@@ -256,6 +270,11 @@ bool Slice::flushToDisk() {
                     "[teemo] Slice[%d] flush to disk failed: %lld/%lld", index_,
                     written, need_write);
     }
+#if defined(WIN32) || defined(_WIN32) || defined(__WIN32__) || defined(__NT__)
+    LeaveCriticalSection(&crit_);
+#else
+    pthread_mutex_unlock(&mutex_);
+#endif
   }
   return bret;
 }
@@ -271,6 +290,13 @@ void Slice::tryFreeDiskCacheBuffer() {
 
 bool Slice::onNewData(const char* p, long data_size) {
   bool bret = false;
+
+#if defined(WIN32) || defined(_WIN32) || defined(__WIN32__) || defined(__NT__)
+  EnterCriticalSection(&crit_);
+#else
+  pthread_mutex_lock(&mutex_);
+#endif
+
   do {
     if (!p || data_size <= 0) {
       bret = true;
@@ -282,6 +308,7 @@ bool Slice::onNewData(const char* p, long data_size) {
       break;
     }
 
+    // no cache buffer, directly write to file.
     if (!disk_cache_buffer_) {
       int64_t written =
           target_file->write(begin_ + capacity_.load(), p, data_size);
@@ -307,6 +334,7 @@ bool Slice::onNewData(const char* p, long data_size) {
         target_file->write(begin_ + capacity_, disk_cache_buffer_, need_write);
     std::atomic_fetch_add(&capacity_, written);
     if (written != need_write) {
+      bret = false;
       break;
     }
 
@@ -328,8 +356,13 @@ bool Slice::onNewData(const char* p, long data_size) {
     std::atomic_fetch_add(&capacity_, written);
 
     bret = (written == data_size);
-    break;
   } while (false);
+
+#if defined(WIN32) || defined(_WIN32) || defined(__WIN32__) || defined(__NT__)
+  LeaveCriticalSection(&crit_);
+#else
+  pthread_mutex_unlock(&mutex_);
+#endif
 
   return bret;
 }

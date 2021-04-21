@@ -33,6 +33,8 @@ class SliceManager : public std::enable_shared_from_this<SliceManager> {
 
   Result loadExistSlice(int64_t cur_file_size,
                         const utf8string& cur_content_md5);
+
+  bool flushAllSlices();
   bool flushIndexFile();
 
   void setOriginFileSize(int64_t file_size);

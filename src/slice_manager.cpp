@@ -171,6 +171,16 @@ Result SliceManager::loadExistSlice(int64_t cur_file_size,
   return SUCCESSED;
 }
 
+bool SliceManager::flushAllSlices() {
+  bool bret = true;
+  for (auto& s : slices_) {
+    if (!s->flushToDisk()) {
+      bret = false; // not break
+    }
+  }
+  return bret;
+}
+
 void SliceManager::setOriginFileSize(int64_t file_size) {
   origin_file_size_ = file_size;
 }
@@ -349,8 +359,7 @@ Result SliceManager::finishDownloadProgress(bool need_check_completed) {
   if (need_check_completed) {
     // is all slice download completed?
     Result completed_ret = isAllSliceCompleted(true);
-    if (completed_ret != SUCCESSED &&
-        completed_ret != UNSURE_DOWNLOAD_COMPLETED) {
+    if (completed_ret != SUCCESSED) {
       return completed_ret;
     }
   }

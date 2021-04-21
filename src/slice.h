@@ -22,6 +22,11 @@
 #include <atomic>
 #include "slice_manager.h"
 #include "target_file.h"
+#if defined(WIN32) || defined(_WIN32) || defined(__WIN32__) || defined(__NT__)
+#include <windows.h>
+#else
+#include <pthread.h>
+#endif
 
 struct curl_slist;
 namespace teemo {
@@ -73,12 +78,18 @@ class Slice {
   struct curl_slist* header_chunk_;
 
   int64_t disk_cache_size_;  // byte
-  std::atomic<int64_t> disk_cache_capacity_;
+  std::atomic<int64_t> disk_cache_capacity_; // data size in cache.
   char* disk_cache_buffer_;
 
   Status status_;
 
   std::shared_ptr<SliceManager> slice_manager_;
+
+#if defined(WIN32) || defined(_WIN32) || defined(__WIN32__) || defined(__NT__)
+  CRITICAL_SECTION crit_;
+#else
+  pthread_mutex_t mutex_;
+#endif
 };
 }  // namespace teemo
 #endif  // !TEEMO_SLICE_H_

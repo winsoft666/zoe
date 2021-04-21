@@ -200,7 +200,6 @@ bool FileUtil::CreateFixedSizeFile(const utf8string& path, int64_t fixed_size) {
   bool prealloc = false;
   HANDLE h = INVALID_HANDLE_VALUE;
   do {
-    break;
     h = CreateFileW(Utf8ToUnicode(path).c_str(), GENERIC_READ | GENERIC_WRITE,
                     FILE_SHARE_READ | FILE_SHARE_WRITE, NULL, OPEN_ALWAYS,
                     FILE_ATTRIBUTE_NORMAL, NULL);

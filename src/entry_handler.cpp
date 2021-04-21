@@ -19,6 +19,7 @@
 #include "string_helper.hpp"
 #include "string_encode.h"
 #include "verbose.h"
+#include "time_meter.hpp"
 
 namespace teemo {
 
@@ -296,6 +297,8 @@ Result EntryHandler::_asyncTaskProcess() {
   CURLMcode mcode = curl_multi_perform(multi_, &still_running);
   OutputVerbose(options_->verbose_functor, "[teemo] Start downloading.");
 
+  TimeMeter flush_time_meter;
+
   do {
     if (user_paused_.load()) {
       while (true) {
@@ -311,6 +314,12 @@ Result EntryHandler::_asyncTaskProcess() {
     if (options_->internal_stop_event.isSetted() ||
         (options_->user_stop_event && options_->user_stop_event->isSetted()))
       break;
+
+    if (flush_time_meter.Elapsed() >= 10000) { // 10s
+      slice_manager_->flushAllSlices();
+      slice_manager_->flushIndexFile();
+      flush_time_meter.Restart();
+    }
 
     FD_ZERO(&fdread);
     FD_ZERO(&fdwrite);

@@ -54,7 +54,6 @@ const char* GetResultString(int enumVal) {
                                       u8"HASH_VERIFY_NOT_PASS",
                                       u8"CALCULATE_HASH_FAILED",
                                       u8"FETCH_FILE_INFO_FAILED",
-                                      u8"UNSURE_DOWNLOAD_COMPLETED",
                                       u8"REDIRECT_URL_DIFFERENT"};
   return EnumStrings[enumVal];
 }

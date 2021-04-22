@@ -108,7 +108,7 @@ Result SliceManager::loadExistSlice(int64_t cur_file_size,
     if (pre_file_size != cur_file_size) {
       OutputVerbose(
           options_->verbose_functor,
-          "[teemo] File size has changed, tmp file expired: %lld -> %lld.",
+          "[teemo] File size has changed, tmp file expired: %lld -> %lld.\n",
           pre_file_size, cur_file_size);
       return TMP_FILE_EXPIRED;
     }
@@ -118,7 +118,7 @@ Result SliceManager::loadExistSlice(int64_t cur_file_size,
         options_->content_md5_enabled) {
       OutputVerbose(
           options_->verbose_functor,
-          "[teemo] Content md5 has changed, tmp file expired: %s -> %s.",
+          "[teemo] Content md5 has changed, tmp file expired: %s -> %s.\n",
           pre_content_md5.c_str(), cur_content_md5.c_str());
       return TMP_FILE_EXPIRED;
     }
@@ -158,7 +158,7 @@ Result SliceManager::loadExistSlice(int64_t cur_file_size,
     target_file_ = target_file;
   } catch (const std::exception& e) {
     OutputVerbose(options_->verbose_functor,
-                  "[teemo] Load exist slice exception: %s.",
+                  "[teemo] Load exist slice exception: %s.\n",
                   e.what() ? e.what() : "");
     slices_.clear();
     return INVALID_INDEX_FORMAT;
@@ -166,7 +166,7 @@ Result SliceManager::loadExistSlice(int64_t cur_file_size,
 
   content_md5_ = cur_content_md5;
   origin_file_size_ = cur_file_size;
-  OutputVerbose(options_->verbose_functor, "[teemo] Load exist slice success.");
+  OutputVerbose(options_->verbose_functor, "[teemo] Load exist slice success.\n");
   dumpSlice();
   return SUCCESSED;
 }
@@ -279,12 +279,12 @@ int64_t SliceManager::totalDownloaded() const {
 
 Result SliceManager::isAllSliceCompleted(bool need_check_hash) const {
   if (origin_file_size_ != -1L && totalDownloaded() != origin_file_size_) {
-    OutputVerbose(options_->verbose_functor, "[teemo] Slice total size error.");
+    OutputVerbose(options_->verbose_functor, "[teemo] Slice total size error.\n");
     return SLICE_DOWNLOAD_FAILED;
   }
 
   if (!need_check_hash) {
-    OutputVerbose(options_->verbose_functor, "[teemo] Do not need check hash.");
+    OutputVerbose(options_->verbose_functor, "[teemo] Do not need check hash.\n");
     return SUCCESSED;
   }
 
@@ -295,10 +295,10 @@ Result SliceManager::isAllSliceCompleted(bool need_check_hash) const {
       if (target_file_) {
         utf8string str_hash;
         OutputVerbose(options_->verbose_functor,
-                      u8"[teemo] Start calculate temp file hash.");
+                      u8"[teemo] Start calculate temp file hash.\n");
         if (target_file_->calculateFileHash(options_, str_hash) == SUCCESSED) {
           str_hash = StringCaseConvert(str_hash, EasyCharToLowerA);
-          OutputVerbose(options_->verbose_functor, "[teemo] Temp file hash: %s",
+          OutputVerbose(options_->verbose_functor, "[teemo] Temp file hash: %s.\n",
                         str_hash.c_str());
           if (str_hash !=
               StringCaseConvert(options_->hash_value, EasyCharToLowerA))
@@ -306,7 +306,7 @@ Result SliceManager::isAllSliceCompleted(bool need_check_hash) const {
         }
         else {
           OutputVerbose(options_->verbose_functor,
-                        "[teemo] Calculate temp file hash failed.");
+                        "[teemo] Calculate temp file hash failed.\n");
           return CALCULATE_HASH_FAILED;
         }
       }
@@ -314,11 +314,11 @@ Result SliceManager::isAllSliceCompleted(bool need_check_hash) const {
   }
   else if (content_md5_.length() > 0 && options_->content_md5_enabled) {
     OutputVerbose(options_->verbose_functor,
-                  "[teemo] Start calculate temp file md5.");
+                  "[teemo] Start calculate temp file md5.\n");
     utf8string str_md5;
     if (target_file_->calculateFileMd5(options_, str_md5) == SUCCESSED) {
       str_md5 = StringCaseConvert(str_md5, EasyCharToLowerA);
-      OutputVerbose(options_->verbose_functor, "[teemo] Temp file md5: %s.",
+      OutputVerbose(options_->verbose_functor, "[teemo] Temp file md5: %s.\n",
                     str_md5.c_str());
 
       if (str_md5 != StringCaseConvert(content_md5_, EasyCharToLowerA))
@@ -326,7 +326,7 @@ Result SliceManager::isAllSliceCompleted(bool need_check_hash) const {
     }
     else {
       OutputVerbose(options_->verbose_functor,
-                    "[teemo] Calculate temp file md5 failed.");
+                    "[teemo] Calculate temp file md5 failed.\n");
       return CALCULATE_HASH_FAILED;
     }
   }
@@ -337,7 +337,7 @@ Result SliceManager::isAllSliceCompleted(bool need_check_hash) const {
 Result SliceManager::finishDownloadProgress(bool need_check_completed) {
   // first of all, flush buffer to disk
   OutputVerbose(options_->verbose_functor,
-                "[teemo] Start flushing cache to disk.");
+                "[teemo] Start flushing cache to disk.\n");
   Result flush_disk_ret = SUCCESSED;
   for (auto& s : slices_) {
     if (!s->flushToDisk()) {
@@ -348,7 +348,7 @@ Result SliceManager::finishDownloadProgress(bool need_check_completed) {
   // then flush index file.
   if (!flushIndexFile()) {
     OutputVerbose(options_->verbose_functor,
-                  "[teemo] Flush index file failed.");
+                  "[teemo] Flush index file failed.\n");
   }
 
   // check flush disk result
@@ -370,7 +370,7 @@ Result SliceManager::finishDownloadProgress(bool need_check_completed) {
     error_code = GetLastError();
 #endif
     OutputVerbose(options_->verbose_functor,
-                  "[teemo] Rename file failed, GLE: %u, %s => %s.", error_code,
+                  "[teemo] Rename file failed, GLE: %u, %s => %s.\n", error_code,
                   target_file_->filePath().c_str(),
                   options_->target_file_path.c_str());
     return RENAME_TMP_FILE_FAILED;
@@ -379,7 +379,7 @@ Result SliceManager::finishDownloadProgress(bool need_check_completed) {
   if (!FileUtil::RemoveFile(index_file_path_)) {
     // not failed
     OutputVerbose(options_->verbose_functor,
-                  u8"[teemo] Remove index file failed.");
+                  u8"[teemo] Remove index file failed.\n");
   }
 
   return SUCCESSED;

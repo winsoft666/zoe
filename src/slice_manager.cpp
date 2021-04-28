@@ -166,7 +166,8 @@ Result SliceManager::loadExistSlice(int64_t cur_file_size,
 
   content_md5_ = cur_content_md5;
   origin_file_size_ = cur_file_size;
-  OutputVerbose(options_->verbose_functor, "[teemo] Load exist slice success.\n");
+  OutputVerbose(options_->verbose_functor,
+                "[teemo] Load exist slice success.\n");
   dumpSlice();
   return SUCCESSED;
 }
@@ -175,7 +176,7 @@ bool SliceManager::flushAllSlices() {
   bool bret = true;
   for (auto& s : slices_) {
     if (!s->flushToDisk()) {
-      bret = false; // not break
+      bret = false;  // not break
     }
   }
   return bret;
@@ -208,8 +209,11 @@ Result SliceManager::makeSlices(bool accept_ranges) {
     target_file_.reset();
   target_file_ = std::make_shared<TargetFile>(tmp_file_path);
 
-  if (!target_file_->createNew(origin_file_size_))
+  if (!target_file_->createNew(origin_file_size_)) {
+    OutputVerbose(options_->verbose_functor,
+                  "[teemo] Create target file failed, GLE: %d.\n", GetLastError());
     return CREATE_TARGET_FILE_FAILED;
+  }
 
   assert(origin_file_size_ > 0L || origin_file_size_ == -1L);
 
@@ -279,12 +283,14 @@ int64_t SliceManager::totalDownloaded() const {
 
 Result SliceManager::isAllSliceCompleted(bool need_check_hash) const {
   if (origin_file_size_ != -1L && totalDownloaded() != origin_file_size_) {
-    OutputVerbose(options_->verbose_functor, "[teemo] Slice total size error.\n");
+    OutputVerbose(options_->verbose_functor,
+                  "[teemo] Slice total size error.\n");
     return SLICE_DOWNLOAD_FAILED;
   }
 
   if (!need_check_hash) {
-    OutputVerbose(options_->verbose_functor, "[teemo] Do not need check hash.\n");
+    OutputVerbose(options_->verbose_functor,
+                  "[teemo] Do not need check hash.\n");
     return SUCCESSED;
   }
 
@@ -298,8 +304,8 @@ Result SliceManager::isAllSliceCompleted(bool need_check_hash) const {
                       u8"[teemo] Start calculate temp file hash.\n");
         if (target_file_->calculateFileHash(options_, str_hash) == SUCCESSED) {
           str_hash = StringCaseConvert(str_hash, EasyCharToLowerA);
-          OutputVerbose(options_->verbose_functor, "[teemo] Temp file hash: %s.\n",
-                        str_hash.c_str());
+          OutputVerbose(options_->verbose_functor,
+                        "[teemo] Temp file hash: %s.\n", str_hash.c_str());
           if (str_hash !=
               StringCaseConvert(options_->hash_value, EasyCharToLowerA))
             return HASH_VERIFY_NOT_PASS;
@@ -334,14 +340,18 @@ Result SliceManager::isAllSliceCompleted(bool need_check_hash) const {
   return SUCCESSED;
 }
 
-Result SliceManager::finishDownloadProgress(bool need_check_completed) {
+Result SliceManager::finishDownloadProgress(bool need_check_completed,
+                                            void* mult) {
   // first of all, flush buffer to disk
   OutputVerbose(options_->verbose_functor,
                 "[teemo] Start flushing cache to disk.\n");
-  Result flush_disk_ret = SUCCESSED;
+  Result stop_ret = SUCCESSED;
   for (auto& s : slices_) {
-    if (!s->flushToDisk()) {
-      flush_disk_ret = FLUSH_TMP_FILE_FAILED;
+    assert(s);
+    if (s) {
+      Result r = s->stop(mult);
+      if (r != SUCCESSED)
+        stop_ret = r;
     }
   }
 
@@ -351,9 +361,9 @@ Result SliceManager::finishDownloadProgress(bool need_check_completed) {
                   "[teemo] Flush index file failed.\n");
   }
 
-  // check flush disk result
-  if (flush_disk_ret != SUCCESSED) {
-    return flush_disk_ret;
+  // check stop operate result
+  if (stop_ret != SUCCESSED) {
+    return stop_ret;
   }
 
   if (need_check_completed) {
@@ -370,8 +380,8 @@ Result SliceManager::finishDownloadProgress(bool need_check_completed) {
     error_code = GetLastError();
 #endif
     OutputVerbose(options_->verbose_functor,
-                  "[teemo] Rename file failed, GLE: %u, %s => %s.\n", error_code,
-                  target_file_->filePath().c_str(),
+                  "[teemo] Rename file failed, GLE: %u, %s => %s.\n",
+                  error_code, target_file_->filePath().c_str(),
                   options_->target_file_path.c_str());
     return RENAME_TMP_FILE_FAILED;
   }
@@ -448,4 +458,10 @@ void SliceManager::dumpSlice() const {
 
   OutputVerbose(options_->verbose_functor, ss.str().c_str());
 }
+
+void SliceManager::cleanup() {
+  slices_.clear();
+  target_file_.reset();
+}
+
 }  // namespace teemo

@@ -57,7 +57,7 @@ class Slice {
   int32_t index() const;
 
   Result start(void* multi, int64_t disk_cache_size, int32_t max_speed);
-  void stop(void* multi);
+  Result stop(void* multi);
 
   void setFetched();
   Status status() const;

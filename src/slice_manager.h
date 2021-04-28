@@ -51,7 +51,7 @@ class SliceManager : public std::enable_shared_from_this<SliceManager> {
 
   Result isAllSliceCompleted(bool need_check_hash) const;
 
-  Result finishDownloadProgress(bool need_check_completed);
+  Result finishDownloadProgress(bool need_check_completed, void* mult);
 
   int32_t usefulSliceNum() const;
   std::shared_ptr<Slice> fetchUsefulSlice(bool remove_completed_slice,
@@ -62,10 +62,11 @@ class SliceManager : public std::enable_shared_from_this<SliceManager> {
   utf8string redirectUrl();
 
   utf8string indexFilePath() const;
+
+  void cleanup();
  protected:
   utf8string makeIndexFilePath() const;
   void dumpSlice() const;
-
  protected:
   utf8string redirect_url_;
   int64_t origin_file_size_;

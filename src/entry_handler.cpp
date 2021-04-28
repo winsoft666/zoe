@@ -143,8 +143,10 @@ Result EntryHandler::asyncTaskProcess() {
     speed_handler_.reset();
   if (progress_handler_)
     progress_handler_.reset();
-  if (slice_manager_)
+  if (slice_manager_) {
+    slice_manager_->cleanup();
     slice_manager_.reset();
+  }
 
   if (options_->result_functor)
     options_->result_functor(ret);
@@ -187,9 +189,7 @@ Result EntryHandler::_asyncTaskProcess() {
   OutputVerbose(options_->verbose_functor, "[teemo] Target file path: %s.\n",
                 options_->target_file_path.c_str());
 
-  assert(!slice_manager_.get());
-  if (slice_manager_)
-    slice_manager_.reset();
+  assert(!slice_manager_);
   slice_manager_ =
       std::make_shared<SliceManager>(options_, file_info.redirect_url);
 
@@ -200,7 +200,6 @@ Result EntryHandler::_asyncTaskProcess() {
 
     Result ms_ret = slice_manager_->makeSlices(file_info.acceptRanges);
     if (ms_ret != SUCCESSED) {
-      slice_manager_.reset();
       return ms_ret;
     }
   }
@@ -209,15 +208,13 @@ Result EntryHandler::_asyncTaskProcess() {
   if (all_completed_ret == SUCCESSED) {
     OutputVerbose(options_->verbose_functor,
                   "[teemo] All of slices been downloaded.\n");
-    Result ret = slice_manager_->finishDownloadProgress(false);
-    slice_manager_.reset();
+    Result ret = slice_manager_->finishDownloadProgress(false, multi_);
     return ret;
   }
 
   multi_ = curl_multi_init();
   if (!multi_) {
     OutputVerbose(options_->verbose_functor, "[teemo] curl_multi_init failed.\n");
-    slice_manager_.reset();
     return INIT_CURL_MULTI_FAILED;
   }
 
@@ -254,7 +251,6 @@ Result EntryHandler::_asyncTaskProcess() {
     OutputVerbose(options_->verbose_functor, "[teemo] No available slice.\n");
     curl_multi_cleanup(multi_);
     multi_ = nullptr;
-    slice_manager_.reset();
     return UNKNOWN_ERROR;
   }
 
@@ -388,8 +384,12 @@ Result EntryHandler::_asyncTaskProcess() {
 
   OutputVerbose(options_->verbose_functor, "[teemo] Downloading end.\n");
 
-  Result ret = slice_manager_->finishDownloadProgress(true);
-  slice_manager_.reset();
+  Result ret = slice_manager_->finishDownloadProgress(true, multi_);
+
+  if (multi_) {
+    curl_multi_cleanup(multi_);
+    multi_ = nullptr;
+  }
 
   state_.store(DownloadState::STOPPED);
 

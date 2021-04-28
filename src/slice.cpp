@@ -50,6 +50,7 @@ Slice::Slice(int32_t index,
 }
 
 Slice::~Slice() {
+  assert(!curl_);
   tryFreeDiskCacheBuffer();
 #if defined(WIN32) || defined(_WIN32) || defined(__WIN32__) || defined(__NT__)
   DeleteCriticalSection(&crit_);
@@ -208,7 +209,8 @@ Result Slice::start(void* multi, int64_t disk_cache_size, int32_t max_speed) {
   return SUCCESSED;
 }
 
-void Slice::stop(void* multi) {
+Result Slice::stop(void* multi) {
+  Result ret = SUCCESSED;
   if (curl_) {
     if (multi) {
       CURLMcode code = curl_multi_remove_handle(multi, curl_);
@@ -226,8 +228,10 @@ void Slice::stop(void* multi) {
     curl_ = nullptr;
   }
 
-  flushToDisk();
+  if (!flushToDisk())
+    ret = FLUSH_TMP_FILE_FAILED;
   tryFreeDiskCacheBuffer();
+  return ret;
 }
 
 void Slice::setFetched() {

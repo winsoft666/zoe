@@ -157,6 +157,17 @@ class TEEMO_API Teemo {
   Result setMaxDownloadSpeed(int32_t byte_per_seconds) noexcept;
   int32_t maxDownloadSpeed() const noexcept;
 
+  // Pass an int as parameter.
+  // If a download less than this speed (counted in bytes per second) during "low speed time" seconds,
+  // the transfer will be considered as failed.
+  // Default to -1, unlimited speed.
+  // Set to 0 or negative to switch to the default built-in limit - -1(unlimited speed).
+  //
+  Result setMinDownloadSpeed(int32_t byte_per_seconds,
+                             int32_t duration) noexcept; // seconds
+  int32_t minDownloadSpeed() const noexcept;
+  int32_t minDownloadSpeedDuration() const noexcept;  // seconds
+
   // Pass an unsigned int specifying your maximal size for the disk cache total buffer in teemo.
   // This buffer size is by default 20971520 byte (20MB).
   //

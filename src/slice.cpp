@@ -142,8 +142,17 @@ Result Slice::start(void* multi, int64_t disk_cache_size, int32_t max_speed) {
   curl_easy_setopt(curl_, CURLOPT_SSL_VERIFYPEER, 0L);
   //if (ca_path_.length() > 0)
   //    curl_easy_setopt(curl_, CURLOPT_CAINFO, ca_path_.c_str());
-  curl_easy_setopt(curl_, CURLOPT_LOW_SPEED_LIMIT, 0L);  // disabled
-  curl_easy_setopt(curl_, CURLOPT_LOW_SPEED_TIME, 0L);   // disabled
+
+  if (slice_manager_->options()->min_speed == -1) {
+    curl_easy_setopt(curl_, CURLOPT_LOW_SPEED_LIMIT, 0L);  // disabled
+    curl_easy_setopt(curl_, CURLOPT_LOW_SPEED_TIME, 0L);   // disabled
+  }
+  else {
+    curl_easy_setopt(curl_, CURLOPT_LOW_SPEED_LIMIT,
+                     slice_manager_->options()->min_speed);
+    curl_easy_setopt(curl_, CURLOPT_LOW_SPEED_TIME,
+                     slice_manager_->options()->min_speed_duration);
+  }
   curl_easy_setopt(curl_, CURLOPT_NOPROGRESS, 1L);
 
   if (max_speed > 0) {

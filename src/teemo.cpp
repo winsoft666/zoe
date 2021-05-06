@@ -198,6 +198,29 @@ int32_t Teemo::maxDownloadSpeed() const noexcept {
   return impl_->options_.max_speed;
 }
 
+Result Teemo::setMinDownloadSpeed(int32_t byte_per_seconds,
+                                  int32_t duration) noexcept {
+  assert(impl_);
+  if (impl_->isDownloading())
+    return ALREADY_DOWNLOADING;
+  if (byte_per_seconds <= 0)
+    byte_per_seconds = -1;
+  impl_->options_.min_speed = byte_per_seconds;
+  impl_->options_.min_speed_duration = duration;
+
+  return SUCCESSED;
+}
+
+int32_t Teemo::minDownloadSpeed() const noexcept {
+  assert(impl_);
+  return impl_->options_.min_speed;
+}
+
+int32_t Teemo::minDownloadSpeedDuration() const noexcept {
+  assert(impl_);
+  return impl_->options_.min_speed_duration;
+}
+
 Result Teemo::setDiskCacheSize(int32_t cache_size) noexcept {
   assert(impl_);
   if (impl_->isDownloading())
@@ -272,8 +295,8 @@ Result Teemo::setSlicePolicy(SlicePolicy policy,
   return INVALID_SLICE_POLICY;
 }
 
-void Teemo::slicePolicy(SlicePolicy& policy,
-                        int64_t& policy_value) const noexcept {
+void Teemo::slicePolicy(SlicePolicy& policy, int64_t& policy_value) const
+    noexcept {
   assert(impl_);
   policy = impl_->options_.slice_policy;
   policy_value = impl_->options_.slice_policy_value;
@@ -332,7 +355,7 @@ std::shared_future<Result> Teemo::start(
     ret = INVALID_URL;
   }
   else {
-    if(!FileUtil::PathFormatting(target_file_path, target_path_formatted))
+    if (!FileUtil::PathFormatting(target_file_path, target_path_formatted))
       ret = INVALID_TARGET_FILE_PATH;
   }
 

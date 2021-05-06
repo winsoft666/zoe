@@ -33,6 +33,8 @@ typedef struct _Options {
   int32_t thread_num;
   int32_t disk_cache_size;
   int32_t max_speed;
+  int32_t min_speed;
+  int32_t min_speed_duration;
   int32_t tmp_file_expired_time;
   int32_t fetch_file_info_retry;
   int32_t network_conn_timeout;
@@ -72,6 +74,8 @@ typedef struct _Options {
     hash_type = MD5;
 
     max_speed = -1;
+    min_speed = -1;
+    min_speed_duration = 0;
     tmp_file_expired_time = -1;
     fetch_file_info_retry = TEEMO_DEFAULT_FETCH_FILE_INFO_RETRY_TIMES;
     network_conn_timeout = TEEMO_DEFAULT_NETWORK_CONN_TIMEOUT_MS;

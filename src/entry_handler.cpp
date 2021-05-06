@@ -558,13 +558,14 @@ void EntryHandler::updateSliceStatus() {
       }
       else {
         if (!slice->isDataCompleted()) {
-          slice->setStatus(Slice::DOWNLOAD_FAILED);
-          slice->increaseFailedTimes();
-          slice->stop(multi_);
           OutputVerbose(options_->verbose_functor,
                         "[teemo] Slice<%d> download failed %ld(%s).\n",
                         slice->index(), m->data.result,
                         curl_easy_strerror(m->data.result));
+
+          slice->setStatus(Slice::DOWNLOAD_FAILED);
+          slice->increaseFailedTimes();
+          slice->stop(multi_);
         }
       }
     }

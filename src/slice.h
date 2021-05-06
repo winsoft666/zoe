@@ -20,7 +20,6 @@
 #include <mutex>
 #include <memory>
 #include <atomic>
-#include "slice_manager.h"
 #include "target_file.h"
 #if defined(WIN32) || defined(_WIN32) || defined(__WIN32__) || defined(__NT__)
 #include <windows.h>
@@ -37,7 +36,9 @@ class Slice {
     UNFETCH = 0,
     FETCHED = 1,
     DOWNLOADING = 2,
-    DOWNLOAD_FAILED = 3
+    DOWNLOAD_FAILED = 3,
+    INIT_FAILED = 4,
+    DOWNLOAD_COMPLETED = 5
   };
   Slice(int32_t index,
         int64_t begin,
@@ -55,14 +56,19 @@ class Slice {
   int64_t diskCacheCapacity() const;
 
   int32_t index() const;
+  void* curlHandle();
 
   Result start(void* multi, int64_t disk_cache_size, int32_t max_speed);
   Result stop(void* multi);
 
-  void setFetched();
+  void setStatus(Slice::Status s);
   Status status() const;
 
-  bool isCompleted();
+  void increaseFailedTimes();
+  int32_t failedTimes() const;
+
+  // if end_ is -1, this function will return false.
+  bool isDataCompleted();
 
   bool onNewData(const char* p, long size);
   bool flushToDisk();
@@ -82,6 +88,7 @@ class Slice {
   char* disk_cache_buffer_;
 
   Status status_;
+  int32_t failed_times_;
 
   std::shared_ptr<SliceManager> slice_manager_;
 

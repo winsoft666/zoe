@@ -164,7 +164,8 @@ Result EntryHandler::_asyncTaskProcess() {
   } while (++try_times <= options_->fetch_file_info_retry);
 
   if (!fetch_size_ret) {
-    OutputVerbose(options_->verbose_functor, "[teemo] Fetch file size failed.\n");
+    OutputVerbose(options_->verbose_functor,
+                  "[teemo] Fetch file size failed.\n");
     return FETCH_FILE_INFO_FAILED;
   }
 
@@ -214,20 +215,22 @@ Result EntryHandler::_asyncTaskProcess() {
 
   multi_ = curl_multi_init();
   if (!multi_) {
-    OutputVerbose(options_->verbose_functor, "[teemo] curl_multi_init failed.\n");
+    OutputVerbose(options_->verbose_functor,
+                  "[teemo] curl_multi_init failed.\n");
     return INIT_CURL_MULTI_FAILED;
   }
 
   int32_t disk_cache_per_slice = 0L;
   int32_t max_speed_per_slice = 0L;
   calculateSliceInfo(
-      std::min(slice_manager_->usefulSliceNum(), options_->thread_num),
+      std::min(slice_manager_->getUnfetchAndUncompletedSliceNum(),
+               options_->thread_num),
       &disk_cache_per_slice, &max_speed_per_slice);
 
-  OutputVerbose(options_->verbose_functor, "[teemo] Disk cache per slice: %ld.\n",
-                disk_cache_per_slice);
-  OutputVerbose(options_->verbose_functor, "[teemo] Max speed per slice: %ld.\n",
-                max_speed_per_slice);
+  OutputVerbose(options_->verbose_functor,
+                "[teemo] Disk cache per slice: %ld.\n", disk_cache_per_slice);
+  OutputVerbose(options_->verbose_functor,
+                "[teemo] Max speed per slice: %ld.\n", max_speed_per_slice);
 
   Result ss_ret = SUCCESSED;
   int32_t selected = 0;
@@ -235,15 +238,20 @@ Result EntryHandler::_asyncTaskProcess() {
     if (selected >= options_->thread_num)
       break;
     std::shared_ptr<Slice> slice =
-        slice_manager_->fetchUsefulSlice(false, nullptr);
+        slice_manager_->getUncompletedSlice(Slice::UNFETCH);
     if (!slice)
       break;
+    slice->setStatus(Slice::FETCHED);
     ss_ret = slice->start(multi_, disk_cache_per_slice, max_speed_per_slice);
     if (ss_ret != SUCCESSED) {
       OutputVerbose(options_->verbose_functor,
-                    "[teemo] Start slice failed: %s.\n", GetResultString(ss_ret));
+                    "[teemo] Slice<%d> start downloading failed: %s.\n",
+                    slice->index(), GetResultString(ss_ret));
+
       continue;
     }
+    OutputVerbose(options_->verbose_functor,
+                  "[teemo] Slice<%d> start downloading.\n", slice->index());
     selected++;
   }
 
@@ -311,7 +319,7 @@ Result EntryHandler::_asyncTaskProcess() {
         (options_->user_stop_event && options_->user_stop_event->isSetted()))
       break;
 
-    if (flush_time_meter.Elapsed() >= 10000) { // 10s
+    if (flush_time_meter.Elapsed() >= 10000) {  // 10s
       slice_manager_->flushAllSlices();
       slice_manager_->flushIndexFile();
       flush_time_meter.Restart();
@@ -333,7 +341,8 @@ Result EntryHandler::_asyncTaskProcess() {
     mcode = curl_multi_fdset(multi_, &fdread, &fdwrite, &fdexcep, &maxfd);
     if (mcode != CURLM_CALL_MULTI_PERFORM && mcode != CURLM_OK) {
       OutputVerbose(options_->verbose_functor,
-                    "[teemo] curl_multi_fdset failed, code: %ld.\n", (long)mcode);
+                    "[teemo] curl_multi_fdset failed, code: %ld(%s).\n",
+                    (long)mcode, curl_multi_strerror(mcode));
       break;
     }
 
@@ -355,12 +364,20 @@ Result EntryHandler::_asyncTaskProcess() {
     curl_multi_perform(multi_, &still_running);
 
     if (still_running < options_->thread_num) {
-      // Get a slice that not started
-      // Implied: flush the disk cache buffer of completed slice, then free buffer.
-      //
+      updateSliceStatus();
+
+      // Get a slice that not completed and not be fetched.
       std::shared_ptr<Slice> slice =
-          slice_manager_->fetchUsefulSlice(true, multi_);
+          slice_manager_->getUncompletedSlice(Slice::UNFETCH);
+      if (!slice) {
+        // Try to download the slice that is failed previous again.
+        slice = slice_manager_->getUncompletedSlice(Slice::DOWNLOAD_FAILED);
+        if (slice && slice->failedTimes() >= options_->slice_max_failed_times)
+          slice.reset();
+      }
+
       if (slice) {
+        slice->setStatus(Slice::FETCHED);
         int32_t disk_cache_per_slice = 0L;
         int32_t max_speed_per_slice = 0L;
         calculateSliceInfo(still_running + 1, &disk_cache_per_slice,
@@ -370,12 +387,15 @@ Result EntryHandler::_asyncTaskProcess() {
         if (still_running <= 0) {
           if (start_ret == SUCCESSED) {
             curl_multi_perform(multi_, &still_running);
+            OutputVerbose(options_->verbose_functor,
+                          "[teemo] Slice<%d> start downloading.\n",
+                          slice->index());
           }
           else {
             still_running = 1;
             OutputVerbose(options_->verbose_functor,
-                          "[teemo] Start slice downloading failed: %s.\n",
-                          GetResultString(start_ret));
+                          "[teemo] Slice<%d> start downloading failed: %s.\n",
+                          slice->index(), GetResultString(start_ret));
           }
         }
       }
@@ -455,8 +475,8 @@ bool EntryHandler::requestFileInfo(const utf8string& url, FileInfo& fileInfo) {
 
   if (ret_code != CURLE_OK) {
     OutputVerbose(options_->verbose_functor,
-                  "[teemo] curl_easy_perform failed, CURLcode: %ld.\n",
-                  (long)ret_code);
+                  "[teemo] curl_easy_perform failed, CURLcode: %ld(%s).\n",
+                  (long)ret_code, curl_easy_strerror(ret_code));
     return false;
   }
 
@@ -470,9 +490,10 @@ bool EntryHandler::requestFileInfo(const utf8string& url, FileInfo& fileInfo) {
   int http_code = 0;
   if ((ret_code = curl_easy_getinfo(curl, CURLINFO_RESPONSE_CODE,
                                     &http_code)) != CURLE_OK) {
-    OutputVerbose(options_->verbose_functor,
-                  "[teemo] Get CURLINFO_RESPONSE_CODE failed, CURLcode: %ld.\n",
-                  (long)ret_code);
+    OutputVerbose(
+        options_->verbose_functor,
+        "[teemo] Get CURLINFO_RESPONSE_CODE failed, CURLcode: %ld(%s).\n",
+        (long)ret_code, curl_easy_strerror(ret_code));
     return false;
   }
 
@@ -518,5 +539,35 @@ void EntryHandler::calculateSliceInfo(int32_t concurrency_num,
                                      : (options_->max_speed / concurrency_num));
     }
   }
+}
+
+void EntryHandler::updateSliceStatus() {
+  struct CURLMsg* m = nullptr;
+  do {
+    int msgq = 0;
+    m = curl_multi_info_read(multi_, &msgq);
+    if (m && m->msg == CURLMSG_DONE) {
+      std::shared_ptr<Slice> slice = slice_manager_->getSlice(m->easy_handle);
+      assert(slice);
+      if (!slice)
+        continue;
+
+      if (m->data.result == CURLE_OK) {
+        slice->setStatus(Slice::DOWNLOAD_COMPLETED);
+        slice->stop(multi_);
+      }
+      else {
+        if (!slice->isDataCompleted()) {
+          slice->setStatus(Slice::DOWNLOAD_FAILED);
+          slice->increaseFailedTimes();
+          slice->stop(multi_);
+          OutputVerbose(options_->verbose_functor,
+                        "[teemo] Slice<%d> download failed %ld(%s).\n",
+                        slice->index(), m->data.result,
+                        curl_easy_strerror(m->data.result));
+        }
+      }
+    }
+  } while (m);
 }
 }  // namespace teemo

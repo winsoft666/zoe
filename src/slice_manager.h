@@ -18,12 +18,11 @@
 
 #include <vector>
 #include <atomic>
-#include "slice.h"
 #include "teemo/teemo.h"
 #include "target_file.h"
+#include "slice.h"
 
 namespace teemo {
-class Slice;
 typedef struct _Options Options;
 
 class SliceManager : public std::enable_shared_from_this<SliceManager> {
@@ -53,9 +52,10 @@ class SliceManager : public std::enable_shared_from_this<SliceManager> {
 
   Result finishDownloadProgress(bool need_check_completed, void* mult);
 
-  int32_t usefulSliceNum() const;
-  std::shared_ptr<Slice> fetchUsefulSlice(bool remove_completed_slice,
-                                          void* mult);
+  int32_t getUnfetchAndUncompletedSliceNum() const;
+  std::shared_ptr<Slice> getUncompletedSlice(Slice::Status status);
+
+  std::shared_ptr<Slice> getSlice(void* curlHandle);
 
   const Options* options();
 

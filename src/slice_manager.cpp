@@ -44,25 +44,22 @@ SliceManager::~SliceManager() {
   target_file_.reset();
 }
 
-std::shared_ptr<Slice> SliceManager::fetchUsefulSlice(
-    bool remove_completed_slice,
-    void* mult) {
-  std::shared_ptr<Slice> ret_slice;
+std::shared_ptr<teemo::Slice> SliceManager::getSlice(void* curlHandle) {
   for (auto& s : slices_) {
-    if (s->isCompleted()) {
-      if (remove_completed_slice && mult)
-        s->stop(mult);
-    }
-    else {
-      if (!ret_slice && s->status() == Slice::Status::UNFETCH) {
-        ret_slice = s;
-        ret_slice->setFetched();
-        if (remove_completed_slice && mult)
-          break;
-      }
+    if (s->curlHandle() == curlHandle)
+      return s;
+  }
+  return nullptr;
+}
+
+std::shared_ptr<teemo::Slice> SliceManager::getUncompletedSlice(
+    Slice::Status status) {
+  for (auto& s : slices_) {
+    if (s && !s->isDataCompleted() && s->status() == status) {
+      return s;
     }
   }
-  return ret_slice;
+  return nullptr;
 }
 
 const Options* SliceManager::options() {
@@ -147,11 +144,12 @@ Result SliceManager::loadExistSlice(int64_t cur_file_size,
       options_->url = j["url"].get<utf8string>();
 
     slices_.clear();
-    int32_t slice_index = 0;
+
     for (auto& it : j["slices"]) {
       std::shared_ptr<Slice> slice = std::make_shared<Slice>(
-          ++slice_index, it["begin"].get<int64_t>(), it["end"].get<int64_t>(),
-          it["capacity"].get<int64_t>(), shared_from_this());
+          it["index"].get<int32_t>(), it["begin"].get<int64_t>(),
+          it["end"].get<int64_t>(), it["capacity"].get<int64_t>(),
+          shared_from_this());
       slices_.push_back(slice);
     }
 
@@ -210,8 +208,14 @@ Result SliceManager::makeSlices(bool accept_ranges) {
   target_file_ = std::make_shared<TargetFile>(tmp_file_path);
 
   if (!target_file_->createNew(origin_file_size_)) {
+#if defined(WIN32) || defined(_WIN32) || defined(__WIN32__) || defined(__NT__)
     OutputVerbose(options_->verbose_functor,
-                  "[teemo] Create target file failed, GLE: %d.\n", GetLastError());
+                  "[teemo] Create target file failed, GLE: %d.\n",
+                  GetLastError());
+#else
+    OutputVerbose(options_->verbose_functor,
+                  "[teemo] Create target file failed.\n");
+#endif
     return CREATE_TARGET_FILE_FAILED;
   }
 
@@ -247,8 +251,10 @@ Result SliceManager::makeSlices(bool accept_ranges) {
     if (slice_size > 0L) {
       bool is_last = false;
       do {
+        slice_index++;
+
         cur_end = std::min(cur_begin + slice_size - 1, origin_file_size_ - 1);
-        // last slice contains all of remainder space.
+        // final slice contains all of remainder space.
         if (options_->slice_policy == FixedNum &&
             slice_index == options_->slice_policy_value) {
           cur_end = origin_file_size_ - 1L;
@@ -261,7 +267,7 @@ Result SliceManager::makeSlices(bool accept_ranges) {
           cur_end = -1L;
 
         std::shared_ptr<Slice> slice = std::make_shared<Slice>(
-            slice_index++, cur_begin, cur_end, 0L, shared_from_this());
+            slice_index, cur_begin, cur_end, 0L, shared_from_this());
         slices_.push_back(slice);
 
         cur_begin = cur_end + 1L;
@@ -395,10 +401,10 @@ Result SliceManager::finishDownloadProgress(bool need_check_completed,
   return SUCCESSED;
 }
 
-int32_t SliceManager::usefulSliceNum() const {
+int32_t SliceManager::getUnfetchAndUncompletedSliceNum() const {
   int32_t num = 0;
   for (auto& it : slices_) {
-    if (!it->isCompleted() && it->status() == Slice::UNFETCH)
+    if (it && !it->isDataCompleted() && it->status() == Slice::UNFETCH)
       num++;
   }
   return num;
@@ -420,7 +426,8 @@ bool SliceManager::flushIndexFile() {
 
   json s;
   for (auto& slice : slices_) {
-    s.push_back({{"begin", slice->begin()},
+    s.push_back({{"index", slice->index()},
+                 {"begin", slice->begin()},
                  {"end", slice->end()},
                  {"capacity", slice->capacity()}});
   }
@@ -443,9 +450,8 @@ utf8string SliceManager::makeIndexFilePath() const {
 
 void SliceManager::dumpSlice() const {
   std::stringstream ss;
-  int32_t s_index = 0;
   for (auto& s : slices_) {
-    ss << "<" << s_index++ << "> [" << s->begin() << "~" << s->end();
+    ss << "<" << s->index() << "> [" << s->begin() << "~" << s->end();
     if (s->end() == -1) {
       ss << "] (*), Disk: " << s->capacity()
          << ", Buffer: " << s->diskCacheCapacity() << "\r\n";

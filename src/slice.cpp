@@ -21,6 +21,7 @@
 #include "options.h"
 #include "string_encode.h"
 #include "verbose.h"
+#include "slice_manager.h"
 
 namespace teemo {
 
@@ -37,6 +38,7 @@ Slice::Slice(int32_t index,
     , curl_(nullptr)
     , header_chunk_(nullptr)
     , status_(UNFETCH)
+    , failed_times_(0)
     , slice_manager_(slice_manager) {
 #if defined(WIN32) || defined(_WIN32) || defined(__WIN32__) || defined(__NT__)
   InitializeCriticalSection(&crit_);
@@ -85,6 +87,10 @@ int32_t Slice::index() const {
   return index_;
 }
 
+void* Slice::curlHandle() {
+  return curl_;
+}
+
 static size_t __SliceWriteBodyCallback(char* buffer,
                                        size_t size,
                                        size_t nitems,
@@ -119,7 +125,7 @@ Result Slice::start(void* multi, int64_t disk_cache_size, int32_t max_speed) {
     OutputVerbose(slice_manager_->options()->verbose_functor,
                   "[teemo] curl_easy_init failed.\n");
     tryFreeDiskCacheBuffer();
-    status_ = DOWNLOAD_FAILED;
+    status_ = INIT_FAILED;
     return INIT_CURL_FAILED;
   }
 
@@ -169,11 +175,12 @@ Result Slice::start(void* multi, int64_t disk_cache_size, int32_t max_speed) {
                     "[teemo] CURLOPT_RANGE: %s.\n", range);
       if (err != CURLE_OK) {
         OutputVerbose(slice_manager_->options()->verbose_functor,
-                      "[teemo] CURLOPT_RANGE failed: %ld.\n", (long)err);
+                      "[teemo] CURLOPT_RANGE failed: %ld(%s).\n", (long)err,
+                      curl_easy_strerror(err));
         curl_easy_cleanup(curl_);
         curl_ = nullptr;
         tryFreeDiskCacheBuffer();
-        status_ = DOWNLOAD_FAILED;
+        status_ = INIT_FAILED;
         return SET_CURL_OPTION_FAILED;
       }
     }
@@ -185,12 +192,12 @@ Result Slice::start(void* multi, int64_t disk_cache_size, int32_t max_speed) {
                   "[teemo] CURLOPT_RESUME_FROM_LARGE: %ld.\n", offset);
     if (err != CURLE_OK) {
       OutputVerbose(slice_manager_->options()->verbose_functor,
-                    "[teemo] CURLOPT_RESUME_FROM_LARGE failed: %ld.\n",
-                    (long)err);
+                    "[teemo] CURLOPT_RESUME_FROM_LARGE failed: %ld(%s).\n",
+                    (long)err, curl_easy_strerror(err));
       curl_easy_cleanup(curl_);
       curl_ = nullptr;
       tryFreeDiskCacheBuffer();
-      status_ = DOWNLOAD_FAILED;
+      status_ = INIT_FAILED;
       return SET_CURL_OPTION_FAILED;
     }
   }
@@ -198,11 +205,12 @@ Result Slice::start(void* multi, int64_t disk_cache_size, int32_t max_speed) {
   CURLMcode m_code = curl_multi_add_handle(multi, curl_);
   if (m_code != CURLM_OK) {
     OutputVerbose(slice_manager_->options()->verbose_functor,
-                  "[teemo] curl_multi_add_handle failed: %ld.\n", (long)m_code);
+                  "[teemo] curl_multi_add_handle failed: %ld(%s).\n",
+                  (long)m_code, curl_multi_strerror(m_code));
     curl_easy_cleanup(curl_);
     curl_ = nullptr;
     tryFreeDiskCacheBuffer();
-    status_ = DOWNLOAD_FAILED;
+    status_ = INIT_FAILED;
     return ADD_CURL_HANDLE_FAILED;
   }
 
@@ -216,8 +224,8 @@ Result Slice::stop(void* multi) {
       CURLMcode code = curl_multi_remove_handle(multi, curl_);
       if (code != CURLM_CALL_MULTI_PERFORM && code != CURLM_OK) {
         OutputVerbose(slice_manager_->options()->verbose_functor,
-                      "[teemo] curl_multi_remove_handle failed: %ld.\n",
-                      (long)code);
+                      "[teemo] curl_multi_remove_handle failed: %ld(%s).\n",
+                      (long)code, curl_multi_strerror(code));
       }
     }
     if (header_chunk_) {
@@ -231,18 +239,27 @@ Result Slice::stop(void* multi) {
   if (!flushToDisk())
     ret = FLUSH_TMP_FILE_FAILED;
   tryFreeDiskCacheBuffer();
+
   return ret;
 }
 
-void Slice::setFetched() {
-  status_ = FETCHED;
+void Slice::setStatus(Slice::Status s) {
+  status_ = s;
 }
 
 Slice::Status Slice::status() const {
   return status_;
 }
 
-bool Slice::isCompleted() {
+void Slice::increaseFailedTimes() {
+  failed_times_++;
+}
+
+int32_t Slice::failedTimes() const {
+  return failed_times_;
+}
+
+bool Slice::isDataCompleted() {
   if (end_ == -1)
     return false;
 
@@ -271,8 +288,8 @@ bool Slice::flushToDisk() {
     assert(bret);
     if (!bret) {
       OutputVerbose(slice_manager_->options()->verbose_functor,
-                    "[teemo] Slice[%d] flush to disk failed: %lld/%lld.\n", index_,
-                    written, need_write);
+                    "[teemo] Slice[%d] flush to disk failed: %lld/%lld.\n",
+                    index_, written, need_write);
     }
 #if defined(WIN32) || defined(_WIN32) || defined(__WIN32__) || defined(__NT__)
     LeaveCriticalSection(&crit_);

@@ -25,6 +25,7 @@ namespace teemo {
 #define TEEMO_DEFAULT_FIXED_SLICE_NUM 1
 #define TEEMO_DEFAULT_FETCH_FILE_INFO_RETRY_TIMES 1
 #define TEEMO_DEFAULT_THREAD_NUM 1
+#define TEEMO_DEFAULT_SLICE_MAX_FAILED_TIMES 3
 
 typedef struct _Options {
   bool redirected_url_check_enabled;
@@ -35,6 +36,8 @@ typedef struct _Options {
   int32_t tmp_file_expired_time;
   int32_t fetch_file_info_retry;
   int32_t network_conn_timeout;
+
+  int32_t slice_max_failed_times;
 
   SlicePolicy slice_policy;
   int64_t slice_policy_value;
@@ -72,6 +75,8 @@ typedef struct _Options {
     tmp_file_expired_time = -1;
     fetch_file_info_retry = TEEMO_DEFAULT_FETCH_FILE_INFO_RETRY_TIMES;
     network_conn_timeout = TEEMO_DEFAULT_NETWORK_CONN_TIMEOUT_MS;
+
+    slice_max_failed_times = TEEMO_DEFAULT_SLICE_MAX_FAILED_TIMES;
 
     result_functor = nullptr;
     progress_functor = nullptr;

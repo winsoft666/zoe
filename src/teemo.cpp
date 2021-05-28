@@ -170,6 +170,17 @@ int32_t Teemo::fetchFileInfoRetryTimes() const noexcept {
   return impl_->options_.fetch_file_info_retry;
 }
 
+Result Teemo::setFetchFileInfoHeadMethod(bool use_head) noexcept {
+  assert(impl_);
+  impl_->options_.use_head_method_fetch_file_info = use_head;
+  return SUCCESSED;
+}
+
+bool Teemo::fetchFileInfoHeadMethod() const noexcept {
+  assert(impl_);
+  return impl_->options_.use_head_method_fetch_file_info;
+}
+
 Result Teemo::setTmpFileExpiredTime(int32_t seconds) noexcept {
   assert(impl_);
   impl_->options_.tmp_file_expired_time = seconds;

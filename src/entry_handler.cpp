@@ -438,7 +438,11 @@ bool EntryHandler::requestFileInfo(const utf8string& url, FileInfo& fileInfo) {
   curl_easy_setopt(curl, CURLOPT_VERBOSE, 0L);
   curl_easy_setopt(curl, CURLOPT_NOSIGNAL, 1L);
   curl_easy_setopt(curl, CURLOPT_URL, url.c_str());
-  curl_easy_setopt(curl, CURLOPT_NOBODY, 1L);
+  if(options_->use_head_method_fetch_file_info)
+    curl_easy_setopt(curl, CURLOPT_NOBODY, 1L);
+  else
+    curl_easy_setopt(curl, CURLOPT_NOBODY, 0L);
+
   curl_easy_setopt(curl, CURLOPT_FOLLOWLOCATION, 1L);
   curl_easy_setopt(curl, CURLOPT_SSL_VERIFYHOST, 0L);
   curl_easy_setopt(curl, CURLOPT_SSL_VERIFYPEER, 0L);

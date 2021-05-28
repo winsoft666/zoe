@@ -141,6 +141,10 @@ class TEEMO_API Teemo {
   Result setFetchFileInfoRetryTimes(int32_t retry_times) noexcept;
   int32_t fetchFileInfoRetryTimes() const noexcept;
 
+  // If bUseHead is true, teemo will use HEAD method to fetch file info. Otherwise, teemo will use GET method.
+  Result setFetchFileInfoHeadMethod(bool use_head) noexcept;
+  bool fetchFileInfoHeadMethod() const noexcept;
+
   // Pass an int as parameter.
   // If the interval seconds that from the saved time of temporary file to present greater than or equal to this parameter, the temporary file will be discarded.
   // Default to -1, never expired.

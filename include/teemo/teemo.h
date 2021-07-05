@@ -236,10 +236,8 @@ class TEEMO_API Teemo {
   void resume() noexcept;
 
   // Stop downloading and state change to STOPPED, teemo will return CANCELED in ResultFunctor.
-  // Wait wait_timeout_ms (-1 is infinite) millseconds for downloading progress come to a full stop.
-  // The function return true if progress has come to a full stop in wait_timeout_ms, otherwise return false.
   //
-  bool stop(int wait_timeout_ms = 0) noexcept;
+  void stop() noexcept;
 
   utf8string url() const noexcept;
   utf8string targetFilePath() const noexcept;

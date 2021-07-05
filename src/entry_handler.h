@@ -50,7 +50,7 @@ class EntryHandler {
   std::shared_future<Result> start(Options* options);
   void pause();
   void resume();
-  bool stop(int wait_timeout_ms = 0);
+  void stop();
 
   int64_t originFileSize() const;
   Options* options();

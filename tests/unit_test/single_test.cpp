@@ -31,8 +31,7 @@ TEST(SingleTest, test1) {
 
   getchar();
 
-  bool stop_ret = efd.stop(-1);
-  printf("Stop result: %s\n", stop_ret ? "true" : "false");
+  efd.stop();
 
   getchar();
 

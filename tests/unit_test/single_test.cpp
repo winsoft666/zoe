@@ -33,6 +33,12 @@ TEST(SingleTest, test1) {
 
   efd.stop();
 
+  std::shared_future<Result> future_result = efd.futureResult();
+  if (future_result.valid()) {
+    Result ret = future_result.get();
+    printf("\nResult: %s\n", GetResultString(ret));
+  }
+
   getchar();
 
   Teemo::GlobalUnInit();

@@ -57,6 +57,7 @@ class EntryHandler {
 
   DownloadState state() const;
 
+  std::shared_future<Result> futureResult();
  protected:
   Result asyncTaskProcess();
   Result _asyncTaskProcess();

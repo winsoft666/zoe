@@ -38,7 +38,10 @@ EntryHandler::EntryHandler()
   state_.store(DownloadState::STOPPED);
 }
 
-EntryHandler::~EntryHandler() {}
+EntryHandler::~EntryHandler() {
+  if (async_task_.valid())
+    async_task_.get();
+}
 
 static size_t __WriteBodyCallback(char* buffer,
                                   size_t size,
@@ -127,6 +130,10 @@ teemo::Options* EntryHandler::options() {
 
 DownloadState EntryHandler::state() const {
   return state_.load();
+}
+
+std::shared_future<teemo::Result> EntryHandler::futureResult() {
+  return async_task_;
 }
 
 Result EntryHandler::asyncTaskProcess() {

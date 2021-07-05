@@ -144,6 +144,13 @@ DownloadState Teemo::state() const noexcept {
   return DownloadState::STOPPED;
 }
 
+std::shared_future<teemo::Result> Teemo::futureResult() noexcept {
+  assert(impl_);
+  if(impl_ && impl_->entry_handler_)
+    return impl_->entry_handler_->futureResult();
+  return std::shared_future<teemo::Result>();
+}
+
 Result Teemo::setNetworkConnectionTimeout(int32_t milliseconds) noexcept {
   assert(impl_);
   if (milliseconds <= 0)

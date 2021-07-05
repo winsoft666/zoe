@@ -249,6 +249,7 @@ class TEEMO_API Teemo {
 
   DownloadState state() const noexcept;
 
+  std::shared_future<Result> futureResult() noexcept;
  protected:
   class TeemoImpl;
   TeemoImpl* impl_;

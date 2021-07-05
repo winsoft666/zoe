@@ -38,7 +38,10 @@ EntryHandler::EntryHandler()
   state_.store(DownloadState::STOPPED);
 }
 
-EntryHandler::~EntryHandler() {}
+EntryHandler::~EntryHandler() {
+  if (async_task_.valid())
+    async_task_.get();
+}
 
 static size_t __WriteBodyCallback(char* buffer,
                                   size_t size,
@@ -108,11 +111,23 @@ void EntryHandler::resume() {
   }
 }
 
-void EntryHandler::stop() {
+bool EntryHandler::stop(int wait_timeout_ms) {
   user_stopped_.store(true);
   options_->internal_stop_event.set();
   cancelFetchFileInfo();
   state_.store(DownloadState::STOPPED);
+
+  if (async_task_.valid()) {
+    if (wait_timeout_ms < 0) {
+      // 10 years
+      return async_task_.wait_until(std::chrono::system_clock::now() +
+                                    std::chrono::minutes(5256000)) ==
+             std::future_status::ready;
+    }
+    return async_task_.wait_for(std::chrono::milliseconds(wait_timeout_ms)) ==
+           std::future_status::ready;
+  }
+  return true;
 }
 
 int64_t EntryHandler::originFileSize() const {

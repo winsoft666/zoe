@@ -406,11 +406,12 @@ void Teemo::resume() noexcept {
   }
 }
 
-void Teemo::stop() noexcept {
+bool Teemo::stop(int wait_timeout_ms) noexcept {
   assert(impl_);
   if (impl_ && impl_->entry_handler_) {
-    impl_->entry_handler_->stop();
+    return impl_->entry_handler_->stop(wait_timeout_ms);
   }
+  return false;
 }
 
 class Event::EventImpl {

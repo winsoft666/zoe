@@ -28,12 +28,21 @@
 # 二、编译与安装
 
 ## 方式一、使用vcpkg
-`teemo`库已经收录到微软的[vcpkg](https://github.com/microsoft/vcpkg/tree/master/ports/teemo)之中，可以使用如下命令一键安装:
+`teemo`库已经收录到微软的[vcpkg](https://github.com/microsoft/vcpkg/tree/master/ports/teemo)之中，可以使用如下命令快速安装:
+
+- 1) 下载安装vcpkg（详见[https://github.com/microsoft/vcpkg](https://github.com/microsoft/vcpkg)
 ```bash
-vcpkg install teemo:x86-windows
+git clone https://github.com/Microsoft/vcpkg.git
+cd vcpkg
+PS> bootstrap-vcpkg.bootstrap
+Linux:~/$ ./bootstrap-vcpkg.sh
 ```
 
-> 关于vcpkg的介绍，可以参考：[https://github.com/microsoft/vcpkg/blob/master/README_zh_CN.md](https://github.com/microsoft/vcpkg/blob/master/README_zh_CN.md)
+- 2) 安装teemo
+```bash
+PS> .\vcpkg install teemo [--triplet x64-windows-static/x64-windows/x64-windows-static-md and etc...]
+Linux:~/$ ./vcpkg install teemo
+```
 
 ## 方式二、使用源码编译
 ### 1. 安装依赖项

@@ -31,11 +31,19 @@ So I developed this download library named `"teemo"` based on libcurl, which can
 # 2. Compile and Install
 ## Method 1: Using with vcpkg
 The `teemo` library has been included in Microsoft's [vcpkg](https://github.com/microsoft/vcpkg/tree/master/ports/teemo), you can use the following command to install `teemo`:
+- 1) Clone and setup vcpkg (See more detail on [https://github.com/microsoft/vcpkg](https://github.com/microsoft/vcpkg))
+```
+git clone https://github.com/Microsoft/vcpkg.git
+cd vcpkg
+PS> bootstrap-vcpkg.bootstrap
+Linux:~/$ ./bootstrap-vcpkg.sh
+```
+
+- 2) Install teemo
 ```bash
 vcpkg install teemo:x86-windows
 ```
 
-> About vcpkg: [https://github.com/microsoft/vcpkg](https://github.com/microsoft/vcpkg)
 
 ## Method 2: Compile from source code
 ### Step 1: Install dependencies

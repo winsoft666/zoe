@@ -17,19 +17,9 @@ set(CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/CMake;${CMAKE_MODULE_PATH};")
 
 project(teemo CXX)
 
-option(BUILD_SHARED_LIBS "Build shared libraries" OFF)
+option(BUILD_SHARED_LIBS "Build shared libraries" ON)
 option(BUILD_TESTS "Build tests project" ON)
 option(USE_STATIC_CRT "Set to ON to build with static CRT on Windows (/MT)." OFF)
-
-
-if(WIN32)
-	# Dll default use MD(d), Lib default use MT(d)
-	if(BUILD_SHARED_LIBS)
-		set(USE_STATIC_CRT OFF)
-	else()
-		set(USE_STATIC_CRT ON)
-	endif()
-endif()
 
 if(MSVC)
   set(TEEMO_INSTALL_CMAKE_DIR share/teemo)

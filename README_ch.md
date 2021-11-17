@@ -153,4 +153,6 @@ teemo_tool URL TargetFilePath [ThreadNum] [DiskCacheMb] [MD5] [TmpExpiredSeconds
 
 # 五、捐赠
 
-本项目暂不接受捐赠，感谢你的好意，如果你觉得这个项目帮助到了你，可以给该项目点颗小星星.
+本项目暂不接受捐赠，感谢你的好意！
+
+开源不易，如果这个项目帮助到了你，可以给项目点颗小星星⭐.

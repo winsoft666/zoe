@@ -157,5 +157,7 @@ teemo_tool URL TargetFilePath [ThreadNum] [DiskCacheMb] [MD5] [TmpExpiredSeconds
 
 # 5. Donate
 
-This project does not accept donations, Thank you for your kindness, If you think this project helped you, you can give the project a star.
+This project does not accept donations, Thank you for your kindness!
+
+Open source is not a easy work, if you think this project helped you, you can give the project a star⭐.
 

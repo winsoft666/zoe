@@ -35,7 +35,7 @@ if (NOT BUILD_SHARED_LIBS)
 endif()
 
 include_directories(../../src)
-file(GLOB SOURCE_FILES 			./*.cpp ../../src/file_util.cpp)
+file(GLOB SOURCE_FILES 			./*.cpp ../../src/file_util.cpp ../../src/string_encode.cpp)
 
 add_executable(
 	${EXE_NAME}
@@ -56,8 +56,10 @@ find_package(CURL REQUIRED)
 target_link_libraries(${EXE_NAME} ${CURL_LIBRARIES})
 
 # OpenSSL
-find_package(OpenSSL REQUIRED)
-target_link_libraries(${EXE_NAME} OpenSSL::SSL OpenSSL::Crypto)
+find_package(OpenSSL)
+if(OpenSSL_FOUND)
+  target_link_libraries(${EXE_NAME} OpenSSL::SSL OpenSSL::Crypto)
+endif()
 
 add_test(NAME unit
 COMMAND ${CMAKE_BINARY_DIR}/${CMAKE_INSTALL_BINDIR}/unit_tests)

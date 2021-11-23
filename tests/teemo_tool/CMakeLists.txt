@@ -46,8 +46,10 @@ find_package(CURL REQUIRED)
 target_link_libraries(${EXE_NAME} ${CURL_LIBRARIES})
 
 # OpenSSL
-find_package(OpenSSL REQUIRED)
-target_link_libraries(${EXE_NAME} OpenSSL::SSL OpenSSL::Crypto)
+find_package(OpenSSL)
+if(OpenSSL_FOUND)
+  target_link_libraries(${EXE_NAME} OpenSSL::SSL OpenSSL::Crypto)
+endif()
 
 # Win32 Console
 if (WIN32 OR _WIN32)

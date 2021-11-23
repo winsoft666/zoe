@@ -14,7 +14,9 @@
 
 #include "curl_utils.h"
 #include "curl/curl.h"
+#ifdef WITH_OPENSSL
 #include <openssl/crypto.h>
+#endif
 
 namespace teemo {
 namespace {
@@ -36,6 +38,7 @@ int THREAD_cleanup(void);
 #define THREAD_ID pthread_self()
 #endif
 
+#ifdef WITH_OPENSSL
 static MUTEX_TYPE* mutex_buf = NULL;
 static void locking_function(int mode, int n, const char* file, int line) {
   if (mode & CRYPTO_LOCK)
@@ -72,15 +75,20 @@ int THREAD_cleanup(void) {
   mutex_buf = NULL;
   return 1;
 }
+#endif
 }  // namespace
 
 void GlobalCurlInit() {
+#ifdef WITH_OPENSSL
   THREAD_setup();
+#endif
   curl_global_init(CURL_GLOBAL_ALL);
 }
 
 void GlobalCurlUnInit() {
   curl_global_cleanup();
+#ifdef WITH_OPENSSL
   THREAD_cleanup();
+#endif
 }
 }  // namespace teemo

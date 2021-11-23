@@ -99,8 +99,7 @@ if "" == "%BUILD_SHARED_LIBS%" (
 )
 
 vcpkg install gtest:%VCPKG_TARGET_TRIPLET%
-vcpkg install curl[non-http]:%VCPKG_TARGET_TRIPLET%
 
-cmake.exe -G "%CMAKE_GENERATOR%" -T "%TOOLSET%" -A "%ARCH%" -DCMAKE_TOOLCHAIN_FILE=D:\sourcecode\vcpkg\scripts\buildsystems\vcpkg.cmake -DVCPKG_TARGET_TRIPLET=%VCPKG_TARGET_TRIPLET% -DBUILD_SHARED_LIBS=%BUILD_SHARED_LIBS% -DCMAKE_INSTALL_PREFIX=D:\Teemo -DBUILD_TESTS=ON -S %~dp0 -B %~dp0build
+cmake.exe -G "%CMAKE_GENERATOR%" -T "%TOOLSET%" -A "%ARCH%" -DCMAKE_TOOLCHAIN_FILE=D:\sourcecode\Github\vcpkg\scripts\buildsystems\vcpkg.cmake -DVCPKG_TARGET_TRIPLET=%VCPKG_TARGET_TRIPLET% -DBUILD_SHARED_LIBS=%BUILD_SHARED_LIBS% -DCMAKE_INSTALL_PREFIX=D:\Teemo -DBUILD_TESTS=ON -S %~dp0 -B %~dp0build
 endlocal
 goto :eof

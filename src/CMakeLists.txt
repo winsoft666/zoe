@@ -87,8 +87,11 @@ target_include_directories(${LIB_NAME} PUBLIC
 	${CURL_INCLUDE_DIRS})
 
 # OpenSSL
-find_package(OpenSSL REQUIRED)
-target_link_libraries(${LIB_NAME} PUBLIC OpenSSL::SSL OpenSSL::Crypto)
+find_package(OpenSSL)
+if(OpenSSL_FOUND)
+  add_definitions(-DWITH_OPENSSL)
+  target_link_libraries(${LIB_NAME} PUBLIC OpenSSL::SSL OpenSSL::Crypto)
+endif()
 
 
 if (WIN32 OR _WIN32)

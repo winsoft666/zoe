@@ -355,6 +355,18 @@ HttpHeaders Teemo::httpHeaders() const noexcept {
   return impl_->options_.http_headers;
 }
 
+Result Teemo::setProxy(const utf8string& proxy) noexcept {
+  assert(impl_);
+  impl_->options_.proxy = proxy;
+
+  return SUCCESSED;
+}
+
+utf8string Teemo::proxy() const noexcept {
+  assert(impl_);
+  return impl_->options_.proxy;
+}
+
 std::shared_future<Result> Teemo::start(
     const utf8string& url,
     const utf8string& target_file_path,

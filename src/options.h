@@ -62,6 +62,8 @@ typedef struct _Options {
 
   HttpHeaders http_headers;
 
+  utf8string proxy;
+
   _Options() : internal_stop_event(true) {
     redirected_url_check_enabled = true;
     content_md5_enabled = false;

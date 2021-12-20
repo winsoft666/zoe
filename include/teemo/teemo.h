@@ -218,6 +218,11 @@ class TEEMO_API Teemo {
   Result setHttpHeaders(const HttpHeaders& headers) noexcept;
   HttpHeaders httpHeaders() const noexcept;
 
+  // set proxy string, such as http://127.0.0.1:8888
+  //
+  Result setProxy(const utf8string& proxy) noexcept;
+  utf8string proxy() const noexcept;
+
   // Start to download and state change to DOWNLOADING.
   // Supported url protocol is the same as libcurl.
   //

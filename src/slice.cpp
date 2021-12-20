@@ -107,6 +107,12 @@ static size_t __SliceWriteBodyCallback(char* buffer,
 }
 
 Result Slice::start(void* multi, int64_t disk_cache_size, int32_t max_speed) {
+  if (!slice_manager_)
+    return UNKNOWN_ERROR;
+
+  if (!slice_manager_->options())
+    return UNKNOWN_ERROR;
+
   status_ = DOWNLOADING;
 
   disk_cache_size_ = disk_cache_size;
@@ -136,6 +142,10 @@ Result Slice::start(void* multi, int64_t disk_cache_size, int32_t max_speed) {
       curl_, CURLOPT_URL,
       (redirect_url.length() > 0 ? redirect_url.c_str() : url.c_str()));
 
+  if (slice_manager_->options()->proxy.length() > 0) {
+    curl_easy_setopt(curl_, CURLOPT_PROXY, slice_manager_->options()->proxy.c_str());
+  }
+
   curl_easy_setopt(curl_, CURLOPT_NOSIGNAL, 1L);
   curl_easy_setopt(curl_, CURLOPT_FOLLOWLOCATION, 1L);
   curl_easy_setopt(curl_, CURLOPT_SSL_VERIFYHOST, 0L);
@@ -163,15 +173,13 @@ Result Slice::start(void* multi, int64_t disk_cache_size, int32_t max_speed) {
   curl_easy_setopt(curl_, CURLOPT_WRITEFUNCTION, __SliceWriteBodyCallback);
   curl_easy_setopt(curl_, CURLOPT_WRITEDATA, this);
 
-  if (slice_manager_->options()) {
-    const HttpHeaders& headers = slice_manager_->options()->http_headers;
-    if (headers.size() > 0) {
-      for (const auto& it : headers) {
-        utf8string headerStr = it.first + u8": " + it.second;
-        header_chunk_ = curl_slist_append(header_chunk_, headerStr.c_str());
-      }
-      curl_easy_setopt(curl_, CURLOPT_HTTPHEADER, header_chunk_);
+  const HttpHeaders& headers = slice_manager_->options()->http_headers;
+  if (headers.size() > 0) {
+    for (const auto& it : headers) {
+      utf8string headerStr = it.first + u8": " + it.second;
+      header_chunk_ = curl_slist_append(header_chunk_, headerStr.c_str());
     }
+    curl_easy_setopt(curl_, CURLOPT_HTTPHEADER, header_chunk_);
   }
 
   if (end_ != -1) {

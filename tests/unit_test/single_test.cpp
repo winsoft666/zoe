@@ -10,13 +10,13 @@ TEST(SingleTest, test1) {
   Teemo efd;
   efd.setThreadNum(6);
   efd.setSlicePolicy(SlicePolicy::FixedSize, 1024000 * 5);
-  efd.setHashVerifyPolicy(ALWAYS, MD5, "cfc86ceb95503c7251941a4da0ce13a6");
+  efd.setHashVerifyPolicy(ALWAYS, MD5, "9b7af5c91139659b10b84b1ca357d08f");
   efd.setHttpHeaders({{u8"Origin", u8"https://mysql.com"},
                       {u8"User-Agent", u8"Mozilla/4.0 (compatible; MSIE 7.0; Windows NT 5.1)"}});
 
   efd.start(
-      "https://cdn.mysql.com//Downloads/MySQL-8.0/mysql-8.0.23-winx64-debug-test.zip",
-      "mysql.zip",
+      "https://cdn.mysql.com//Downloads/MySQLInstaller/mysql-installer-community-8.0.27.1.msi",
+      "mysql-installer-community-8.0.27.1.msi",
       [](Result result) {
         printf("\nResult: %s\n", GetResultString(result));
         EXPECT_TRUE(result == SUCCESSED || result == CANCELED);

@@ -20,6 +20,7 @@
 #endif
 #include <io.h>
 #include <windows.h>
+#include <fileapi.h>
 #else
 #include <unistd.h>
 #include <sys/stat.h>
@@ -278,9 +279,41 @@ bool FileUtil::CreateFixedSizeFile(const utf8string& path, int64_t fixed_size) {
 }
 
 bool FileUtil::PathFormatting(const utf8string& path, utf8string& formatted) {
-  // TODO
 #if defined(WIN32) || defined(_WIN32) || defined(__WIN32__) || defined(__NT__)
-  formatted = path;
+  utf8string fullFileName;
+  size_t lastBackslashPos = path.find_last_of('\\');
+  if (lastBackslashPos != utf8string::npos) {
+    fullFileName = path.substr(lastBackslashPos + 1);
+  }
+  else {
+    fullFileName = path;
+  }
+
+  if (fullFileName.length() == 0) {
+    return false;
+  }
+
+  bool includeInvalidChar = false;
+  for (int i = 0; i < fullFileName.length(); i++) {
+    char c = fullFileName[i];
+    if (c == '\\' || c == '/' || c == ':' || c == '*' || c == '?' || c == '<' ||
+        c == '>' || c == '|' || c == '"') {
+      includeInvalidChar = true;
+      break;
+    }
+  }
+
+  if (includeInvalidChar) {
+    return false;
+  }
+
+  std::wstring pathW = Utf8ToUnicode(path);
+  WCHAR szPathAbsolute[4096] = {0};
+  if (::GetFullPathName(pathW.c_str(), 4096, szPathAbsolute, NULL) == 0)
+    return false;
+
+  formatted = UnicodeToUtf8(szPathAbsolute);
+
   return true;
 #else
   formatted = path;

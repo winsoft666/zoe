@@ -437,15 +437,19 @@ bool EntryHandler::fetchFileInfo(FileInfo& fileInfo) {
 }
 
 bool EntryHandler::requestFileInfo(const utf8string& url, FileInfo& fileInfo) {
+  if (!options_)
+    return false;
+
   if (!fetch_file_info_curl_)
     fetch_file_info_curl_ = std::make_shared<ScopedCurl>();
+
   CURL* curl = fetch_file_info_curl_->GetCurl();
 
   curl_easy_reset(curl);
   curl_easy_setopt(curl, CURLOPT_VERBOSE, 0L);
   curl_easy_setopt(curl, CURLOPT_NOSIGNAL, 1L);
   curl_easy_setopt(curl, CURLOPT_URL, url.c_str());
-  if(options_->use_head_method_fetch_file_info)
+  if (options_->use_head_method_fetch_file_info)
     curl_easy_setopt(curl, CURLOPT_NOBODY, 1L);
   else
     curl_easy_setopt(curl, CURLOPT_NOBODY, 0L);
@@ -465,7 +469,9 @@ bool EntryHandler::requestFileInfo(const utf8string& url, FileInfo& fileInfo) {
   curl_easy_setopt(curl, CURLOPT_HEADERFUNCTION, __WriteHeaderCallback);
   curl_easy_setopt(curl, CURLOPT_HEADERDATA, (void*)&fileInfo);
 
-  //curl_easy_setopt(curl, CURLOPT_PROXY, "127.0.0.1:8888");
+  if (options_->proxy.length() > 0) {
+    curl_easy_setopt(curl, CURLOPT_PROXY, options_->proxy.c_str());
+  }
 
   struct curl_slist* headerChunk = nullptr;
   const HttpHeaders& headers = options_->http_headers;

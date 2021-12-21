@@ -280,6 +280,8 @@ bool FileUtil::CreateFixedSizeFile(const utf8string& path, int64_t fixed_size) {
 
 bool FileUtil::PathFormatting(const utf8string& path, utf8string& formatted) {
 #if defined(WIN32) || defined(_WIN32) || defined(__WIN32__) || defined(__NT__)
+  // See: https://docs.microsoft.com/en-us/windows/win32/fileio/naming-a-file
+  //
   utf8string fullFileName;
   size_t lastBackslashPos = path.find_last_of('\\');
   if (lastBackslashPos != utf8string::npos) {
@@ -307,12 +309,22 @@ bool FileUtil::PathFormatting(const utf8string& path, utf8string& formatted) {
     return false;
   }
 
+  // See: https://docs.microsoft.com/en-us/windows/win32/fileio/maximum-file-path-limitation?tabs=cmd
+  //
   std::wstring pathW = Utf8ToUnicode(path);
-  WCHAR szPathAbsolute[4096] = {0};
-  if (::GetFullPathName(pathW.c_str(), 4096, szPathAbsolute, NULL) == 0)
+  DWORD dwRet = ::GetFullPathName(pathW.c_str(), 0, NULL, NULL);
+  if (dwRet == 0)
     return false;
 
-  formatted = UnicodeToUtf8(szPathAbsolute);
+  wchar_t* pBuf = new wchar_t[dwRet + 1]();
+  dwRet = ::GetFullPathName(pathW.c_str(), dwRet, pBuf, NULL);
+  if (dwRet == 0) {
+    delete[] pBuf;
+    return false;
+  }
+
+  formatted = UnicodeToUtf8(pBuf);
+  delete[] pBuf;
 
   return true;
 #else

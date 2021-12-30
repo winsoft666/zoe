@@ -11,7 +11,7 @@ typedef struct _TestData {
 static std::vector<TestData> http_test_datas = {
 #if defined(WIN32) || defined(_WIN32) || defined(__WIN32__) || defined(__NT__)
     {u8"https://dlie.sogoucdn.com/se/sogou_explorer_8.6_1120.exe",
-     u8"D:\\TeemoTest\\ËÑ¹·ä¯ÀÀÆ÷_8.6_1120.exe", u8"8e78e77400cdc268032a5491d2fe18d8"},
+     u8"D:/TeemoTest/ËÑ¹·ä¯ÀÀÆ÷_8.6_1120.exe", u8"8e78e77400cdc268032a5491d2fe18d8"},
     {u8"http://download.ydstatic.cn/cidian/static/8.9/20201217/YoudaoDictSetup.exe",
      u8"D:\\TeemoTest\\YoudaoDictSetup.exe", u8"e3323c940f0bc62fae3b0f32d7f2453b"},
 #else

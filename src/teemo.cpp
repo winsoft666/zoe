@@ -438,11 +438,13 @@ class Event::EventImpl {
   void set() noexcept {
     std::unique_lock<std::mutex> ul(setted_mutex_);
     setted_ = true;
+    setted_cond_var_.notify_all();
   }
 
   void unset() noexcept {
     std::unique_lock<std::mutex> ul(setted_mutex_);
     setted_ = false;
+    setted_cond_var_.notify_all();
   }
 
   bool isSetted() noexcept {

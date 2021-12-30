@@ -15,10 +15,9 @@ void DoCancelTest(std::vector<TestData> test_datas, int thread_num) {
     efd.setHashVerifyPolicy(ALWAYS, MD5, test_data.md5);
 
     std::thread t = std::thread([&cancel_event]() {
-      std::this_thread::sleep_for(std::chrono::milliseconds(2500));
+      std::this_thread::sleep_for(std::chrono::milliseconds(500));
       cancel_event.set();
     });
-    t.detach();
 
     Result ret =
         efd.start(
@@ -33,6 +32,8 @@ void DoCancelTest(std::vector<TestData> test_datas, int thread_num) {
                },
                nullptr)
             .get();
+
+    t.join();
   }
 }
 

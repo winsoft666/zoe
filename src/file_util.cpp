@@ -280,15 +280,21 @@ bool FileUtil::CreateFixedSizeFile(const utf8string& path, int64_t fixed_size) {
 
 bool FileUtil::PathFormatting(const utf8string& path, utf8string& formatted) {
 #if defined(WIN32) || defined(_WIN32) || defined(__WIN32__) || defined(__NT__)
+  utf8string cleanupPath = path;
+  for (size_t i = 0; i < cleanupPath.size(); i++) {
+    if (cleanupPath[i] == '/')
+      cleanupPath[i] = '\\';
+  }
+
   // See: https://docs.microsoft.com/en-us/windows/win32/fileio/naming-a-file
   //
   utf8string fullFileName;
-  size_t lastBackslashPos = path.find_last_of('\\');
+  size_t lastBackslashPos = cleanupPath.find_last_of('\\');
   if (lastBackslashPos != utf8string::npos) {
-    fullFileName = path.substr(lastBackslashPos + 1);
+    fullFileName = cleanupPath.substr(lastBackslashPos + 1);
   }
   else {
-    fullFileName = path;
+    fullFileName = cleanupPath;
   }
 
   if (fullFileName.length() == 0) {
@@ -296,7 +302,7 @@ bool FileUtil::PathFormatting(const utf8string& path, utf8string& formatted) {
   }
 
   bool includeInvalidChar = false;
-  for (int i = 0; i < fullFileName.length(); i++) {
+  for (size_t i = 0; i < fullFileName.length(); i++) {
     char c = fullFileName[i];
     if (c == '\\' || c == '/' || c == ':' || c == '*' || c == '?' || c == '<' ||
         c == '>' || c == '|' || c == '"') {
@@ -311,13 +317,13 @@ bool FileUtil::PathFormatting(const utf8string& path, utf8string& formatted) {
 
   // See: https://docs.microsoft.com/en-us/windows/win32/fileio/maximum-file-path-limitation?tabs=cmd
   //
-  std::wstring pathW = Utf8ToUnicode(path);
-  DWORD dwRet = ::GetFullPathName(pathW.c_str(), 0, NULL, NULL);
+  std::wstring pathW = Utf8ToUnicode(cleanupPath);
+  DWORD dwRet = ::GetFullPathNameW(pathW.c_str(), 0, NULL, NULL);
   if (dwRet == 0)
     return false;
 
   wchar_t* pBuf = new wchar_t[dwRet + 1]();
-  dwRet = ::GetFullPathName(pathW.c_str(), dwRet, pBuf, NULL);
+  dwRet = ::GetFullPathNameW(pathW.c_str(), dwRet, pBuf, NULL);
   if (dwRet == 0) {
     delete[] pBuf;
     return false;

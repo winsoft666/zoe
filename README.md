@@ -24,6 +24,10 @@ Although there are many mature and powerful download tools, such as `Free Downlo
 
 ✅ Support hash checksum verify.
 
+✅ Support large file download.
+
+✅ Support compatible server leeching detection(or limit).
+
 ---
 
 # 2. Compile and Install

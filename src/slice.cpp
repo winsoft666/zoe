@@ -14,6 +14,7 @@
 
 #include "slice.h"
 #include <assert.h>
+#include <inttypes.h>
 #include <string.h>
 #include "file_util.h"
 #include "curl_utils.h"
@@ -33,10 +34,10 @@ Slice::Slice(int32_t index,
     : index_(index)
     , begin_(begin)
     , end_(end)
-    , disk_cache_size_(0L)
-    , disk_cache_buffer_(nullptr)
     , curl_(nullptr)
     , header_chunk_(nullptr)
+    , disk_cache_size_(0L)
+    , disk_cache_buffer_(nullptr)
     , status_(UNFETCH)
     , failed_times_(0)
     , slice_manager_(slice_manager) {
@@ -45,10 +46,14 @@ Slice::Slice(int32_t index,
 #else
   mutex_ = PTHREAD_MUTEX_INITIALIZER;
 #endif
-  capacity_.store(init_capacity);
+  disk_capacity_.store(init_capacity);
   disk_cache_capacity_.store(0L);
 
-  assert(end_ == -1 || (end_ + 1 >= begin_ + capacity_.load()));
+  assert(end_ == -1 || (end_ + 1 >= begin_ + disk_capacity_.load()));
+
+  if (end_ != -1 && (size() == disk_capacity_.load() + disk_cache_capacity_.load())) {
+    status_ = DOWNLOAD_COMPLETED;
+  }
 }
 
 Slice::~Slice() {
@@ -68,11 +73,11 @@ int64_t Slice::end() const {
 }
 
 int64_t Slice::size() const {
-  return (end_ - begin_);
+  return (end_ - begin_ + 1);
 }
 
 int64_t Slice::capacity() const {
-  return capacity_.load();
+  return disk_capacity_.load();
 }
 
 int64_t Slice::diskCacheSize() const {
@@ -129,9 +134,9 @@ Result Slice::start(void* multi, int64_t disk_cache_size, int32_t max_speed) {
   curl_ = curl_easy_init();
   if (!curl_) {
     OutputVerbose(slice_manager_->options()->verbose_functor,
-                  "[teemo] curl_easy_init failed.\n");
+                  u8"[teemo] curl_easy_init failed.\n");
     tryFreeDiskCacheBuffer();
-    status_ = INIT_FAILED;
+    status_ = DOWNLOAD_FAILED;
     return INIT_CURL_FAILED;
   }
 
@@ -143,7 +148,8 @@ Result Slice::start(void* multi, int64_t disk_cache_size, int32_t max_speed) {
       (redirect_url.length() > 0 ? redirect_url.c_str() : url.c_str()));
 
   if (slice_manager_->options()->proxy.length() > 0) {
-    curl_easy_setopt(curl_, CURLOPT_PROXY, slice_manager_->options()->proxy.c_str());
+    curl_easy_setopt(curl_, CURLOPT_PROXY,
+                     slice_manager_->options()->proxy.c_str());
   }
 
   curl_easy_setopt(curl_, CURLOPT_NOSIGNAL, 1L);
@@ -184,37 +190,38 @@ Result Slice::start(void* multi, int64_t disk_cache_size, int32_t max_speed) {
 
   if (end_ != -1) {
     char range[64] = {0};
-    snprintf(range, sizeof(range), "%ld-%ld", (long)(begin_ + capacity_),
-             (long)end_);
+    snprintf(range, sizeof(range), "%" PRId64 "-%" PRId64, begin_ + disk_capacity_, end_);
     if (strlen(range) > 0) {
-      CURLcode err = curl_easy_setopt(curl_, CURLOPT_RANGE, range);
-      OutputVerbose(slice_manager_->options()->verbose_functor,
-                    "[teemo] CURLOPT_RANGE: %s.\n", range);
+      const CURLcode err = curl_easy_setopt(curl_, CURLOPT_RANGE, range);
+      OutputVerbose(slice_manager_->options()->verbose_functor, u8"[teemo] Slice<%d>, Range: %s.\n", index_, range);
       if (err != CURLE_OK) {
         OutputVerbose(slice_manager_->options()->verbose_functor,
-                      "[teemo] CURLOPT_RANGE failed: %ld(%s).\n", (long)err,
+                      u8"[teemo] CURLOPT_RANGE failed: %ld(%s).\n", (long)err,
                       curl_easy_strerror(err));
         curl_easy_cleanup(curl_);
         curl_ = nullptr;
         tryFreeDiskCacheBuffer();
-        status_ = INIT_FAILED;
+        status_ = DOWNLOAD_FAILED;
         return SET_CURL_OPTION_FAILED;
       }
     }
   }
   else {
-    curl_off_t offset = begin_ + capacity_;
+    curl_off_t offset = begin_ + disk_capacity_;
     CURLcode err = curl_easy_setopt(curl_, CURLOPT_RESUME_FROM_LARGE, offset);
     OutputVerbose(slice_manager_->options()->verbose_functor,
-                  "[teemo] CURLOPT_RESUME_FROM_LARGE: %ld.\n", offset);
+                  u8"[teemo] Slice<%d>, Range: %" PRId64 "-INFINITE.\n", index_, offset);
     if (err != CURLE_OK) {
       OutputVerbose(slice_manager_->options()->verbose_functor,
-                    "[teemo] CURLOPT_RESUME_FROM_LARGE failed: %ld(%s).\n",
+                    u8"[teemo] CURLOPT_RESUME_FROM_LARGE failed: %ld(%s).\n",
                     (long)err, curl_easy_strerror(err));
+
       curl_easy_cleanup(curl_);
       curl_ = nullptr;
+
       tryFreeDiskCacheBuffer();
-      status_ = INIT_FAILED;
+
+      status_ = DOWNLOAD_FAILED;
       return SET_CURL_OPTION_FAILED;
     }
   }
@@ -222,39 +229,50 @@ Result Slice::start(void* multi, int64_t disk_cache_size, int32_t max_speed) {
   CURLMcode m_code = curl_multi_add_handle(multi, curl_);
   if (m_code != CURLM_OK) {
     OutputVerbose(slice_manager_->options()->verbose_functor,
-                  "[teemo] curl_multi_add_handle failed: %ld(%s).\n",
+                  u8"[teemo] curl_multi_add_handle failed: %ld(%s).\n",
                   (long)m_code, curl_multi_strerror(m_code));
     curl_easy_cleanup(curl_);
     curl_ = nullptr;
+
     tryFreeDiskCacheBuffer();
-    status_ = INIT_FAILED;
+
+    status_ = DOWNLOAD_FAILED;
     return ADD_CURL_HANDLE_FAILED;
   }
 
   return SUCCESSED;
 }
 
-Result Slice::stop(void* multi) {
+Result Slice::stop(void* multi, bool discard_downloaded) {
   Result ret = SUCCESSED;
   if (curl_) {
     if (multi) {
       CURLMcode code = curl_multi_remove_handle(multi, curl_);
       if (code != CURLM_CALL_MULTI_PERFORM && code != CURLM_OK) {
         OutputVerbose(slice_manager_->options()->verbose_functor,
-                      "[teemo] curl_multi_remove_handle failed: %ld(%s).\n",
+                      u8"[teemo] curl_multi_remove_handle failed: %ld(%s).\n",
                       (long)code, curl_multi_strerror(code));
       }
     }
+
     if (header_chunk_) {
       curl_slist_free_all(header_chunk_);
       header_chunk_ = nullptr;
     }
+
     curl_easy_cleanup(curl_);
     curl_ = nullptr;
   }
 
-  if (!flushToDisk())
-    ret = FLUSH_TMP_FILE_FAILED;
+  if (!discard_downloaded) {
+    if (!flushToDisk())
+      ret = FLUSH_TMP_FILE_FAILED;
+  }
+  else {
+    disk_capacity_.store(0);
+    disk_cache_capacity_.store(0);
+  }
+
   tryFreeDiskCacheBuffer();
 
   return ret;
@@ -276,12 +294,11 @@ int32_t Slice::failedTimes() const {
   return failed_times_;
 }
 
-bool Slice::isDataCompleted() {
+bool Slice::isDataCompletedClearly() const {
   if (end_ == -1)
     return false;
 
-  return ((end_ - begin_ + 1) ==
-          capacity_.load() + disk_cache_capacity_.load());
+  return (size() == (disk_capacity_.load() + disk_cache_capacity_.load()));
 }
 
 bool Slice::flushToDisk() {
@@ -295,18 +312,21 @@ bool Slice::flushToDisk() {
     int64_t written = 0;
     int64_t need_write = disk_cache_capacity_.load();
     disk_cache_capacity_ = 0L;
-    std::shared_ptr<TargetFile> target_file = slice_manager_->targetFile();
-    if (target_file) {
-      written = target_file->write(begin_ + capacity_.load(),
-                                   disk_cache_buffer_, need_write);
-    }
-    std::atomic_fetch_add(&capacity_, written);
-    bret = (written == need_write);
-    assert(bret);
-    if (!bret) {
-      OutputVerbose(slice_manager_->options()->verbose_functor,
-                    "[teemo] Slice[%d] flush to disk failed: %lld/%lld.\n",
-                    index_, written, need_write);
+
+    if (need_write > 0) {
+      std::shared_ptr<TargetFile> target_file = slice_manager_->targetFile();
+      if (target_file) {
+        written = target_file->write(begin_ + disk_capacity_.load(), disk_cache_buffer_, need_write);
+      }
+
+      std::atomic_fetch_add(&disk_capacity_, written);
+      bret = (written == need_write);
+      assert(bret);
+      if (!bret) {
+        OutputVerbose(slice_manager_->options()->verbose_functor,
+                      "[teemo] Slice[%d] flush to disk failed: %" PRId64 "/%" PRId64 ".\n",
+                      index_, written, need_write);
+      }
     }
 #if defined(WIN32) || defined(_WIN32) || defined(__WIN32__) || defined(__NT__)
     LeaveCriticalSection(&crit_);
@@ -314,6 +334,7 @@ bool Slice::flushToDisk() {
     pthread_mutex_unlock(&mutex_);
 #endif
   }
+
   return bret;
 }
 
@@ -348,50 +369,46 @@ bool Slice::onNewData(const char* p, long data_size) {
 
     // no cache buffer, directly write to file.
     if (!disk_cache_buffer_) {
-      int64_t written =
-          target_file->write(begin_ + capacity_.load(), p, data_size);
-      std::atomic_fetch_add(&capacity_, written);
+      int64_t written = target_file->write(begin_ + disk_capacity_.load(), p, data_size);
+      std::atomic_fetch_add(&disk_capacity_, written);
 
       bret = (written == data_size);
       break;
     }
 
     if (disk_cache_size_ - disk_cache_capacity_ >= data_size) {
-      memcpy((char*)(disk_cache_buffer_ + disk_cache_capacity_.load()), p,
-             data_size);
+      memcpy((char*)(disk_cache_buffer_ + disk_cache_capacity_.load()), p, data_size);
       disk_cache_capacity_ += data_size;
       bret = true;
       break;
     }
 
-    int64_t need_write = disk_cache_capacity_.load();
+    const int64_t need_write = disk_cache_capacity_.load();
 
     disk_cache_capacity_.store(0L);
 
-    int64_t written =
-        target_file->write(begin_ + capacity_, disk_cache_buffer_, need_write);
-    std::atomic_fetch_add(&capacity_, written);
+    int64_t written = target_file->write(begin_ + disk_capacity_, disk_cache_buffer_, need_write);
+    std::atomic_fetch_add(&disk_capacity_, written);
     if (written != need_write) {
       bret = false;
       break;
     }
 
     if (disk_cache_size_ - disk_cache_capacity_ >= data_size) {
-      memcpy((char*)(disk_cache_buffer_ + disk_cache_capacity_.load()), p,
-             data_size);
+      memcpy((char*)(disk_cache_buffer_ + disk_cache_capacity_.load()), p, data_size);
       std::atomic_fetch_add(&disk_cache_capacity_, data_size);
       bret = true;
       break;
     }
 
-    written = target_file->write(begin_ + capacity_.load(), p, data_size);
+    written = target_file->write(begin_ + disk_capacity_.load(), p, data_size);
     if (written != data_size) {
       OutputVerbose(
           slice_manager_->options()->verbose_functor,
-          "[teemo] Warning: only write a part of buffer to file: %lld/%lld.\n",
+          u8"[teemo] Warning: only write a part of buffer to file: %" PRId64 "/%" PRId64 ".\n",
           written, data_size);
     }
-    std::atomic_fetch_add(&capacity_, written);
+    std::atomic_fetch_add(&disk_capacity_, written);
 
     bret = (written == data_size);
   } while (false);

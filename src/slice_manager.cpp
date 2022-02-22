@@ -15,6 +15,7 @@
 #include "slice_manager.h"
 #include <array>
 #include <algorithm>
+#include <inttypes.h>
 #include <sstream>
 #include <iostream>
 #include "json.hpp"
@@ -52,21 +53,20 @@ std::shared_ptr<teemo::Slice> SliceManager::getSlice(void* curlHandle) {
   return nullptr;
 }
 
-std::shared_ptr<teemo::Slice> SliceManager::getUncompletedSlice(
-    Slice::Status status) {
+std::shared_ptr<teemo::Slice> SliceManager::getSlice(Slice::Status status) {
   for (auto& s : slices_) {
-    if (s && !s->isDataCompleted() && s->status() == status) {
+    if (s && s->status() == status) {
       return s;
     }
   }
   return nullptr;
 }
 
-const Options* SliceManager::options() {
+const Options* SliceManager::options() const {
   return options_;
 }
 
-utf8string SliceManager::redirectUrl() {
+utf8string SliceManager::redirectUrl() const {
   return redirect_url_;
 }
 
@@ -80,7 +80,7 @@ Result SliceManager::loadExistSlice(int64_t cur_file_size,
   if (!file)
     return OPEN_INDEX_FILE_FAILED;
 
-  int64_t file_size = FileUtil::GetFileSize(file);
+  const int64_t file_size = FileUtil::GetFileSize(file);
   FileUtil::Seek(file, 0, SEEK_SET);
   std::vector<char> file_content((size_t)(file_size + 1), 0);
   fread(file_content.data(), 1, (size_t)file_size, file);
@@ -196,7 +196,7 @@ utf8string SliceManager::contentMd5() const {
   return content_md5_;
 }
 
-std::shared_ptr<TargetFile> SliceManager::targetFile() {
+std::shared_ptr<TargetFile> SliceManager::targetFile() const {
   return target_file_;
 }
 
@@ -263,8 +263,8 @@ Result SliceManager::makeSlices(bool accept_ranges) {
         is_last = (cur_end == (origin_file_size_ - 1L));
 
         // TODO: control by option
-        if (is_last)
-          cur_end = -1L;
+        //if (is_last)
+        //  cur_end = -1L;
 
         std::shared_ptr<Slice> slice = std::make_shared<Slice>(
             slice_index, cur_begin, cur_end, 0L, shared_from_this());
@@ -287,75 +287,94 @@ int64_t SliceManager::totalDownloaded() const {
   return total;
 }
 
-Result SliceManager::isAllSliceCompleted(bool need_check_hash) const {
-  if (origin_file_size_ != -1L && totalDownloaded() != origin_file_size_) {
-    OutputVerbose(options_->verbose_functor,
-                  "[teemo] Slice total size error.\n");
-    return SLICE_DOWNLOAD_FAILED;
-  }
+Result SliceManager::isAllSliceCompletedClearly(bool try_check_hash) const {
+  Result ret = NOT_CLEARLY_RESULT;
 
-  if (!need_check_hash) {
-    OutputVerbose(options_->verbose_functor,
-                  "[teemo] Do not need check hash.\n");
-    return SUCCESSED;
-  }
+  do {
+    const bool can_check_hash =
+        try_check_hash &&
+        (options_->hash_verify_policy == ALWAYS || (options_->hash_verify_policy == ONLY_NO_FILESIZE && origin_file_size_ == -1L)) &&
+        (options_->hash_value.length() > 0 || (content_md5_.length() > 0 && options_->content_md5_enabled));
 
-  if (options_->hash_value.length() > 0) {
-    if (options_->hash_verify_policy == ALWAYS ||
-        (options_->hash_verify_policy == ONLY_NO_FILESIZE &&
-         origin_file_size_ == -1L)) {
-      if (target_file_) {
-        utf8string str_hash;
-        OutputVerbose(options_->verbose_functor,
-                      u8"[teemo] Start calculate temp file hash.\n");
-        if (target_file_->calculateFileHash(options_, str_hash) == SUCCESSED) {
-          str_hash = StringCaseConvert(str_hash, EasyCharToLowerA);
-          OutputVerbose(options_->verbose_functor,
-                        "[teemo] Temp file hash: %s.\n", str_hash.c_str());
-          if (str_hash !=
-              StringCaseConvert(options_->hash_value, EasyCharToLowerA))
-            return HASH_VERIFY_NOT_PASS;
+    // check file size
+    if (origin_file_size_ != -1L) {
+      const int64_t totalDwn = totalDownloaded();
+      if (totalDwn != origin_file_size_) {
+        OutputVerbose(options_->verbose_functor, u8"[teemo] Slices total size(%" PRId64 ") not qualified(%" PRId64 ").\n", totalDwn, origin_file_size_);
+        ret = SLICE_DOWNLOAD_FAILED;
+        break;
+      }
+      else if (!can_check_hash) {
+        ret = SUCCESSED;
+        break;
+      }
+    }
+
+    // check hash
+    if (can_check_hash) {
+      if (options_->hash_value.length() > 0) {
+        if (options_->hash_verify_policy == ALWAYS || (options_->hash_verify_policy == ONLY_NO_FILESIZE && origin_file_size_ == -1L)) {
+          if (target_file_) {
+            utf8string str_hash;
+            OutputVerbose(options_->verbose_functor, u8"[teemo] Start calculate temp file hash.\n");
+
+            if (target_file_->calculateFileHash(options_, str_hash) == SUCCESSED) {
+              str_hash = StringCaseConvert(str_hash, EasyCharToLowerA);
+
+              OutputVerbose(options_->verbose_functor, u8"[teemo] Temp file hash: %s.\n", str_hash.c_str());
+
+              if (str_hash != StringCaseConvert(options_->hash_value, EasyCharToLowerA)) {
+                ret = HASH_VERIFY_NOT_PASS;
+                OutputVerbose(options_->verbose_functor, u8"[teemo] Hash check not pass.\n");
+              }
+              else {
+                ret = SUCCESSED;
+                OutputVerbose(options_->verbose_functor, u8"[teemo] Hash check passed.\n");
+              }
+            }
+            else {
+              OutputVerbose(options_->verbose_functor, u8"[teemo] Calculate temp file hash failed.\n");
+              ret = CALCULATE_HASH_FAILED;
+            }
+          }
+        }
+      }
+      else if (content_md5_.length() > 0 && options_->content_md5_enabled) {
+        OutputVerbose(options_->verbose_functor, u8"[teemo] Start calculate temp file md5.\n");
+        utf8string str_md5;
+        if (target_file_->calculateFileMd5(options_, str_md5) == SUCCESSED) {
+          str_md5 = StringCaseConvert(str_md5, EasyCharToLowerA);
+          OutputVerbose(options_->verbose_functor, u8"[teemo] Temp file md5: %s.\n", str_md5.c_str());
+
+          if (str_md5 != StringCaseConvert(content_md5_, EasyCharToLowerA)) {
+            ret = HASH_VERIFY_NOT_PASS;
+            OutputVerbose(options_->verbose_functor, u8"[teemo] Hash check not pass.\n");
+          }
+          else {
+            ret = SUCCESSED;
+            OutputVerbose(options_->verbose_functor, u8"[teemo] Hash check passed.\n");
+          }
         }
         else {
-          OutputVerbose(options_->verbose_functor,
-                        "[teemo] Calculate temp file hash failed.\n");
-          return CALCULATE_HASH_FAILED;
+          OutputVerbose(options_->verbose_functor, u8"[teemo] Calculate temp file md5 failed.\n");
+          ret = CALCULATE_HASH_FAILED;
         }
       }
     }
-  }
-  else if (content_md5_.length() > 0 && options_->content_md5_enabled) {
-    OutputVerbose(options_->verbose_functor,
-                  "[teemo] Start calculate temp file md5.\n");
-    utf8string str_md5;
-    if (target_file_->calculateFileMd5(options_, str_md5) == SUCCESSED) {
-      str_md5 = StringCaseConvert(str_md5, EasyCharToLowerA);
-      OutputVerbose(options_->verbose_functor, "[teemo] Temp file md5: %s.\n",
-                    str_md5.c_str());
+  } while (false);
 
-      if (str_md5 != StringCaseConvert(content_md5_, EasyCharToLowerA))
-        return HASH_VERIFY_NOT_PASS;
-    }
-    else {
-      OutputVerbose(options_->verbose_functor,
-                    "[teemo] Calculate temp file md5 failed.\n");
-      return CALCULATE_HASH_FAILED;
-    }
-  }
-
-  return SUCCESSED;
+  return ret;
 }
 
 Result SliceManager::finishDownloadProgress(bool need_check_completed,
                                             void* mult) {
   // first of all, flush buffer to disk
-  OutputVerbose(options_->verbose_functor,
-                "[teemo] Start flushing cache to disk.\n");
+  OutputVerbose(options_->verbose_functor, u8"[teemo] Start flushing cache to disk.\n");
   Result stop_ret = SUCCESSED;
   for (auto& s : slices_) {
     assert(s);
     if (s) {
-      Result r = s->stop(mult);
+      const Result r = s->stop(mult, false);
       if (r != SUCCESSED)
         stop_ret = r;
     }
@@ -363,8 +382,7 @@ Result SliceManager::finishDownloadProgress(bool need_check_completed,
 
   // then flush index file.
   if (!flushIndexFile()) {
-    OutputVerbose(options_->verbose_functor,
-                  "[teemo] Flush index file failed.\n");
+    OutputVerbose(options_->verbose_functor, u8"[teemo] Flush index file failed.\n");
   }
 
   // check stop operate result
@@ -374,9 +392,9 @@ Result SliceManager::finishDownloadProgress(bool need_check_completed,
 
   if (need_check_completed) {
     // is all slice download completed?
-    Result completed_ret = isAllSliceCompleted(true);
-    if (completed_ret != SUCCESSED) {
-      return completed_ret;
+    const Result ascc_ret = isAllSliceCompletedClearly(true);
+    if (ascc_ret != SUCCESSED) {
+      return ascc_ret;
     }
   }
 
@@ -386,17 +404,18 @@ Result SliceManager::finishDownloadProgress(bool need_check_completed,
     error_code = GetLastError();
 #endif
     OutputVerbose(options_->verbose_functor,
-                  "[teemo] Rename file failed, GLE: %u, %s => %s.\n",
+                  u8"[teemo] Rename file failed, GLE: %u, %s => %s.\n",
                   error_code, target_file_->filePath().c_str(),
                   options_->target_file_path.c_str());
     return RENAME_TMP_FILE_FAILED;
   }
 
   if (!FileUtil::RemoveFile(index_file_path_)) {
-    // not failed
-    OutputVerbose(options_->verbose_functor,
-                  u8"[teemo] Remove index file failed.\n");
+    // do not return failed
+    OutputVerbose(options_->verbose_functor, u8"[teemo] Remove index file failed.\n");
   }
+
+  OutputVerbose(options_->verbose_functor, u8"[teemo] Flush cache to disk successful.\n");
 
   return SUCCESSED;
 }
@@ -404,7 +423,7 @@ Result SliceManager::finishDownloadProgress(bool need_check_completed,
 int32_t SliceManager::getUnfetchAndUncompletedSliceNum() const {
   int32_t num = 0;
   for (auto& it : slices_) {
-    if (it && !it->isDataCompleted() && it->status() == Slice::UNFETCH)
+    if (it && !it->isDataCompletedClearly() && it->status() == Slice::UNFETCH)
       num++;
   }
   return num;
@@ -443,9 +462,8 @@ bool SliceManager::flushIndexFile() {
 
 utf8string SliceManager::makeIndexFilePath() const {
   utf8string target_dir = FileUtil::GetDirectory(options_->target_file_path);
-  utf8string target_filename =
-      FileUtil::GetFileName(options_->target_file_path);
-  return FileUtil::AppendFileName(target_dir, target_filename + ".efdindex");
+  utf8string target_filename = FileUtil::GetFileName(options_->target_file_path);
+  return FileUtil::AppendFileName(target_dir, target_filename + u8".efdindex");
 }
 
 void SliceManager::dumpSlice() const {
@@ -457,7 +475,7 @@ void SliceManager::dumpSlice() const {
          << ", Buffer: " << s->diskCacheCapacity() << "\r\n";
     }
     else {
-      ss << "] (" << s->end() - s->begin() << "), Disk: " << s->capacity()
+      ss << "] (" << s->size() << "), Disk: " << s->capacity()
          << ", Buffer: " << s->diskCacheCapacity() << "\r\n";
     }
   }

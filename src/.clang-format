@@ -6,6 +6,7 @@ SortUsingDeclarations: false
 BreakStringLiterals: false
 BreakConstructorInitializersBeforeComma: true
 ReflowComments: false
+ColumnLimit: 0
 BreakBeforeBraces: Custom
 BraceWrapping:
   BeforeElse:      true

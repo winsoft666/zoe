@@ -37,8 +37,8 @@ class Slice {
     FETCHED = 1,
     DOWNLOADING = 2,
     DOWNLOAD_FAILED = 3,
-    INIT_FAILED = 4,
-    DOWNLOAD_COMPLETED = 5
+    DOWNLOAD_COMPLETED = 4,
+    CURL_OK_BUT_STATUS_NOT_SURE = 5
   };
   Slice(int32_t index,
         int64_t begin,
@@ -59,7 +59,7 @@ class Slice {
   void* curlHandle();
 
   Result start(void* multi, int64_t disk_cache_size, int32_t max_speed);
-  Result stop(void* multi);
+  Result stop(void* multi, bool discard_downloaded);
 
   void setStatus(Slice::Status s);
   Status status() const;
@@ -68,7 +68,7 @@ class Slice {
   int32_t failedTimes() const;
 
   // if end_ is -1, this function will return false.
-  bool isDataCompleted();
+  bool isDataCompletedClearly() const;
 
   bool onNewData(const char* p, long size);
   bool flushToDisk();
@@ -76,9 +76,9 @@ class Slice {
   void tryFreeDiskCacheBuffer();
  protected:
   int32_t index_;
-  int64_t begin_;
+  int64_t begin_; // data range is [begin_, end_]
   int64_t end_;
-  std::atomic<int64_t> capacity_;  // data size in disk file
+  std::atomic<int64_t> disk_capacity_;  // data size in disk file
 
   void* curl_;
   struct curl_slist* header_chunk_;

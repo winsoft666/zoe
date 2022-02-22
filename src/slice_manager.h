@@ -42,24 +42,24 @@ class SliceManager : public std::enable_shared_from_this<SliceManager> {
   void setContentMd5(const utf8string& md5);
   utf8string contentMd5() const;
 
-  std::shared_ptr<TargetFile> targetFile();
+  std::shared_ptr<TargetFile> targetFile() const;
 
   Result makeSlices(bool accept_ranges);
 
   int64_t totalDownloaded() const;
 
-  Result isAllSliceCompleted(bool need_check_hash) const;
+  Result isAllSliceCompletedClearly(bool try_check_hash) const;
 
   Result finishDownloadProgress(bool need_check_completed, void* mult);
 
   int32_t getUnfetchAndUncompletedSliceNum() const;
-  std::shared_ptr<Slice> getUncompletedSlice(Slice::Status status);
+  std::shared_ptr<Slice> getSlice(Slice::Status status);
 
   std::shared_ptr<Slice> getSlice(void* curlHandle);
 
-  const Options* options();
+  const Options* options() const;
 
-  utf8string redirectUrl();
+  utf8string redirectUrl() const;
 
   utf8string indexFilePath() const;
 

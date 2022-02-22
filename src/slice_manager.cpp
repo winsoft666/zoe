@@ -147,8 +147,10 @@ Result SliceManager::loadExistSlice(int64_t cur_file_size,
 
     for (auto& it : j["slices"]) {
       std::shared_ptr<Slice> slice = std::make_shared<Slice>(
-          it["index"].get<int32_t>(), it["begin"].get<int64_t>(),
-          it["end"].get<int64_t>(), it["capacity"].get<int64_t>(),
+          it["index"].get<int32_t>(),
+          it["begin"].get<int64_t>(),
+          it["end"].get<int64_t>(),
+          it["capacity"].get<int64_t>(),
           shared_from_this());
       slices_.push_back(slice);
     }
@@ -366,15 +368,14 @@ Result SliceManager::isAllSliceCompletedClearly(bool try_check_hash) const {
   return ret;
 }
 
-Result SliceManager::finishDownloadProgress(bool need_check_completed,
-                                            void* mult) {
+Result SliceManager::finishDownloadProgress(bool need_check_completed, void* mult) {
   // first of all, flush buffer to disk
   OutputVerbose(options_->verbose_functor, u8"[teemo] Start flushing cache to disk.\n");
   Result stop_ret = SUCCESSED;
   for (auto& s : slices_) {
     assert(s);
     if (s) {
-      const Result r = s->stop(mult, false);
+      const Result r = s->stop(mult);
       if (r != SUCCESSED)
         stop_ret = r;
     }
@@ -435,6 +436,7 @@ bool SliceManager::flushIndexFile() {
   FILE* f = FileUtil::Open(index_file_path_, u8"wb");
   if (!f)
     return false;
+
   json j;
   j["update_time"] = time(nullptr);
   j["file_size"] = origin_file_size_;
@@ -451,10 +453,13 @@ bool SliceManager::flushIndexFile() {
                  {"capacity", slice->capacity()}});
   }
   j["slices"] = s;
+
   utf8string str_json = j.dump();
+
   fwrite(INDEX_FILE_SIGN_STRING, 1, strlen(INDEX_FILE_SIGN_STRING), f);
   fwrite(str_json.c_str(), 1, str_json.size(), f);
   fflush(f);
+
   FileUtil::Close(f);
 
   return true;

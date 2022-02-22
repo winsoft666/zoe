@@ -86,6 +86,8 @@ enum HashType { MD5 = 0, CRC32, SHA1, SHA256 };
 
 enum HashVerifyPolicy { ALWAYS = 0, ONLY_NO_FILESIZE };
 
+enum UncompletedSliceSavePolicy { ALWAYS_DISCARD = 0, SAVE_EXCEPT_FAILED };
+
 class TEEMO_API Event {
  public:
   Event(bool setted = false);
@@ -223,6 +225,12 @@ class TEEMO_API Teemo {
   //
   Result setProxy(const utf8string& proxy) noexcept;
   utf8string proxy() const noexcept;
+
+  // Set uncompleted slice save policy.
+  // Default is ALWAYS_DISCARD, because teemo doesn't know how to check slice(especially uncompleted) is valid or not.
+  // 
+  Result setUncompletedSliceSavePolicy(UncompletedSliceSavePolicy policy) noexcept;
+  UncompletedSliceSavePolicy uncompletedSliceSavePolicy() const noexcept;
 
   // Start to download and state change to DOWNLOADING.
   // Supported url protocol is the same as libcurl.

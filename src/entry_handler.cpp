@@ -376,10 +376,10 @@ Result EntryHandler::_asyncTaskProcess() {
         }
         else {
           if (!slice_manager_->getSlice(Slice::DOWNLOADING)) {
-            slice = slice_manager_->getSlice(Slice::CURL_OK_BUT_STATUS_NOT_SURE);
+            // only one slice that end_ is -1, so don't need loop
+            slice = slice_manager_->getSlice(Slice::CURL_OK_BUT_COMPLETED_NOT_SURE);
             if (slice) {
-              const Result ascc_ret = slice_manager_->isAllSliceCompletedClearly(false);
-              if (ascc_ret == SUCCESSED) {
+              if (slice_manager_->originFileSize() == -1 || slice_manager_->isAllSliceCompletedClearly(false) == SUCCESSED) {
                 slice->setStatus(Slice::DOWNLOAD_COMPLETED);
                 slice.reset();
               }
@@ -573,17 +573,17 @@ void EntryHandler::updateSliceStatus() {
       if (m->data.result == CURLE_OK) {
         if (slice->isDataCompletedClearly()) {
           slice->setStatus(Slice::DOWNLOAD_COMPLETED);
-          slice->stop(multi_, false);
+          slice->stop(multi_);
         }
         else {
           if (slice->end() == -1) {
-            slice->setStatus(Slice::CURL_OK_BUT_STATUS_NOT_SURE);
-            slice->stop(multi_, false);
+            slice->setStatus(Slice::CURL_OK_BUT_COMPLETED_NOT_SURE);
+            slice->stop(multi_);
           }
           else {
             slice->setStatus(Slice::DOWNLOAD_FAILED);
             slice->increaseFailedTimes();
-            slice->stop(multi_, true);
+            slice->stop(multi_);
           }
         }
       }
@@ -595,7 +595,7 @@ void EntryHandler::updateSliceStatus() {
 
         slice->setStatus(Slice::DOWNLOAD_FAILED);
         slice->increaseFailedTimes();
-        slice->stop(multi_, true);
+        slice->stop(multi_);
       }
     }
   } while (m);

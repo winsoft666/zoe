@@ -64,6 +64,8 @@ typedef struct _Options {
 
   utf8string proxy;
 
+  UncompletedSliceSavePolicy uncompleted_slice_save_policy;
+
   _Options() : internal_stop_event(true) {
     redirected_url_check_enabled = true;
     content_md5_enabled = false;
@@ -92,6 +94,8 @@ typedef struct _Options {
     verbose_functor = nullptr;
 
     user_stop_event = nullptr;
+
+    uncompleted_slice_save_policy = ALWAYS_DISCARD;
   }
 } Options;
 }  // namespace teemo

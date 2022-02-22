@@ -38,7 +38,7 @@ Slice::Slice(int32_t index,
     , header_chunk_(nullptr)
     , disk_cache_size_(0L)
     , disk_cache_buffer_(nullptr)
-    , status_(UNFETCH)
+    , status_(Slice::UNFETCH)
     , failed_times_(0)
     , slice_manager_(slice_manager) {
 #if defined(WIN32) || defined(_WIN32) || defined(__WIN32__) || defined(__NT__)
@@ -51,14 +51,13 @@ Slice::Slice(int32_t index,
 
   assert(end_ == -1 || (end_ + 1 >= begin_ + disk_capacity_.load()));
 
-  if (end_ != -1 && (size() == disk_capacity_.load() + disk_cache_capacity_.load())) {
+  if (isDataCompletedClearly())
     status_ = DOWNLOAD_COMPLETED;
-  }
 }
 
 Slice::~Slice() {
   assert(!curl_);
-  tryFreeDiskCacheBuffer();
+  freeDiskCacheBuffer();
 #if defined(WIN32) || defined(_WIN32) || defined(__WIN32__) || defined(__NT__)
   DeleteCriticalSection(&crit_);
 #endif
@@ -135,7 +134,7 @@ Result Slice::start(void* multi, int64_t disk_cache_size, int32_t max_speed) {
   if (!curl_) {
     OutputVerbose(slice_manager_->options()->verbose_functor,
                   u8"[teemo] curl_easy_init failed.\n");
-    tryFreeDiskCacheBuffer();
+    freeDiskCacheBuffer();
     status_ = DOWNLOAD_FAILED;
     return INIT_CURL_FAILED;
   }
@@ -200,7 +199,7 @@ Result Slice::start(void* multi, int64_t disk_cache_size, int32_t max_speed) {
                       curl_easy_strerror(err));
         curl_easy_cleanup(curl_);
         curl_ = nullptr;
-        tryFreeDiskCacheBuffer();
+        freeDiskCacheBuffer();
         status_ = DOWNLOAD_FAILED;
         return SET_CURL_OPTION_FAILED;
       }
@@ -219,7 +218,7 @@ Result Slice::start(void* multi, int64_t disk_cache_size, int32_t max_speed) {
       curl_easy_cleanup(curl_);
       curl_ = nullptr;
 
-      tryFreeDiskCacheBuffer();
+      freeDiskCacheBuffer();
 
       status_ = DOWNLOAD_FAILED;
       return SET_CURL_OPTION_FAILED;
@@ -234,7 +233,7 @@ Result Slice::start(void* multi, int64_t disk_cache_size, int32_t max_speed) {
     curl_easy_cleanup(curl_);
     curl_ = nullptr;
 
-    tryFreeDiskCacheBuffer();
+    freeDiskCacheBuffer();
 
     status_ = DOWNLOAD_FAILED;
     return ADD_CURL_HANDLE_FAILED;
@@ -243,11 +242,11 @@ Result Slice::start(void* multi, int64_t disk_cache_size, int32_t max_speed) {
   return SUCCESSED;
 }
 
-Result Slice::stop(void* multi, bool discard_downloaded) {
+Result Slice::stop(void* multi) {
   Result ret = SUCCESSED;
   if (curl_) {
     if (multi) {
-      CURLMcode code = curl_multi_remove_handle(multi, curl_);
+      const CURLMcode code = curl_multi_remove_handle(multi, curl_);
       if (code != CURLM_CALL_MULTI_PERFORM && code != CURLM_OK) {
         OutputVerbose(slice_manager_->options()->verbose_functor,
                       u8"[teemo] curl_multi_remove_handle failed: %ld(%s).\n",
@@ -264,16 +263,32 @@ Result Slice::stop(void* multi, bool discard_downloaded) {
     curl_ = nullptr;
   }
 
-  if (!discard_downloaded) {
-    if (!flushToDisk())
-      ret = FLUSH_TMP_FILE_FAILED;
+  bool discard_downloaded = false;
+
+  if (status_ == UNFETCH ||
+      status_ == FETCHED ||
+      status_ == DOWNLOAD_COMPLETED) {
+    discard_downloaded = false;
   }
   else {
+    const UncompletedSliceSavePolicy policy = slice_manager_->options()->uncompleted_slice_save_policy;
+    if (policy == ALWAYS_DISCARD) {
+      discard_downloaded = true;
+    }
+    else if (policy == SAVE_EXCEPT_FAILED) {
+      discard_downloaded = (status_ == DOWNLOAD_FAILED);
+    }
+  }
+
+  if (discard_downloaded) {
     disk_capacity_.store(0);
     disk_cache_capacity_.store(0);
   }
+  else if (!flushToDisk()) {
+    ret = FLUSH_TMP_FILE_FAILED;
+  }
 
-  tryFreeDiskCacheBuffer();
+  freeDiskCacheBuffer();
 
   return ret;
 }
@@ -338,7 +353,7 @@ bool Slice::flushToDisk() {
   return bret;
 }
 
-void Slice::tryFreeDiskCacheBuffer() {
+void Slice::freeDiskCacheBuffer() {
   if (disk_cache_buffer_) {
     free(disk_cache_buffer_);
     disk_cache_buffer_ = nullptr;

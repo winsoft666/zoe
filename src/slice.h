@@ -38,8 +38,9 @@ class Slice {
     DOWNLOADING = 2,
     DOWNLOAD_FAILED = 3,
     DOWNLOAD_COMPLETED = 4,
-    CURL_OK_BUT_STATUS_NOT_SURE = 5
+    CURL_OK_BUT_COMPLETED_NOT_SURE = 5
   };
+
   Slice(int32_t index,
         int64_t begin,
         int64_t end,
@@ -59,7 +60,7 @@ class Slice {
   void* curlHandle();
 
   Result start(void* multi, int64_t disk_cache_size, int32_t max_speed);
-  Result stop(void* multi, bool discard_downloaded);
+  Result stop(void* multi); // must setStatus first
 
   void setStatus(Slice::Status s);
   Status status() const;
@@ -73,7 +74,7 @@ class Slice {
   bool onNewData(const char* p, long size);
   bool flushToDisk();
  protected:
-  void tryFreeDiskCacheBuffer();
+  void freeDiskCacheBuffer();
  protected:
   int32_t index_;
   int64_t begin_; // data range is [begin_, end_]

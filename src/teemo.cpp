@@ -54,7 +54,8 @@ const char* GetResultString(int enumVal) {
                                       u8"HASH_VERIFY_NOT_PASS",
                                       u8"CALCULATE_HASH_FAILED",
                                       u8"FETCH_FILE_INFO_FAILED",
-                                      u8"REDIRECT_URL_DIFFERENT"};
+                                      u8"REDIRECT_URL_DIFFERENT",
+                                      u8"NOT_CLEARLY_RESULT"};
   return EnumStrings[enumVal];
 }
 
@@ -146,7 +147,7 @@ DownloadState Teemo::state() const noexcept {
 
 std::shared_future<teemo::Result> Teemo::futureResult() noexcept {
   assert(impl_);
-  if(impl_ && impl_->entry_handler_)
+  if (impl_ && impl_->entry_handler_)
     return impl_->entry_handler_->futureResult();
   return std::shared_future<teemo::Result>();
 }
@@ -367,6 +368,18 @@ utf8string Teemo::proxy() const noexcept {
   return impl_->options_.proxy;
 }
 
+Result Teemo::setUncompletedSliceSavePolicy(UncompletedSliceSavePolicy policy) noexcept {
+  assert(impl_);
+  impl_->options_.uncompleted_slice_save_policy = policy;
+
+  return SUCCESSED;
+}
+
+UncompletedSliceSavePolicy Teemo::uncompletedSliceSavePolicy() const noexcept {
+  assert(impl_);
+  return impl_->options_.uncompleted_slice_save_policy;
+}
+
 std::shared_future<Result> Teemo::start(
     const utf8string& url,
     const utf8string& target_file_path,
@@ -434,7 +447,8 @@ void Teemo::stop() noexcept {
 
 class Event::EventImpl {
  public:
-  EventImpl(bool setted) : setted_(setted) {}
+  EventImpl(bool setted)
+      : setted_(setted) {}
   void set() noexcept {
     std::unique_lock<std::mutex> ul(setted_mutex_);
     setted_ = true;
@@ -465,7 +479,8 @@ class Event::EventImpl {
   std::condition_variable setted_cond_var_;
 };
 
-Event::Event(bool setted) : impl_(new EventImpl(setted)) {}
+Event::Event(bool setted)
+    : impl_(new EventImpl(setted)) {}
 
 Event::~Event() {
   assert(impl_);

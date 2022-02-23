@@ -4,17 +4,18 @@
 #include "test_data.h"
 using namespace teemo;
 
-void DoTest(std::vector<TestData> test_datas, int thread_num, int32_t disk_cache) {
+void DoTest(const std::vector<TestData>& test_datas, int thread_num, int32_t disk_cache) {
   Teemo::GlobalInit();
 
-  for (auto test_data : test_datas) {
+  for (const auto& test_data : test_datas) {
     Teemo efd;
 
     if (thread_num != -1)
       efd.setThreadNum(thread_num);
 
     efd.setDiskCacheSize(disk_cache);
-    efd.setHashVerifyPolicy(ALWAYS, MD5, test_data.md5);
+    if (test_data.md5.length() > 0)
+      efd.setHashVerifyPolicy(ALWAYS, MD5, test_data.md5);
 
     Result ret =
         efd.start(
@@ -36,12 +37,21 @@ void DoTest(std::vector<TestData> test_datas, int thread_num, int32_t disk_cache
 
 TEST(DiskCacheHttpTest, Http_ThreadNum_2) {
   DoTest(http_test_datas, 10, 10 * 1024 * 1024);
+
+  // set test case interval
+  std::this_thread::sleep_for(std::chrono::milliseconds(5000));
 }
 
 TEST(DiskCacheHttpTest, Http_ThreadNum_3) {
   DoTest(http_test_datas, 3, 0);
+
+  // set test case interval
+  std::this_thread::sleep_for(std::chrono::milliseconds(5000));
 }
 
 TEST(DiskCacheHttpTest, Http_ThreadNum_20) {
   DoTest(http_test_datas, 20, 1);
+
+  // set test case interval
+  std::this_thread::sleep_for(std::chrono::milliseconds(5000));
 }

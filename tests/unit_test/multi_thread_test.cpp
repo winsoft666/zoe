@@ -4,22 +4,22 @@
 #include <future>
 using namespace teemo;
 
-void DoTest(std::vector<TestData> test_datas, int thread_num) {
+void DoTest(const std::vector<TestData>& test_datas, int thread_num) {
   Teemo::GlobalInit();
 
-  for (auto test_data : test_datas) {
+  for (const auto& test_data : test_datas) {
     Teemo efd;
 
     efd.setThreadNum(thread_num);
-    efd.setHashVerifyPolicy(ALWAYS, MD5, test_data.md5);
-
+    if (test_data.md5.length() > 0)
+      efd.setHashVerifyPolicy(ALWAYS, MD5, test_data.md5);
 
     Result ret =
         efd.start(
                test_data.url, test_data.target_file_path,
                [test_data](Result result) {
                  printf("\nResult: %s\n", GetResultString(result));
-                 EXPECT_TRUE(result == SUCCESSED || result == CANCELED);
+                 EXPECT_TRUE(result == SUCCESSED);
                },
                [](int64_t total, int64_t downloaded) {
                  if (total > 0)
@@ -34,34 +34,28 @@ void DoTest(std::vector<TestData> test_datas, int thread_num) {
 
 TEST(MultiThreadHttpTest, Http_DefaultThreadNum) {
   DoTest(http_test_datas, -1);
+
+  // set test case interval
+  std::this_thread::sleep_for(std::chrono::milliseconds(5000));
 }
 
 TEST(MultiThreadHttpTest, Http_ThreadNum_2) {
   DoTest(http_test_datas, 2);
+
+  // set test case interval
+  std::this_thread::sleep_for(std::chrono::milliseconds(5000));
 }
 
 TEST(MultiThreadHttpTest, Http_ThreadNum_3) {
   DoTest(http_test_datas, 3);
+
+  // set test case interval
+  std::this_thread::sleep_for(std::chrono::milliseconds(5000));
 }
 
 TEST(MultiThreadHttpTest, Http_ThreadNum_20) {
   DoTest(http_test_datas, 20);
-}
 
-// FTP
-
-TEST(MultiThreadFTPTest, FTP_DefaultThreadNum) {
-  DoTest(ftp_test_datas, -1);
-}
-
-TEST(MultiThreadFTPTest, FTP_ThreadNum_2) {
-  DoTest(ftp_test_datas, 2);
-}
-
-TEST(MultiThreadFTPTest, FTP_ThreadNum_3) {
-  DoTest(ftp_test_datas, 3);
-}
-
-TEST(MultiThreadFTPTest, FTP_ThreadNum_20) {
-  DoTest(ftp_test_datas, 20);
+  // set test case interval
+  std::this_thread::sleep_for(std::chrono::milliseconds(5000));
 }

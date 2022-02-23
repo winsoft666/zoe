@@ -5,14 +5,15 @@
 #include <future>
 using namespace teemo;
 
-void DoCancelTest(std::vector<TestData> test_datas, int thread_num) {
-  for (auto test_data : test_datas) {
+void DoCancelTest(const std::vector<TestData>& test_datas, int thread_num) {
+  for (const auto& test_data : test_datas) {
     Event cancel_event;
 
     Teemo efd;
     efd.setThreadNum(thread_num);
     efd.setStopEvent(&cancel_event);
-    efd.setHashVerifyPolicy(ALWAYS, MD5, test_data.md5);
+    if (test_data.md5.length() > 0)
+      efd.setHashVerifyPolicy(ALWAYS, MD5, test_data.md5);
 
     std::thread t = std::thread([&cancel_event]() {
       std::this_thread::sleep_for(std::chrono::milliseconds(500));
@@ -39,4 +40,7 @@ void DoCancelTest(std::vector<TestData> test_datas, int thread_num) {
 
 TEST(CancelTest, Http_ThreadNum3) {
   DoCancelTest(http_test_datas, 3);
+
+  // set test case interval
+  std::this_thread::sleep_for(std::chrono::milliseconds(5000));
 }

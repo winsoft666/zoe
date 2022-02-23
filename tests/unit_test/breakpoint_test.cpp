@@ -4,13 +4,14 @@
 #include <future>
 using namespace teemo;
 
-void DoBreakpointTest(std::vector<TestData> test_datas, int thread_num) {
-  for (auto test_data : test_datas) {
+void DoBreakpointTest(const std::vector<TestData>& test_datas, int thread_num) {
+  for (const auto &test_data : test_datas) {
     std::future<void> test_task = std::async(std::launch::async, [test_data, thread_num]() {
       Teemo efd;
 
       efd.setThreadNum(thread_num / 2);
-      efd.setHashVerifyPolicy(ALWAYS, MD5, test_data.md5);
+      if (test_data.md5.length() > 0)
+        efd.setHashVerifyPolicy(ALWAYS, MD5, test_data.md5);
 
       std::shared_future<Result> r = efd.start(
           test_data.url, test_data.target_file_path,
@@ -28,7 +29,8 @@ void DoBreakpointTest(std::vector<TestData> test_datas, int thread_num) {
 
       efd.stop();
 
-      r.get();
+      r.wait();
+
       efd.setThreadNum(thread_num);
 
       Result ret =
@@ -44,7 +46,6 @@ void DoBreakpointTest(std::vector<TestData> test_datas, int thread_num) {
                  },
                  nullptr)
               .get();
-
     });
     test_task.wait();
   }
@@ -52,27 +53,21 @@ void DoBreakpointTest(std::vector<TestData> test_datas, int thread_num) {
 
 TEST(BreakPointHttpTest, Http_ThreadNum_1_Breakpoint) {
   DoBreakpointTest(http_test_datas, 1);
+
+  // set test case interval
+  std::this_thread::sleep_for(std::chrono::milliseconds(5000));
 }
 
 TEST(BreakPointHttpTest, Http_ThreadNum_3_Breakpoint) {
   DoBreakpointTest(http_test_datas, 3);
+
+  // set test case interval
+  std::this_thread::sleep_for(std::chrono::milliseconds(5000));
 }
 
 TEST(BreakPointHttpTest, Http_ThreadNum_10_Breakpoint) {
   DoBreakpointTest(http_test_datas, 10);
-}
 
-
-// FTP
-
-TEST(BreakPointFTPTest, FTP_ThreadNum_1_Breakpoint) {
-  DoBreakpointTest(ftp_test_datas, 1);
-}
-
-TEST(BreakPointFTPTest, FTP_ThreadNum_3_Breakpoint) {
-  DoBreakpointTest(ftp_test_datas, 3);
-}
-
-TEST(BreakPointFTPTest, FTP_ThreadNum_10_Breakpoint) {
-  DoBreakpointTest(ftp_test_datas, 10);
+  // set test case interval
+  std::this_thread::sleep_for(std::chrono::milliseconds(5000));
 }

@@ -59,7 +59,7 @@ class Slice {
   int32_t index() const;
   void* curlHandle();
 
-  Result start(void* multi, int64_t disk_cache_size, int32_t max_speed);
+  Result start(void* multi, int64_t disk_cache_size, int64_t max_speed);
   Result stop(void* multi); // must setStatus first
 
   void setStatus(Slice::Status s);

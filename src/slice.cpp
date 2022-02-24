@@ -24,6 +24,14 @@
 #include "verbose.h"
 #include "slice_manager.h"
 
+#define CHECK_SETOPT1(x)                                                                                                  \
+  do {                                                                                                                    \
+    CURLcode __cc__ = (x);                                                                                                \
+    if (__cc__ != CURLE_OK) {                                                                                             \
+      OutputVerbose(slice_manager_->options()->verbose_functor, u8"[teemo] " #x " failed, return: %ld.\n", (long)__cc__); \
+    }                                                                                                                     \
+  } while (false)
+
 namespace teemo {
 
 Slice::Slice(int32_t index,
@@ -110,7 +118,7 @@ static size_t __SliceWriteBodyCallback(char* buffer,
   return write_size;
 }
 
-Result Slice::start(void* multi, int64_t disk_cache_size, int32_t max_speed) {
+Result Slice::start(void* multi, int64_t disk_cache_size, int64_t max_speed) {
   if (!slice_manager_)
     return UNKNOWN_ERROR;
 
@@ -121,7 +129,8 @@ Result Slice::start(void* multi, int64_t disk_cache_size, int32_t max_speed) {
 
   disk_cache_size_ = disk_cache_size;
   if (disk_cache_size_ > 0) {
-    disk_cache_buffer_ = (char*)malloc((long)disk_cache_size_);
+    // TODO: support int64_t
+    disk_cache_buffer_ = (char*)malloc((size_t)disk_cache_size_);
     if (!disk_cache_buffer_) {
       disk_cache_size_ = 0L;
     }
@@ -132,47 +141,44 @@ Result Slice::start(void* multi, int64_t disk_cache_size, int32_t max_speed) {
 
   curl_ = curl_easy_init();
   if (!curl_) {
-    OutputVerbose(slice_manager_->options()->verbose_functor,
-                  u8"[teemo] curl_easy_init failed.\n");
+    OutputVerbose(slice_manager_->options()->verbose_functor, u8"[teemo] curl_easy_init failed.\n");
     freeDiskCacheBuffer();
     status_ = DOWNLOAD_FAILED;
     return INIT_CURL_FAILED;
   }
 
-  curl_easy_setopt(curl_, CURLOPT_VERBOSE, 0L);
+  CHECK_SETOPT1(curl_easy_setopt(curl_, CURLOPT_VERBOSE, 0L));
   const utf8string redirect_url = slice_manager_->redirectUrl();
   const utf8string url = slice_manager_->options()->url;
-  curl_easy_setopt(
-      curl_, CURLOPT_URL,
-      (redirect_url.length() > 0 ? redirect_url.c_str() : url.c_str()));
+  CHECK_SETOPT1(curl_easy_setopt(curl_, CURLOPT_URL, (redirect_url.length() > 0 ? redirect_url.c_str() : url.c_str())));
 
   if (slice_manager_->options()->proxy.length() > 0) {
-    curl_easy_setopt(curl_, CURLOPT_PROXY, slice_manager_->options()->proxy.c_str());
+    CHECK_SETOPT1(curl_easy_setopt(curl_, CURLOPT_PROXY, slice_manager_->options()->proxy.c_str()));
   }
 
-  curl_easy_setopt(curl_, CURLOPT_NOSIGNAL, 1L);
-  curl_easy_setopt(curl_, CURLOPT_FOLLOWLOCATION, 1L);
-  curl_easy_setopt(curl_, CURLOPT_SSL_VERIFYHOST, 0L);
-  curl_easy_setopt(curl_, CURLOPT_SSL_VERIFYPEER, 0L);
+  CHECK_SETOPT1(curl_easy_setopt(curl_, CURLOPT_NOSIGNAL, 1L));
+  CHECK_SETOPT1(curl_easy_setopt(curl_, CURLOPT_FOLLOWLOCATION, 1L));
+  CHECK_SETOPT1(curl_easy_setopt(curl_, CURLOPT_SSL_VERIFYHOST, 0L));
+  CHECK_SETOPT1(curl_easy_setopt(curl_, CURLOPT_SSL_VERIFYPEER, 0L));
   //if (ca_path_.length() > 0)
   //    curl_easy_setopt(curl_, CURLOPT_CAINFO, ca_path_.c_str());
 
   if (slice_manager_->options()->min_speed == -1) {
-    curl_easy_setopt(curl_, CURLOPT_LOW_SPEED_LIMIT, 0L);  // disabled
-    curl_easy_setopt(curl_, CURLOPT_LOW_SPEED_TIME, 0L);   // disabled
+    CHECK_SETOPT1(curl_easy_setopt(curl_, CURLOPT_LOW_SPEED_LIMIT, 0L));  // disabled
+    CHECK_SETOPT1(curl_easy_setopt(curl_, CURLOPT_LOW_SPEED_TIME, 0L));   // disabled
   }
   else {
-    curl_easy_setopt(curl_, CURLOPT_LOW_SPEED_LIMIT, slice_manager_->options()->min_speed);
-    curl_easy_setopt(curl_, CURLOPT_LOW_SPEED_TIME, slice_manager_->options()->min_speed_duration);
+    CHECK_SETOPT1(curl_easy_setopt(curl_, CURLOPT_LOW_SPEED_LIMIT, slice_manager_->options()->min_speed));
+    CHECK_SETOPT1(curl_easy_setopt(curl_, CURLOPT_LOW_SPEED_TIME, slice_manager_->options()->min_speed_duration));
   }
-  curl_easy_setopt(curl_, CURLOPT_NOPROGRESS, 1L);
+  CHECK_SETOPT1(curl_easy_setopt(curl_, CURLOPT_NOPROGRESS, 1L));
 
   if (max_speed > 0) {
-    curl_easy_setopt(curl_, CURLOPT_MAX_RECV_SPEED_LARGE, (curl_off_t)max_speed);
+    CHECK_SETOPT1(curl_easy_setopt(curl_, CURLOPT_MAX_RECV_SPEED_LARGE, (curl_off_t)max_speed));
   }
-  curl_easy_setopt(curl_, CURLOPT_FORBID_REUSE, 0L);
-  curl_easy_setopt(curl_, CURLOPT_WRITEFUNCTION, __SliceWriteBodyCallback);
-  curl_easy_setopt(curl_, CURLOPT_WRITEDATA, this);
+  CHECK_SETOPT1(curl_easy_setopt(curl_, CURLOPT_FORBID_REUSE, 0L));
+  CHECK_SETOPT1(curl_easy_setopt(curl_, CURLOPT_WRITEFUNCTION, __SliceWriteBodyCallback));
+  CHECK_SETOPT1(curl_easy_setopt(curl_, CURLOPT_WRITEDATA, this));
 
   const HttpHeaders& headers = slice_manager_->options()->http_headers;
   if (headers.size() > 0) {
@@ -180,7 +186,7 @@ Result Slice::start(void* multi, int64_t disk_cache_size, int32_t max_speed) {
       utf8string headerStr = it.first + u8": " + it.second;
       header_chunk_ = curl_slist_append(header_chunk_, headerStr.c_str());
     }
-    curl_easy_setopt(curl_, CURLOPT_HTTPHEADER, header_chunk_);
+    CHECK_SETOPT1(curl_easy_setopt(curl_, CURLOPT_HTTPHEADER, header_chunk_));
   }
 
   if (end_ != -1) {

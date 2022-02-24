@@ -41,39 +41,39 @@
 namespace teemo {
 enum Result {
   SUCCESSED = 0,
-  UNKNOWN_ERROR,
-  INVALID_URL,
-  INVALID_INDEX_FORMAT,
-  INVALID_TARGET_FILE_PATH,
-  INVALID_THREAD_NUM,
-  INVALID_HASH_POLICY,
-  INVALID_SLICE_POLICY,
-  INVALID_NETWORK_CONN_TIMEOUT,
-  INVALID_NETWORK_READ_TIMEOUT,
-  INVALID_FETCH_FILE_INFO_RETRY_TIMES,
-  ALREADY_DOWNLOADING,
-  CANCELED,
-  RENAME_TMP_FILE_FAILED,
-  OPEN_INDEX_FILE_FAILED,
-  TMP_FILE_EXPIRED,
-  INIT_CURL_FAILED,
-  INIT_CURL_MULTI_FAILED,
-  SET_CURL_OPTION_FAILED,
-  ADD_CURL_HANDLE_FAILED,
-  CREATE_TARGET_FILE_FAILED,
-  CREATE_TMP_FILE_FAILED,
-  OPEN_TMP_FILE_FAILED,
-  URL_DIFFERENT,
-  TMP_FILE_SIZE_ERROR,
-  TMP_FILE_CANNOT_RW,
-  FLUSH_TMP_FILE_FAILED,
-  UPDATE_INDEX_FILE_FAILED,
-  SLICE_DOWNLOAD_FAILED,
-  HASH_VERIFY_NOT_PASS,
-  CALCULATE_HASH_FAILED,
-  FETCH_FILE_INFO_FAILED,
-  REDIRECT_URL_DIFFERENT,
-  NOT_CLEARLY_RESULT,
+  UNKNOWN_ERROR = 1,
+  INVALID_URL = 2,
+  INVALID_INDEX_FORMAT = 3,
+  INVALID_TARGET_FILE_PATH = 4,
+  INVALID_THREAD_NUM = 5,
+  INVALID_HASH_POLICY = 6,
+  INVALID_SLICE_POLICY = 7,
+  INVALID_NETWORK_CONN_TIMEOUT = 8,
+  INVALID_NETWORK_READ_TIMEOUT = 9,
+  INVALID_FETCH_FILE_INFO_RETRY_TIMES = 10,
+  ALREADY_DOWNLOADING = 11,
+  CANCELED = 12,
+  RENAME_TMP_FILE_FAILED = 13,
+  OPEN_INDEX_FILE_FAILED = 14,
+  TMP_FILE_EXPIRED = 15,
+  INIT_CURL_FAILED = 16,
+  INIT_CURL_MULTI_FAILED = 17,
+  SET_CURL_OPTION_FAILED = 18,
+  ADD_CURL_HANDLE_FAILED = 19,
+  CREATE_TARGET_FILE_FAILED = 20,
+  CREATE_TMP_FILE_FAILED = 21,
+  OPEN_TMP_FILE_FAILED = 22,
+  URL_DIFFERENT = 23,
+  TMP_FILE_SIZE_ERROR = 24,
+  TMP_FILE_CANNOT_RW = 25,
+  FLUSH_TMP_FILE_FAILED = 26,
+  UPDATE_INDEX_FILE_FAILED = 27,
+  SLICE_DOWNLOAD_FAILED = 28,
+  HASH_VERIFY_NOT_PASS = 29,
+  CALCULATE_HASH_FAILED = 30,
+  FETCH_FILE_INFO_FAILED = 31,
+  REDIRECT_URL_DIFFERENT = 32,
+  NOT_CLEARLY_RESULT = 33,
 };
 
 enum DownloadState { STOPPED = 0, DOWNLODING = 1, PAUSED = 2 };
@@ -171,7 +171,7 @@ class TEEMO_API Teemo {
   // Set to 0 or negative to switch to the default built-in limit - -1(unlimited speed).
   //
   Result setMinDownloadSpeed(int32_t byte_per_seconds,
-                             int32_t duration) noexcept; // seconds
+                             int32_t duration) noexcept;  // seconds
   int32_t minDownloadSpeed() const noexcept;
   int32_t minDownloadSpeedDuration() const noexcept;  // seconds
 
@@ -228,8 +228,9 @@ class TEEMO_API Teemo {
 
   // Set uncompleted slice save policy.
   // Default is ALWAYS_DISCARD, because teemo doesn't know how to check slice(especially uncompleted) is valid or not.
-  // 
-  Result setUncompletedSliceSavePolicy(UncompletedSliceSavePolicy policy) noexcept;
+  //
+  Result setUncompletedSliceSavePolicy(
+      UncompletedSliceSavePolicy policy) noexcept;
   UncompletedSliceSavePolicy uncompletedSliceSavePolicy() const noexcept;
 
   // Start to download and state change to DOWNLOADING.
@@ -264,6 +265,7 @@ class TEEMO_API Teemo {
   DownloadState state() const noexcept;
 
   std::shared_future<Result> futureResult() noexcept;
+
  protected:
   class TeemoImpl;
   TeemoImpl* impl_;

@@ -22,6 +22,14 @@
 #include "verbose.h"
 #include "time_meter.hpp"
 
+#define CHECK_SETOPT2(x)                                                                                  \
+  do {                                                                                                   \
+    CURLcode __cc__ = (x);                                                                               \
+    if (__cc__ != CURLE_OK) {                                                                            \
+      OutputVerbose(options_->verbose_functor, u8"[teemo] " #x " failed, return: %ld.\n", (long)__cc__); \
+    }                                                                                                    \
+  } while (false)
+
 namespace teemo {
 
 utf8string bool2string(bool b) {
@@ -32,6 +40,7 @@ EntryHandler::EntryHandler()
     : options_(nullptr)
     , slice_manager_(nullptr)
     , progress_handler_(nullptr)
+    , multi_(nullptr)
     , fetch_file_info_curl_(nullptr)
     , speed_handler_(nullptr) {
   user_paused_.store(false);
@@ -453,31 +462,30 @@ bool EntryHandler::requestFileInfo(const utf8string& url, FileInfo& fileInfo) {
   CURL* curl = fetch_file_info_curl_->GetCurl();
 
   curl_easy_reset(curl);
-  curl_easy_setopt(curl, CURLOPT_VERBOSE, 0L);
-  curl_easy_setopt(curl, CURLOPT_NOSIGNAL, 1L);
-  curl_easy_setopt(curl, CURLOPT_URL, url.c_str());
+  CHECK_SETOPT2(curl_easy_setopt(curl, CURLOPT_VERBOSE, 0L));
+  CHECK_SETOPT2(curl_easy_setopt(curl, CURLOPT_NOSIGNAL, 1L));
+  CHECK_SETOPT2(curl_easy_setopt(curl, CURLOPT_URL, url.c_str()));
   if (options_->use_head_method_fetch_file_info)
-    curl_easy_setopt(curl, CURLOPT_NOBODY, 1L);
+    CHECK_SETOPT2(curl_easy_setopt(curl, CURLOPT_NOBODY, 1L));
   else
-    curl_easy_setopt(curl, CURLOPT_NOBODY, 0L);
+    CHECK_SETOPT2(curl_easy_setopt(curl, CURLOPT_NOBODY, 0L));
 
-  curl_easy_setopt(curl, CURLOPT_FOLLOWLOCATION, 1L);
-  curl_easy_setopt(curl, CURLOPT_SSL_VERIFYHOST, 0L);
-  curl_easy_setopt(curl, CURLOPT_SSL_VERIFYPEER, 0L);
-  curl_easy_setopt(curl, CURLOPT_CONNECTTIMEOUT_MS,
-                   options_->network_conn_timeout);
+  CHECK_SETOPT2(curl_easy_setopt(curl, CURLOPT_FOLLOWLOCATION, 1L));
+  CHECK_SETOPT2(curl_easy_setopt(curl, CURLOPT_SSL_VERIFYHOST, 0L));
+  CHECK_SETOPT2(curl_easy_setopt(curl, CURLOPT_SSL_VERIFYPEER, 0L));
+  CHECK_SETOPT2(curl_easy_setopt(curl, CURLOPT_CONNECTTIMEOUT_MS, options_->network_conn_timeout));
 
   //if (ca_path_.length() > 0)
   //    curl_easy_setopt(curl, CURLOPT_CAINFO, ca_path_.c_str());
 
   // avoid libcurl failed with "Failed writing body".
-  curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, __WriteBodyCallback);
+  CHECK_SETOPT2(curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, __WriteBodyCallback));
 
-  curl_easy_setopt(curl, CURLOPT_HEADERFUNCTION, __WriteHeaderCallback);
-  curl_easy_setopt(curl, CURLOPT_HEADERDATA, (void*)&fileInfo);
+  CHECK_SETOPT2(curl_easy_setopt(curl, CURLOPT_HEADERFUNCTION, __WriteHeaderCallback));
+  CHECK_SETOPT2(curl_easy_setopt(curl, CURLOPT_HEADERDATA, (void*)&fileInfo));
 
   if (options_->proxy.length() > 0) {
-    curl_easy_setopt(curl, CURLOPT_PROXY, options_->proxy.c_str());
+    CHECK_SETOPT2(curl_easy_setopt(curl, CURLOPT_PROXY, options_->proxy.c_str()));
   }
 
   struct curl_slist* headerChunk = nullptr;
@@ -487,7 +495,7 @@ bool EntryHandler::requestFileInfo(const utf8string& url, FileInfo& fileInfo) {
       utf8string headerStr = it.first + u8": " + it.second;
       headerChunk = curl_slist_append(headerChunk, headerStr.c_str());
     }
-    curl_easy_setopt(curl, CURLOPT_HTTPHEADER, headerChunk);
+    CHECK_SETOPT2(curl_easy_setopt(curl, CURLOPT_HTTPHEADER, headerChunk));
   }
 
   CURLcode ret_code = curl_easy_perform(curl);

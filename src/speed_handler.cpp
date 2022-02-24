@@ -43,10 +43,10 @@ void SpeedHandler::asyncTaskProcess() {
     if (options_->user_stop_event && options_->user_stop_event->isSetted())
       break;
     if (options_ && slice_manager_) {
-      int64_t now = slice_manager_->totalDownloaded();
+      const int64_t now = slice_manager_->totalDownloaded();
 
       if (now >= last_download_) {
-        int64_t downloaded = now - last_download_;
+        const int64_t downloaded = now - last_download_;
         last_download_ = now;
         options_->speed_functor(downloaded);
       }

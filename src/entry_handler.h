@@ -66,8 +66,8 @@ class EntryHandler {
   bool requestFileInfo(const utf8string& url, FileInfo& fileInfo);
   void cancelFetchFileInfo();
   void calculateSliceInfo(int32_t concurrency_num,
-                          int32_t* disk_cache_per_slice,
-                          int32_t* max_speed_per_slice) const;
+                          int64_t* disk_cache_per_slice,
+                          int64_t* max_speed_per_slice) const;
   void updateSliceStatus();
 
  protected:

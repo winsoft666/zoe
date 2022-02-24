@@ -140,15 +140,14 @@ Result Slice::start(void* multi, int64_t disk_cache_size, int32_t max_speed) {
   }
 
   curl_easy_setopt(curl_, CURLOPT_VERBOSE, 0L);
-  utf8string redirect_url = slice_manager_->redirectUrl();
-  utf8string url = slice_manager_->options()->url;
+  const utf8string redirect_url = slice_manager_->redirectUrl();
+  const utf8string url = slice_manager_->options()->url;
   curl_easy_setopt(
       curl_, CURLOPT_URL,
       (redirect_url.length() > 0 ? redirect_url.c_str() : url.c_str()));
 
   if (slice_manager_->options()->proxy.length() > 0) {
-    curl_easy_setopt(curl_, CURLOPT_PROXY,
-                     slice_manager_->options()->proxy.c_str());
+    curl_easy_setopt(curl_, CURLOPT_PROXY, slice_manager_->options()->proxy.c_str());
   }
 
   curl_easy_setopt(curl_, CURLOPT_NOSIGNAL, 1L);
@@ -163,16 +162,13 @@ Result Slice::start(void* multi, int64_t disk_cache_size, int32_t max_speed) {
     curl_easy_setopt(curl_, CURLOPT_LOW_SPEED_TIME, 0L);   // disabled
   }
   else {
-    curl_easy_setopt(curl_, CURLOPT_LOW_SPEED_LIMIT,
-                     slice_manager_->options()->min_speed);
-    curl_easy_setopt(curl_, CURLOPT_LOW_SPEED_TIME,
-                     slice_manager_->options()->min_speed_duration);
+    curl_easy_setopt(curl_, CURLOPT_LOW_SPEED_LIMIT, slice_manager_->options()->min_speed);
+    curl_easy_setopt(curl_, CURLOPT_LOW_SPEED_TIME, slice_manager_->options()->min_speed_duration);
   }
   curl_easy_setopt(curl_, CURLOPT_NOPROGRESS, 1L);
 
   if (max_speed > 0) {
-    curl_easy_setopt(curl_, CURLOPT_MAX_RECV_SPEED_LARGE,
-                     (curl_off_t)max_speed);
+    curl_easy_setopt(curl_, CURLOPT_MAX_RECV_SPEED_LARGE, (curl_off_t)max_speed);
   }
   curl_easy_setopt(curl_, CURLOPT_FORBID_REUSE, 0L);
   curl_easy_setopt(curl_, CURLOPT_WRITEFUNCTION, __SliceWriteBodyCallback);
@@ -325,7 +321,7 @@ bool Slice::flushToDisk() {
     pthread_mutex_lock(&mutex_);
 #endif
     int64_t written = 0;
-    int64_t need_write = disk_cache_capacity_.load();
+    const int64_t need_write = disk_cache_capacity_.load();
     disk_cache_capacity_ = 0L;
 
     if (need_write > 0) {

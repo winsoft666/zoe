@@ -105,17 +105,15 @@ Result SliceManager::loadExistSlice(int64_t cur_file_size,
     if (pre_file_size != cur_file_size) {
       OutputVerbose(
           options_->verbose_functor,
-          "[teemo] File size has changed, tmp file expired: %lld -> %lld.\n",
+          u8"[teemo] File size has changed, tmp file expired: %lld -> %lld.\n",
           pre_file_size, cur_file_size);
       return TMP_FILE_EXPIRED;
     }
     utf8string pre_content_md5 = j["content_md5"].get<utf8string>();
-    if (StringCaseConvert(pre_content_md5, EasyCharToLowerA) !=
-            StringCaseConvert(cur_content_md5, EasyCharToLowerA) &&
-        options_->content_md5_enabled) {
+    if (!StringHelper::IsEqual(pre_content_md5, cur_content_md5, true) && options_->content_md5_enabled) {
       OutputVerbose(
           options_->verbose_functor,
-          "[teemo] Content md5 has changed, tmp file expired: %s -> %s.\n",
+          u8"[teemo] Content md5 has changed, tmp file expired: %s -> %s.\n",
           pre_content_md5.c_str(), cur_content_md5.c_str());
       return TMP_FILE_EXPIRED;
     }
@@ -158,7 +156,7 @@ Result SliceManager::loadExistSlice(int64_t cur_file_size,
     target_file_ = target_file;
   } catch (const std::exception& e) {
     OutputVerbose(options_->verbose_functor,
-                  "[teemo] Load exist slice exception: %s.\n",
+                  u8"[teemo] Load exist slice exception: %s.\n",
                   e.what() ? e.what() : "");
     slices_.clear();
     return INVALID_INDEX_FORMAT;
@@ -166,8 +164,7 @@ Result SliceManager::loadExistSlice(int64_t cur_file_size,
 
   content_md5_ = cur_content_md5;
   origin_file_size_ = cur_file_size;
-  OutputVerbose(options_->verbose_functor,
-                "[teemo] Load exist slice success.\n");
+  OutputVerbose(options_->verbose_functor, u8"[teemo] Load exist slice success.\n");
   dumpSlice();
   return SUCCESSED;
 }
@@ -212,11 +209,9 @@ Result SliceManager::makeSlices(bool accept_ranges) {
   if (!target_file_->createNew(origin_file_size_)) {
 #if defined(WIN32) || defined(_WIN32) || defined(__WIN32__) || defined(__NT__)
     OutputVerbose(options_->verbose_functor,
-                  "[teemo] Create target file failed, GLE: %d.\n",
-                  GetLastError());
+                  u8"[teemo] Create target file failed, GLE: %d.\n", GetLastError());
 #else
-    OutputVerbose(options_->verbose_functor,
-                  "[teemo] Create target file failed.\n");
+    OutputVerbose(options_->verbose_functor, u8"[teemo] Create target file failed.\n");
 #endif
     return CREATE_TARGET_FILE_FAILED;
   }
@@ -321,11 +316,9 @@ Result SliceManager::isAllSliceCompletedClearly(bool try_check_hash) const {
             OutputVerbose(options_->verbose_functor, u8"[teemo] Start calculate temp file hash.\n");
 
             if (target_file_->calculateFileHash(options_, str_hash) == SUCCESSED) {
-              str_hash = StringCaseConvert(str_hash, EasyCharToLowerA);
-
               OutputVerbose(options_->verbose_functor, u8"[teemo] Temp file hash: %s.\n", str_hash.c_str());
 
-              if (str_hash != StringCaseConvert(options_->hash_value, EasyCharToLowerA)) {
+              if (!StringHelper::IsEqual(str_hash, options_->hash_value, true)) {
                 ret = HASH_VERIFY_NOT_PASS;
                 OutputVerbose(options_->verbose_functor, u8"[teemo] Hash check not pass.\n");
               }
@@ -345,10 +338,9 @@ Result SliceManager::isAllSliceCompletedClearly(bool try_check_hash) const {
         OutputVerbose(options_->verbose_functor, u8"[teemo] Start calculate temp file md5.\n");
         utf8string str_md5;
         if (target_file_->calculateFileMd5(options_, str_md5) == SUCCESSED) {
-          str_md5 = StringCaseConvert(str_md5, EasyCharToLowerA);
           OutputVerbose(options_->verbose_functor, u8"[teemo] Temp file md5: %s.\n", str_md5.c_str());
 
-          if (str_md5 != StringCaseConvert(content_md5_, EasyCharToLowerA)) {
+          if (!StringHelper::IsEqual(str_md5, content_md5_, true)) {
             ret = HASH_VERIFY_NOT_PASS;
             OutputVerbose(options_->verbose_functor, u8"[teemo] Hash check not pass.\n");
           }

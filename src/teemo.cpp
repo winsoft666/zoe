@@ -19,6 +19,7 @@
 #include "slice_manager.h"
 #include "options.h"
 #include "entry_handler.h"
+#include "string_helper.hpp"
 
 namespace teemo {
 const char* GetResultString(int enumVal) {
@@ -410,7 +411,7 @@ std::shared_future<Result> Teemo::start(
     });
   }
 
-  impl_->options_.url = url;
+  impl_->options_.url = StringHelper::Trim(url);
   impl_->options_.target_file_path = target_path_formatted;
   impl_->options_.result_functor = result_functor;
   impl_->options_.progress_functor = progress_functor;

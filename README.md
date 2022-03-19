@@ -6,7 +6,7 @@ English | [ 简体中文](README_ch.md)
 
 # 1. Introduction
 
-Although there are many mature and powerful download tools, such as `Free Download Manager`, `Aria2`, etc., but when I want to find one that supports multiple protocols (such as http, ftp), multi-threaded download, resumable download, cross-platform, open source libraries, I realized that it difficult to find satisfactory ones, especially those developed in C++. So I developed this download library named "teemo" based on libcurl, which can support the following features:
+Although there are many mature and powerful download tools, such as `Free Download Manager`, `Aria2`, etc., but when I want to find a file download library that supports multiple protocols (such as http, ftp), multi-threaded, resumable, cross-platform, open source, I realized that it's a difficult work, especially developed in C++. So I developed this download library named "teemo" based on libcurl, which can support the following features:
 
 ✅ Support Multi-protocol. Since teemo based on libcurl, so it supports all protocols that same as libcurl.
 

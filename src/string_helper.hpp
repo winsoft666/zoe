@@ -19,6 +19,7 @@
 #define TEEMO_STRING_HELPER_H_
 #pragma once
 
+#include "teemo/config.h"
 #include <string>
 #include <vector>
 #include <algorithm>

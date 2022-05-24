@@ -19,6 +19,7 @@
 #define TEEMO_TIME_METER_H_
 #pragma once
 
+#include "teemo/config.h"
 #include <stdint.h>
 #include <time.h>
 #include <ctime>

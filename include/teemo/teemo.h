@@ -22,6 +22,7 @@
 #include <memory>
 #include <future>
 #include <map>
+#include "config.h"
 
 #ifdef TEEMO_STATIC
 #define TEEMO_API
@@ -115,10 +116,10 @@ typedef std::function<void(int64_t byte_per_sec)> RealtimeSpeedFunctor;
 typedef std::function<void(const utf8string& verbose)> VerboseOuputFunctor;
 typedef std::multimap<utf8string, utf8string> HttpHeaders;
 
-class TEEMO_API Teemo {
+class TEEMO_API TEEMO {
  public:
-  Teemo();
-  ~Teemo();
+  TEEMO();
+  ~TEEMO();
 
   static void GlobalInit();
   static void GlobalUnInit();
@@ -273,8 +274,8 @@ class TEEMO_API Teemo {
   class TeemoImpl;
   TeemoImpl* impl_;
 
-  Teemo(const Teemo&) = delete;
-  Teemo& operator=(const Teemo&) = delete;
+  TEEMO(const TEEMO&) = delete;
+  TEEMO& operator=(const TEEMO&) = delete;
 };
 }  // namespace teemo
 #endif  // !TEEMO_H_

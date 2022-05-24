@@ -63,7 +63,7 @@ const char* GetResultString(int enumVal) {
   return EnumStrings[enumVal];
 }
 
-class Teemo::TeemoImpl {
+class TEEMO::TeemoImpl {
  public:
   TeemoImpl() {}
   ~TeemoImpl() {}
@@ -79,18 +79,18 @@ class Teemo::TeemoImpl {
   std::shared_ptr<EntryHandler> entry_handler_;
 };
 
-Teemo::Teemo() {
+TEEMO::TEEMO() {
   impl_ = new TeemoImpl();
 }
 
-Teemo::~Teemo() {
+TEEMO::~TEEMO() {
   if (impl_) {
     delete impl_;
     impl_ = nullptr;
   }
 }
 
-void Teemo::GlobalInit() {
+void TEEMO::GlobalInit() {
   static bool has_init = false;
   if (!has_init) {
     has_init = true;
@@ -98,16 +98,16 @@ void Teemo::GlobalInit() {
   }
 }
 
-void Teemo::GlobalUnInit() {
+void TEEMO::GlobalUnInit() {
   GlobalCurlUnInit();
 }
 
-void Teemo::setVerboseOutput(VerboseOuputFunctor verbose_functor) noexcept {
+void TEEMO::setVerboseOutput(VerboseOuputFunctor verbose_functor) noexcept {
   assert(impl_);
   impl_->options_.verbose_functor = verbose_functor;
 }
 
-Result Teemo::setThreadNum(int32_t thread_num) noexcept {
+Result TEEMO::setThreadNum(int32_t thread_num) noexcept {
   assert(impl_);
   if (impl_->isDownloading())
     return ALREADY_DOWNLOADING;
@@ -119,22 +119,22 @@ Result Teemo::setThreadNum(int32_t thread_num) noexcept {
   return SUCCESSED;
 }
 
-int32_t Teemo::threadNum() const noexcept {
+int32_t TEEMO::threadNum() const noexcept {
   assert(impl_);
   return impl_->options_.thread_num;
 }
 
-utf8string Teemo::url() const noexcept {
+utf8string TEEMO::url() const noexcept {
   assert(impl_);
   return impl_->options_.url;
 }
 
-utf8string Teemo::targetFilePath() const noexcept {
+utf8string TEEMO::targetFilePath() const noexcept {
   assert(impl_);
   return impl_->options_.target_file_path;
 }
 
-int64_t Teemo::originFileSize() const noexcept {
+int64_t TEEMO::originFileSize() const noexcept {
   assert(impl_);
   int64_t ret = -1;
   if (impl_ && impl_->entry_handler_)
@@ -142,21 +142,21 @@ int64_t Teemo::originFileSize() const noexcept {
   return ret;
 }
 
-DownloadState Teemo::state() const noexcept {
+DownloadState TEEMO::state() const noexcept {
   assert(impl_);
   if (impl_ && impl_->entry_handler_)
     return impl_->entry_handler_->state();
   return DownloadState::STOPPED;
 }
 
-std::shared_future<TEEMO_NAMESPACE::Result> Teemo::futureResult() noexcept {
+std::shared_future<TEEMO_NAMESPACE::Result> TEEMO::futureResult() noexcept {
   assert(impl_);
   if (impl_ && impl_->entry_handler_)
     return impl_->entry_handler_->futureResult();
   return std::shared_future<TEEMO_NAMESPACE::Result>();
 }
 
-Result Teemo::setNetworkConnectionTimeout(int32_t milliseconds) noexcept {
+Result TEEMO::setNetworkConnectionTimeout(int32_t milliseconds) noexcept {
   assert(impl_);
   if (milliseconds <= 0)
     milliseconds = TEEMO_DEFAULT_NETWORK_CONN_TIMEOUT_MS;
@@ -164,12 +164,12 @@ Result Teemo::setNetworkConnectionTimeout(int32_t milliseconds) noexcept {
   return SUCCESSED;
 }
 
-int32_t Teemo::networkConnectionTimeout() const noexcept {
+int32_t TEEMO::networkConnectionTimeout() const noexcept {
   assert(impl_);
   return impl_->options_.network_conn_timeout;
 }
 
-Result Teemo::setFetchFileInfoRetryTimes(int32_t retry_times) noexcept {
+Result TEEMO::setFetchFileInfoRetryTimes(int32_t retry_times) noexcept {
   assert(impl_);
   if (retry_times <= 0)
     retry_times = TEEMO_DEFAULT_FETCH_FILE_INFO_RETRY_TIMES;
@@ -177,35 +177,35 @@ Result Teemo::setFetchFileInfoRetryTimes(int32_t retry_times) noexcept {
   return SUCCESSED;
 }
 
-int32_t Teemo::fetchFileInfoRetryTimes() const noexcept {
+int32_t TEEMO::fetchFileInfoRetryTimes() const noexcept {
   assert(impl_);
   return impl_->options_.fetch_file_info_retry;
 }
 
-Result Teemo::setFetchFileInfoHeadMethod(bool use_head) noexcept {
+Result TEEMO::setFetchFileInfoHeadMethod(bool use_head) noexcept {
   assert(impl_);
   impl_->options_.use_head_method_fetch_file_info = use_head;
   return SUCCESSED;
 }
 
-bool Teemo::fetchFileInfoHeadMethod() const noexcept {
+bool TEEMO::fetchFileInfoHeadMethod() const noexcept {
   assert(impl_);
   return impl_->options_.use_head_method_fetch_file_info;
 }
 
-Result Teemo::setTmpFileExpiredTime(int32_t seconds) noexcept {
+Result TEEMO::setTmpFileExpiredTime(int32_t seconds) noexcept {
   assert(impl_);
   impl_->options_.tmp_file_expired_time = seconds;
 
   return SUCCESSED;
 }
 
-int32_t Teemo::tmpFileExpiredTime() const noexcept {
+int32_t TEEMO::tmpFileExpiredTime() const noexcept {
   assert(impl_);
   return impl_->options_.tmp_file_expired_time;
 }
 
-Result Teemo::setMaxDownloadSpeed(int32_t byte_per_seconds) noexcept {
+Result TEEMO::setMaxDownloadSpeed(int32_t byte_per_seconds) noexcept {
   assert(impl_);
   if (impl_->isDownloading())
     return ALREADY_DOWNLOADING;
@@ -216,12 +216,12 @@ Result Teemo::setMaxDownloadSpeed(int32_t byte_per_seconds) noexcept {
   return SUCCESSED;
 }
 
-int32_t Teemo::maxDownloadSpeed() const noexcept {
+int32_t TEEMO::maxDownloadSpeed() const noexcept {
   assert(impl_);
   return impl_->options_.max_speed;
 }
 
-Result Teemo::setMinDownloadSpeed(int32_t byte_per_seconds,
+Result TEEMO::setMinDownloadSpeed(int32_t byte_per_seconds,
                                   int32_t duration) noexcept {
   assert(impl_);
   if (impl_->isDownloading())
@@ -234,17 +234,17 @@ Result Teemo::setMinDownloadSpeed(int32_t byte_per_seconds,
   return SUCCESSED;
 }
 
-int32_t Teemo::minDownloadSpeed() const noexcept {
+int32_t TEEMO::minDownloadSpeed() const noexcept {
   assert(impl_);
   return impl_->options_.min_speed;
 }
 
-int32_t Teemo::minDownloadSpeedDuration() const noexcept {
+int32_t TEEMO::minDownloadSpeedDuration() const noexcept {
   assert(impl_);
   return impl_->options_.min_speed_duration;
 }
 
-Result Teemo::setDiskCacheSize(int32_t cache_size) noexcept {
+Result TEEMO::setDiskCacheSize(int32_t cache_size) noexcept {
   assert(impl_);
   if (impl_->isDownloading())
     return ALREADY_DOWNLOADING;
@@ -254,45 +254,45 @@ Result Teemo::setDiskCacheSize(int32_t cache_size) noexcept {
   return SUCCESSED;
 }
 
-int32_t Teemo::diskCacheSize() const noexcept {
+int32_t TEEMO::diskCacheSize() const noexcept {
   assert(impl_);
   return impl_->options_.disk_cache_size;
 }
 
-Result Teemo::setStopEvent(Event* stop_event) noexcept {
+Result TEEMO::setStopEvent(Event* stop_event) noexcept {
   assert(impl_);
   impl_->options_.user_stop_event = stop_event;
   return SUCCESSED;
 }
 
-Event* Teemo::stopEvent() noexcept {
+Event* TEEMO::stopEvent() noexcept {
   assert(impl_);
   return impl_->options_.user_stop_event;
 }
 
-Result Teemo::setRedirectedUrlCheckEnabled(bool enabled) noexcept {
+Result TEEMO::setRedirectedUrlCheckEnabled(bool enabled) noexcept {
   assert(impl_);
   impl_->options_.redirected_url_check_enabled = enabled;
   return SUCCESSED;
 }
 
-bool Teemo::redirectedUrlCheckEnabled() const noexcept {
+bool TEEMO::redirectedUrlCheckEnabled() const noexcept {
   assert(impl_);
   return impl_->options_.redirected_url_check_enabled;
 }
 
-Result Teemo::setContentMd5Enabled(bool enabled) noexcept {
+Result TEEMO::setContentMd5Enabled(bool enabled) noexcept {
   assert(impl_);
   impl_->options_.content_md5_enabled = enabled;
   return SUCCESSED;
 }
 
-bool Teemo::contentMd5Enabled() const noexcept {
+bool TEEMO::contentMd5Enabled() const noexcept {
   assert(impl_);
   return impl_->options_.content_md5_enabled;
 }
 
-Result Teemo::setSlicePolicy(SlicePolicy policy,
+Result TEEMO::setSlicePolicy(SlicePolicy policy,
                              int64_t policy_value) noexcept {
   assert(impl_);
   if (policy == FixedSize) {
@@ -318,14 +318,14 @@ Result Teemo::setSlicePolicy(SlicePolicy policy,
   return INVALID_SLICE_POLICY;
 }
 
-void Teemo::slicePolicy(SlicePolicy& policy, int64_t& policy_value) const
+void TEEMO::slicePolicy(SlicePolicy& policy, int64_t& policy_value) const
     noexcept {
   assert(impl_);
   policy = impl_->options_.slice_policy;
   policy_value = impl_->options_.slice_policy_value;
 }
 
-Result Teemo::setHashVerifyPolicy(HashVerifyPolicy policy,
+Result TEEMO::setHashVerifyPolicy(HashVerifyPolicy policy,
                                   HashType hash_type,
                                   const utf8string& hash_value) noexcept {
   assert(impl_);
@@ -339,7 +339,7 @@ Result Teemo::setHashVerifyPolicy(HashVerifyPolicy policy,
   return SUCCESSED;
 }
 
-void Teemo::hashVerifyPolicy(HashVerifyPolicy& policy,
+void TEEMO::hashVerifyPolicy(HashVerifyPolicy& policy,
                              HashType& hash_type,
                              utf8string& hash_value) const noexcept {
   assert(impl_);
@@ -348,43 +348,43 @@ void Teemo::hashVerifyPolicy(HashVerifyPolicy& policy,
   hash_value = impl_->options_.hash_value;
 }
 
-Result Teemo::setHttpHeaders(const HttpHeaders& headers) noexcept {
+Result TEEMO::setHttpHeaders(const HttpHeaders& headers) noexcept {
   assert(impl_);
   impl_->options_.http_headers = headers;
 
   return SUCCESSED;
 }
 
-HttpHeaders Teemo::httpHeaders() const noexcept {
+HttpHeaders TEEMO::httpHeaders() const noexcept {
   assert(impl_);
   return impl_->options_.http_headers;
 }
 
-Result Teemo::setProxy(const utf8string& proxy) noexcept {
+Result TEEMO::setProxy(const utf8string& proxy) noexcept {
   assert(impl_);
   impl_->options_.proxy = proxy;
 
   return SUCCESSED;
 }
 
-utf8string Teemo::proxy() const noexcept {
+utf8string TEEMO::proxy() const noexcept {
   assert(impl_);
   return impl_->options_.proxy;
 }
 
-Result Teemo::setUncompletedSliceSavePolicy(UncompletedSliceSavePolicy policy) noexcept {
+Result TEEMO::setUncompletedSliceSavePolicy(UncompletedSliceSavePolicy policy) noexcept {
   assert(impl_);
   impl_->options_.uncompleted_slice_save_policy = policy;
 
   return SUCCESSED;
 }
 
-UncompletedSliceSavePolicy Teemo::uncompletedSliceSavePolicy() const noexcept {
+UncompletedSliceSavePolicy TEEMO::uncompletedSliceSavePolicy() const noexcept {
   assert(impl_);
   return impl_->options_.uncompleted_slice_save_policy;
 }
 
-std::shared_future<Result> Teemo::start(
+std::shared_future<Result> TEEMO::start(
     const utf8string& url,
     const utf8string& target_file_path,
     ResultFunctor result_functor,
@@ -428,21 +428,21 @@ std::shared_future<Result> Teemo::start(
   return impl_->entry_handler_->start(&impl_->options_);
 }
 
-void Teemo::pause() noexcept {
+void TEEMO::pause() noexcept {
   assert(impl_);
   if (impl_ && impl_->entry_handler_) {
     impl_->entry_handler_->pause();
   }
 }
 
-void Teemo::resume() noexcept {
+void TEEMO::resume() noexcept {
   assert(impl_);
   if (impl_ && impl_->entry_handler_) {
     impl_->entry_handler_->resume();
   }
 }
 
-void Teemo::stop() noexcept {
+void TEEMO::stop() noexcept {
   assert(impl_);
   if (impl_ && impl_->entry_handler_) {
     impl_->entry_handler_->stop();

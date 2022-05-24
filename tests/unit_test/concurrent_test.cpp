@@ -26,11 +26,11 @@ TEST(ConcurrentTest, test1) {
   if (http_test_datas.size() < 2)
     return;
 
-  Teemo::GlobalInit();
+  TEEMO::GlobalInit();
   {
-    std::vector<std::shared_ptr<Teemo>> efds;
+    std::vector<std::shared_ptr<TEEMO>> efds;
     for (size_t i = 0; i < http_test_datas.size(); i++) {
-      std::shared_ptr<Teemo> t = std::make_shared<Teemo>();
+      std::shared_ptr<TEEMO> t = std::make_shared<TEEMO>();
       efds.push_back(t);
 
       t->setThreadNum(6);
@@ -56,5 +56,5 @@ TEST(ConcurrentTest, test1) {
       efds[i]->futureResult().wait();
     }
   }
-  Teemo::GlobalUnInit();
+  TEEMO::GlobalUnInit();
 }

@@ -26,7 +26,7 @@ void DoCancelTest(const std::vector<TestData>& test_datas, int thread_num) {
   for (const auto& test_data : test_datas) {
     Event cancel_event;
 
-    Teemo efd;
+    TEEMO efd;
     efd.setThreadNum(thread_num);
     efd.setStopEvent(&cancel_event);
     if (test_data.md5.length() > 0)

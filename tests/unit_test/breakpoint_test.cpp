@@ -24,7 +24,7 @@ using namespace TEEMO_NAMESPACE;
 void DoBreakpointTest(const std::vector<TestData>& test_datas, int thread_num) {
   for (const auto &test_data : test_datas) {
     std::future<void> test_task = std::async(std::launch::async, [test_data, thread_num]() {
-      Teemo efd;
+      TEEMO efd;
 
       efd.setThreadNum(thread_num / 2);
       if (test_data.md5.length() > 0)

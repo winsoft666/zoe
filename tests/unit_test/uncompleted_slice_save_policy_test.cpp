@@ -24,10 +24,10 @@ using namespace TEEMO_NAMESPACE;
 void DoTest(const std::vector<TestData>& test_datas,
             int thread_num,
             UncompletedSliceSavePolicy policy) {
-  Teemo::GlobalInit();
+  TEEMO::GlobalInit();
 
   for (const auto& test_data : test_datas) {
-    Teemo efd;
+    TEEMO efd;
 
     efd.setThreadNum(thread_num);
     if (test_data.md5.length() > 0)
@@ -66,7 +66,7 @@ void DoTest(const std::vector<TestData>& test_datas,
         .wait();
   }
 
-  Teemo::GlobalUnInit();
+  TEEMO::GlobalUnInit();
 }
 
 TEST(UncompletedSliceSavePolicyHttpTest, Http_DefaultThreadNum_ALWAYS_DISCARD) {

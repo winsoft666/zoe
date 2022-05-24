@@ -50,14 +50,18 @@ mark_as_advanced(DEBUG_LIBNAME_SUFFIX)
 
 set(TEEMO_NAMESPACE "teemo" 
 	CACHE STRING "Custom library's namespace")
+mark_as_advanced(TEEMO_NAMESPACE)
+
+set(TEEMO "Teemo" 
+	CACHE STRING "Custom library's export class name")
+mark_as_advanced(TEEMO)
 
 # Unicode Support
 add_definitions(-DUNICODE -D_UNICODE -DNOMINMAX)
 
-add_definitions(-DTEEMO_NAMESPACE=${TEEMO_NAMESPACE})
-
 set_property(GLOBAL PROPERTY USE_FOLDERS ON)
 
+configure_file(${CMAKE_CURRENT_SOURCE_DIR}/include/teemo/config.h.in ${CMAKE_CURRENT_SOURCE_DIR}/include/teemo/config.h @ONLY)
 
 include_directories(./include)
 

@@ -23,7 +23,7 @@ using namespace TEEMO_NAMESPACE;
 
 TEST(StopTest, NoWait) {
   EXPECT_NO_THROW({
-    Teemo t;
+    TEEMO t;
     t.stop();
   });
 }

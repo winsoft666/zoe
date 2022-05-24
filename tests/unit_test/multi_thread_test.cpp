@@ -22,10 +22,10 @@
 using namespace TEEMO_NAMESPACE;
 
 void DoTest(const std::vector<TestData>& test_datas, int thread_num) {
-  Teemo::GlobalInit();
+  TEEMO::GlobalInit();
 
   for (const auto& test_data : test_datas) {
-    Teemo efd;
+    TEEMO efd;
 
     efd.setThreadNum(thread_num);
     if (test_data.md5.length() > 0)
@@ -46,7 +46,7 @@ void DoTest(const std::vector<TestData>& test_datas, int thread_num) {
             .get();
   }
 
-  Teemo::GlobalUnInit();
+  TEEMO::GlobalUnInit();
 }
 
 TEST(MultiThreadHttpTest, Http_DefaultThreadNum) {

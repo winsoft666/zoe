@@ -17,6 +17,7 @@
 
 #include "string_encode.h"
 #if defined(WIN32) || defined(_WIN32) || defined(__WIN32__) || defined(__NT__)
+#include "teemo/config.h"
 #include <windows.h>
 
 namespace TEEMO_NAMESPACE {

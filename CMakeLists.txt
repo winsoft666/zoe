@@ -51,6 +51,7 @@ mark_as_advanced(DEBUG_LIBNAME_SUFFIX)
 # Unicode Support
 add_definitions(-DUNICODE -D_UNICODE -DNOMINMAX)
 
+add_definitions(-DTEEMO_NAMESPACE=teemo)
 
 set_property(GLOBAL PROPERTY USE_FOLDERS ON)
 

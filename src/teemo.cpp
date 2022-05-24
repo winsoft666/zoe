@@ -24,7 +24,7 @@
 #include "entry_handler.h"
 #include "string_helper.hpp"
 
-namespace teemo {
+namespace TEEMO_NAMESPACE {
 const char* GetResultString(int enumVal) {
   static const char* EnumStrings[] = {u8"SUCCESSED",
                                       u8"UNKNOWN_ERROR",

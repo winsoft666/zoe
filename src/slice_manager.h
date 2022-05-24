@@ -25,7 +25,7 @@
 #include "target_file.h"
 #include "slice.h"
 
-namespace teemo {
+namespace TEEMO_NAMESPACE {
 typedef struct _Options Options;
 
 class SliceManager : public std::enable_shared_from_this<SliceManager> {

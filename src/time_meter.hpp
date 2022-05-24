@@ -24,7 +24,7 @@
 #include <ctime>
 #include <limits>
 
-namespace teemo {
+namespace TEEMO_NAMESPACE {
 class TimeMeter {
  public:
   TimeMeter() { lStartTime_ = std::clock(); }

@@ -19,7 +19,7 @@
 #include "teemo/teemo.h"
 #include "test_data.h"
 #include <future>
-using namespace teemo;
+using namespace TEEMO_NAMESPACE;
 
 void DoBreakpointTest(const std::vector<TestData>& test_datas, int thread_num) {
   for (const auto &test_data : test_datas) {

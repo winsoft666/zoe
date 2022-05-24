@@ -18,7 +18,7 @@
 #include <stdint.h>
 #include "teemo/teemo.h"
 
-namespace teemo {
+namespace TEEMO_NAMESPACE {
 typedef struct _Options Options;
 namespace crc32_internal {
 void crc32Init(uint32_t* pCrc32);

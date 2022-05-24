@@ -31,7 +31,7 @@
 #endif
 
 struct curl_slist;
-namespace teemo {
+namespace TEEMO_NAMESPACE {
 class SliceManager;
 class Slice {
  public:

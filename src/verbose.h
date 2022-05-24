@@ -22,7 +22,7 @@
 
 #include "teemo/teemo.h"
 
-namespace teemo {
+namespace TEEMO_NAMESPACE {
   void OutputVerbose(VerboseOuputFunctor functor, const char* fmt, ...);
 }
 

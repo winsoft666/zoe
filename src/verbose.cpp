@@ -28,7 +28,7 @@
 #endif
 #include "string_encode.h"
 
-namespace teemo {
+namespace TEEMO_NAMESPACE {
 
 void OutputVerbose(VerboseOuputFunctor functor, const char* fmt, ...) {
   if (!fmt)

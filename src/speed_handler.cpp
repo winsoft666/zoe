@@ -19,7 +19,7 @@
 #include <functional>
 #include "options.h"
 
-namespace teemo {
+namespace TEEMO_NAMESPACE {
 SpeedHandler::SpeedHandler(int64_t already_download,
                            Options* options,
                            std::shared_ptr<SliceManager> slice_manager)

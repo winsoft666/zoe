@@ -41,7 +41,7 @@
 #endif
 #endif
 
-namespace teemo {
+namespace TEEMO_NAMESPACE {
 enum Result {
   SUCCESSED = 0,
   UNKNOWN_ERROR = 1,

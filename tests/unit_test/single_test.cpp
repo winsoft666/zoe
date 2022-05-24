@@ -19,7 +19,7 @@
 #include "teemo/teemo.h"
 #include "test_data.h"
 #include <future>
-using namespace teemo;
+using namespace TEEMO_NAMESPACE;
 
 TEST(SingleTest, test1) {
   if (http_test_datas.size() == 0)

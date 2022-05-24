@@ -35,7 +35,7 @@
     }                                                                                                                     \
   } while (false)
 
-namespace teemo {
+namespace TEEMO_NAMESPACE {
 
 Slice::Slice(int32_t index,
              int64_t begin,

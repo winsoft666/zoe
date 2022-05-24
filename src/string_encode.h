@@ -21,7 +21,7 @@
 
 #include <string>
 
-namespace teemo {
+namespace TEEMO_NAMESPACE {
 #if defined(WIN32) || defined(_WIN32) || defined(__WIN32__) || defined(__NT__)
 std::wstring Utf8ToUnicode(const std::string& str);
 std::string UnicodeToUtf8(const std::wstring& str);

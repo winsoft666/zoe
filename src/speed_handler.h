@@ -22,7 +22,7 @@
 #include "teemo/teemo.h"
 #include "slice_manager.h"
 
-namespace teemo {
+namespace TEEMO_NAMESPACE {
 typedef struct _Options Options;
 
 class SpeedHandler {

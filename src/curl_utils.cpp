@@ -21,7 +21,7 @@
 #include <openssl/crypto.h>
 #endif
 
-namespace teemo {
+namespace TEEMO_NAMESPACE {
 namespace {
 int THREAD_setup(void);
 int THREAD_cleanup(void);

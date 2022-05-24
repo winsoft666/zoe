@@ -22,7 +22,7 @@
 #include <stdio.h>
 #include "teemo/teemo.h"
 
-namespace teemo {
+namespace TEEMO_NAMESPACE {
   class FileUtil {
   public:
     static int64_t GetFileSize(FILE* f);

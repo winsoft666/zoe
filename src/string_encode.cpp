@@ -19,7 +19,7 @@
 #if defined(WIN32) || defined(_WIN32) || defined(__WIN32__) || defined(__NT__)
 #include <windows.h>
 
-namespace teemo {
+namespace TEEMO_NAMESPACE {
 std::wstring Utf8ToUnicode(const std::string& str) {
   std::wstring strRes;
   int iSize = ::MultiByteToWideChar(CP_UTF8, 0, str.c_str(), -1, NULL, 0);

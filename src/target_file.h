@@ -22,7 +22,7 @@
 #include "teemo/teemo.h"
 #include <mutex>
 
-namespace teemo {
+namespace TEEMO_NAMESPACE {
 typedef struct _Options Options;
 
 class TargetFile {

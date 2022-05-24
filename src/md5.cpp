@@ -3,7 +3,7 @@
 #include "file_util.h"
 #include "options.h"
 
-namespace teemo {
+namespace TEEMO_NAMESPACE {
 namespace libmd5_internal {
 /*
  * This code implements the MD5 message-digest algorithm.

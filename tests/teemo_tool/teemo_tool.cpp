@@ -32,7 +32,7 @@
 #include <unistd.h>
 #endif
 
-using namespace teemo;
+using namespace TEEMO_NAMESPACE;
 Teemo efd;
 std::mutex console_mutex;
 

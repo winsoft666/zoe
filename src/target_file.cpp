@@ -25,7 +25,7 @@
 #include "sha256.h"
 #include "filesystem.hpp"
 
-namespace teemo {
+namespace TEEMO_NAMESPACE {
 
 TargetFile::TargetFile(const utf8string& file_path)
     : file_path_(file_path), f_(nullptr), fixed_size_(0L), file_seek_pos_(0L) {}

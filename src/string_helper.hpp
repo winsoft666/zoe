@@ -26,7 +26,7 @@
 #include <cwctype>
 #include <iterator>
 
-namespace teemo {
+namespace TEEMO_NAMESPACE {
 class StringHelper {
  public:
   static char EasyCharToLowerA(char in) {

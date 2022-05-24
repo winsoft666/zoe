@@ -19,7 +19,7 @@
 #include "teemo/teemo.h"
 #include "test_data.h"
 #include <future>
-using namespace teemo;
+using namespace TEEMO_NAMESPACE;
 
 void DoTest(const std::vector<TestData>& test_datas, int thread_num) {
   Teemo::GlobalInit();

@@ -19,7 +19,7 @@
 #include "gtest/gtest.h"
 #include "teemo/teemo.h"
 #include "test_data.h"
-using namespace teemo;
+using namespace TEEMO_NAMESPACE;
 
 void DoTest(const std::vector<TestData>& test_datas, int thread_num, int32_t disk_cache) {
   Teemo::GlobalInit();

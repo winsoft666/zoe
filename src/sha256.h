@@ -22,7 +22,7 @@
 
 #include "teemo/teemo.h"
 
-namespace teemo {
+namespace TEEMO_NAMESPACE {
 typedef struct _Options Options;
 
 namespace sha256_internal {

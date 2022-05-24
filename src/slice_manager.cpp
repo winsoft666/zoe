@@ -35,7 +35,7 @@ using json = nlohmann::json;
 #define INDEX_FILE_SIGN_STRING "TEEMO:EASY-FILE-DOWNLOAD(2.0)"
 #define TMP_FILE_EXTENSION ".teemo"
 
-namespace teemo {
+namespace TEEMO_NAMESPACE {
 SliceManager::SliceManager(Options* options, const utf8string& redirect_url)
     : options_(options)
     , redirect_url_(redirect_url)

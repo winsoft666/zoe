@@ -20,7 +20,7 @@
 #include "test_data.h"
 #include <future>
 #include <vector>
-using namespace teemo;
+using namespace TEEMO_NAMESPACE;
 
 TEST(ConcurrentTest, test1) {
   if (http_test_datas.size() < 2)

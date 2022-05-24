@@ -21,7 +21,7 @@
 
 #include "curl/curl.h"
 
-namespace teemo {
+namespace TEEMO_NAMESPACE {
 void GlobalCurlInit();
 void GlobalCurlUnInit();
 

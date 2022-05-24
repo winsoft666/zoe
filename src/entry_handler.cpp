@@ -33,7 +33,7 @@
     }                                                                                                    \
   } while (false)
 
-namespace teemo {
+namespace TEEMO_NAMESPACE {
 
 utf8string bool2string(bool b) {
   return (b ? "true" : "false");

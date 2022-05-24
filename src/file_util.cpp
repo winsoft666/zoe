@@ -32,7 +32,7 @@
 #include "string_encode.h"
 #include "filesystem.hpp"
 
-namespace teemo {
+namespace TEEMO_NAMESPACE {
 
 #if defined(WIN32) || defined(_WIN32) || defined(__WIN32__) || defined(__NT__)
 #define PATH_SEPARATOR '\\'

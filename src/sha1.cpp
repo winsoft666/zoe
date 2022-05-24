@@ -5,7 +5,7 @@
 #include "file_util.h"
 #include "options.h"
 
-namespace teemo {
+namespace TEEMO_NAMESPACE {
 
 namespace {
 typedef union {

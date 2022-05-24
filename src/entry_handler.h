@@ -26,7 +26,7 @@
 #include "options.h"
 #include "curl_utils.h"
 
-namespace teemo {
+namespace TEEMO_NAMESPACE {
 
 class EntryHandler {
  public:

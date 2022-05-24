@@ -4,7 +4,7 @@
 #include "file_util.h"
 #include "options.h"
 
-namespace teemo {
+namespace TEEMO_NAMESPACE {
 namespace sha256_internal {
 /* A block, treated as a sequence of 32-bit words. */
 #define SHA256_DATA_LENGTH 16

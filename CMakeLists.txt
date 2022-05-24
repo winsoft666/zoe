@@ -48,10 +48,13 @@ set(DEBUG_LIBNAME_SUFFIX "-d"
 	CACHE STRING "Optional suffix to append to the library name for a debug build")
 mark_as_advanced(DEBUG_LIBNAME_SUFFIX)
 
+set(TEEMO_NAMESPACE "teemo" 
+	CACHE STRING "Custom library's namespace")
+
 # Unicode Support
 add_definitions(-DUNICODE -D_UNICODE -DNOMINMAX)
 
-add_definitions(-DTEEMO_NAMESPACE=teemo)
+add_definitions(-DTEEMO_NAMESPACE=${TEEMO_NAMESPACE})
 
 set_property(GLOBAL PROPERTY USE_FOLDERS ON)
 

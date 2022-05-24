@@ -48,6 +48,11 @@ file(GLOB SOURCE_FILES 		./*.cpp ./*.h ./*.hpp)
 source_group("Source Files" 			FILES ${SOURCE_FILES})
 source_group("Header Files" 			FILES ${HEADER_FILES})
 
+if(BUILD_SHARED_LIBS AND MSVC)
+  file(GLOB_RECURSE RES_FILES "*.rc") 
+  source_group("Resources" ${RES_FILES})
+endif()
+
 if(BUILD_SHARED_LIBS)
 	add_definitions(-DTEEMO_EXPORTS)
 	
@@ -56,6 +61,7 @@ if(BUILD_SHARED_LIBS)
 		SHARED
 		${HEADER_FILES}
 		${SOURCE_FILES}
+		${RES_FILES}
 	)
 	
 	# set output name prefix/suffix

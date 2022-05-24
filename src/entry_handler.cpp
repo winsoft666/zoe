@@ -137,7 +137,7 @@ int64_t EntryHandler::originFileSize() const {
   return -1;
 }
 
-teemo::Options* EntryHandler::options() {
+TEEMO_NAMESPACE::Options* EntryHandler::options() {
   return options_;
 }
 
@@ -145,7 +145,7 @@ DownloadState EntryHandler::state() const {
   return state_.load();
 }
 
-std::shared_future<teemo::Result> EntryHandler::futureResult() {
+std::shared_future<TEEMO_NAMESPACE::Result> EntryHandler::futureResult() {
   return async_task_;
 }
 

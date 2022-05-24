@@ -48,7 +48,7 @@ SliceManager::~SliceManager() {
   target_file_.reset();
 }
 
-std::shared_ptr<teemo::Slice> SliceManager::getSlice(void* curlHandle) {
+std::shared_ptr<TEEMO_NAMESPACE::Slice> SliceManager::getSlice(void* curlHandle) {
   for (auto& s : slices_) {
     if (s->curlHandle() == curlHandle)
       return s;
@@ -56,7 +56,7 @@ std::shared_ptr<teemo::Slice> SliceManager::getSlice(void* curlHandle) {
   return nullptr;
 }
 
-std::shared_ptr<teemo::Slice> SliceManager::getSlice(Slice::Status status) {
+std::shared_ptr<TEEMO_NAMESPACE::Slice> SliceManager::getSlice(Slice::Status status) {
   for (auto& s : slices_) {
     if (s && s->status() == status) {
       return s;

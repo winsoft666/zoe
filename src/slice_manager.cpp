@@ -108,7 +108,7 @@ Result SliceManager::loadExistSlice(int64_t cur_file_size,
     if (pre_file_size != cur_file_size) {
       OutputVerbose(
           options_->verbose_functor,
-          u8"[teemo] File size has changed, tmp file expired: %lld -> %lld.\n",
+          u8"File size has changed, tmp file expired: %lld -> %lld.\n",
           pre_file_size, cur_file_size);
       return TMP_FILE_EXPIRED;
     }
@@ -116,7 +116,7 @@ Result SliceManager::loadExistSlice(int64_t cur_file_size,
     if (!StringHelper::IsEqual(pre_content_md5, cur_content_md5, true) && options_->content_md5_enabled) {
       OutputVerbose(
           options_->verbose_functor,
-          u8"[teemo] Content md5 has changed, tmp file expired: %s -> %s.\n",
+          u8"Content md5 has changed, tmp file expired: %s -> %s.\n",
           pre_content_md5.c_str(), cur_content_md5.c_str());
       return TMP_FILE_EXPIRED;
     }
@@ -159,7 +159,7 @@ Result SliceManager::loadExistSlice(int64_t cur_file_size,
     target_file_ = target_file;
   } catch (const std::exception& e) {
     OutputVerbose(options_->verbose_functor,
-                  u8"[teemo] Load exist slice exception: %s.\n",
+                  u8"Load exist slice exception: %s.\n",
                   e.what() ? e.what() : "");
     slices_.clear();
     return INVALID_INDEX_FORMAT;
@@ -167,7 +167,7 @@ Result SliceManager::loadExistSlice(int64_t cur_file_size,
 
   content_md5_ = cur_content_md5;
   origin_file_size_ = cur_file_size;
-  OutputVerbose(options_->verbose_functor, u8"[teemo] Load exist slice success.\n");
+  OutputVerbose(options_->verbose_functor, u8"Load exist slice success.\n");
   dumpSlice();
   return SUCCESSED;
 }
@@ -212,9 +212,9 @@ Result SliceManager::makeSlices(bool accept_ranges) {
   if (!target_file_->createNew(origin_file_size_)) {
 #if defined(WIN32) || defined(_WIN32) || defined(__WIN32__) || defined(__NT__)
     OutputVerbose(options_->verbose_functor,
-                  u8"[teemo] Create target file failed, GLE: %d.\n", GetLastError());
+                  u8"Create target file failed, GLE: %d.\n", GetLastError());
 #else
-    OutputVerbose(options_->verbose_functor, u8"[teemo] Create target file failed.\n");
+    OutputVerbose(options_->verbose_functor, u8"Create target file failed.\n");
 #endif
     return CREATE_TARGET_FILE_FAILED;
   }
@@ -300,7 +300,7 @@ Result SliceManager::isAllSliceCompletedClearly(bool try_check_hash) const {
     if (origin_file_size_ != -1L) {
       const int64_t totalDwn = totalDownloaded();
       if (totalDwn != origin_file_size_) {
-        OutputVerbose(options_->verbose_functor, u8"[teemo] Slices total size(%" PRId64 ") not qualified(%" PRId64 ").\n", totalDwn, origin_file_size_);
+        OutputVerbose(options_->verbose_functor, u8"Slices total size(%" PRId64 ") not qualified(%" PRId64 ").\n", totalDwn, origin_file_size_);
         ret = SLICE_DOWNLOAD_FAILED;
         break;
       }
@@ -316,44 +316,44 @@ Result SliceManager::isAllSliceCompletedClearly(bool try_check_hash) const {
         if (options_->hash_verify_policy == ALWAYS || (options_->hash_verify_policy == ONLY_NO_FILESIZE && origin_file_size_ == -1L)) {
           if (target_file_) {
             utf8string str_hash;
-            OutputVerbose(options_->verbose_functor, u8"[teemo] Start calculate temp file hash.\n");
+            OutputVerbose(options_->verbose_functor, u8"Start calculate temp file hash.\n");
 
             if (target_file_->calculateFileHash(options_, str_hash) == SUCCESSED) {
-              OutputVerbose(options_->verbose_functor, u8"[teemo] Temp file hash: %s.\n", str_hash.c_str());
+              OutputVerbose(options_->verbose_functor, u8"Temp file hash: %s.\n", str_hash.c_str());
 
               if (!StringHelper::IsEqual(str_hash, options_->hash_value, true)) {
                 ret = HASH_VERIFY_NOT_PASS;
-                OutputVerbose(options_->verbose_functor, u8"[teemo] Hash check not pass.\n");
+                OutputVerbose(options_->verbose_functor, u8"Hash check not pass.\n");
               }
               else {
                 ret = SUCCESSED;
-                OutputVerbose(options_->verbose_functor, u8"[teemo] Hash check passed.\n");
+                OutputVerbose(options_->verbose_functor, u8"Hash check passed.\n");
               }
             }
             else {
-              OutputVerbose(options_->verbose_functor, u8"[teemo] Calculate temp file hash failed.\n");
+              OutputVerbose(options_->verbose_functor, u8"Calculate temp file hash failed.\n");
               ret = CALCULATE_HASH_FAILED;
             }
           }
         }
       }
       else if (content_md5_.length() > 0 && options_->content_md5_enabled) {
-        OutputVerbose(options_->verbose_functor, u8"[teemo] Start calculate temp file md5.\n");
+        OutputVerbose(options_->verbose_functor, u8"Start calculate temp file md5.\n");
         utf8string str_md5;
         if (target_file_->calculateFileMd5(options_, str_md5) == SUCCESSED) {
-          OutputVerbose(options_->verbose_functor, u8"[teemo] Temp file md5: %s.\n", str_md5.c_str());
+          OutputVerbose(options_->verbose_functor, u8"Temp file md5: %s.\n", str_md5.c_str());
 
           if (!StringHelper::IsEqual(str_md5, content_md5_, true)) {
             ret = HASH_VERIFY_NOT_PASS;
-            OutputVerbose(options_->verbose_functor, u8"[teemo] Hash check not pass.\n");
+            OutputVerbose(options_->verbose_functor, u8"Hash check not pass.\n");
           }
           else {
             ret = SUCCESSED;
-            OutputVerbose(options_->verbose_functor, u8"[teemo] Hash check passed.\n");
+            OutputVerbose(options_->verbose_functor, u8"Hash check passed.\n");
           }
         }
         else {
-          OutputVerbose(options_->verbose_functor, u8"[teemo] Calculate temp file md5 failed.\n");
+          OutputVerbose(options_->verbose_functor, u8"Calculate temp file md5 failed.\n");
           ret = CALCULATE_HASH_FAILED;
         }
       }
@@ -365,7 +365,7 @@ Result SliceManager::isAllSliceCompletedClearly(bool try_check_hash) const {
 
 Result SliceManager::finishDownloadProgress(bool need_check_completed, void* mult) {
   // first of all, flush buffer to disk
-  OutputVerbose(options_->verbose_functor, u8"[teemo] Start flushing cache to disk.\n");
+  OutputVerbose(options_->verbose_functor, u8"Start flushing cache to disk.\n");
   Result stop_ret = SUCCESSED;
   for (auto& s : slices_) {
     assert(s);
@@ -378,7 +378,7 @@ Result SliceManager::finishDownloadProgress(bool need_check_completed, void* mul
 
   // then flush index file.
   if (!flushIndexFile()) {
-    OutputVerbose(options_->verbose_functor, u8"[teemo] Flush index file failed.\n");
+    OutputVerbose(options_->verbose_functor, u8"Flush index file failed.\n");
   }
 
   // check stop operate result
@@ -400,7 +400,7 @@ Result SliceManager::finishDownloadProgress(bool need_check_completed, void* mul
     error_code = GetLastError();
 #endif
     OutputVerbose(options_->verbose_functor,
-                  u8"[teemo] Rename file failed, GLE: %u, %s => %s.\n",
+                  u8"Rename file failed, GLE: %u, %s => %s.\n",
                   error_code, target_file_->filePath().c_str(),
                   options_->target_file_path.c_str());
     return RENAME_TMP_FILE_FAILED;
@@ -408,10 +408,10 @@ Result SliceManager::finishDownloadProgress(bool need_check_completed, void* mul
 
   if (!FileUtil::RemoveFile(index_file_path_)) {
     // do not return failed
-    OutputVerbose(options_->verbose_functor, u8"[teemo] Remove index file failed.\n");
+    OutputVerbose(options_->verbose_functor, u8"Remove index file failed.\n");
   }
 
-  OutputVerbose(options_->verbose_functor, u8"[teemo] Flush cache to disk successful.\n");
+  OutputVerbose(options_->verbose_functor, u8"Flush cache to disk successful.\n");
 
   return SUCCESSED;
 }

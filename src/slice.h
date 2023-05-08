@@ -15,8 +15,8 @@
 *    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 ******************************************************************************/
 
-#ifndef TEEMO_SLICE_H_
-#define TEEMO_SLICE_H_
+#ifndef LIBGET_SLICE_H_
+#define LIBGET_SLICE_H_
 #pragma once
 
 #include <string>
@@ -31,7 +31,7 @@
 #endif
 
 struct curl_slist;
-namespace TEEMO_NAMESPACE {
+namespace LIBGET_NAMESPACE {
 class SliceManager;
 class Slice {
  public:
@@ -102,5 +102,5 @@ class Slice {
   pthread_mutex_t mutex_;
 #endif
 };
-}  // namespace teemo
-#endif  // !TEEMO_SLICE_H_
+}  // namespace libGet
+#endif  // !LIBGET_SLICE_H_

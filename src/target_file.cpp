@@ -25,7 +25,7 @@
 #include "sha256.h"
 #include "filesystem.hpp"
 
-namespace TEEMO_NAMESPACE {
+namespace LIBGET_NAMESPACE {
 
 TargetFile::TargetFile(const utf8string& file_path)
     : file_path_(file_path), f_(nullptr), fixed_size_(0L), file_seek_pos_(0L) {}
@@ -186,4 +186,4 @@ bool TargetFile::isOpened() const {
   return f_ != nullptr;
 }
 
-}  // namespace teemo
+}  // namespace libGet

@@ -35,7 +35,7 @@
     }                                                                                                                     \
   } while (false)
 
-namespace TEEMO_NAMESPACE {
+namespace LIBGET_NAMESPACE {
 
 Slice::Slice(int32_t index,
              int64_t begin,
@@ -441,4 +441,4 @@ bool Slice::onNewData(const char* p, long data_size) {
 
   return bret;
 }
-}  // namespace teemo
+}  // namespace libGet

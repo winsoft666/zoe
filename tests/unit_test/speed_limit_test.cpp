@@ -16,18 +16,18 @@
 ******************************************************************************/
 
 #include "gtest/gtest.h"
-#include "teemo/teemo.h"
+#include "libGet/libGet.h"
 #include "test_data.h"
 #include <future>
-using namespace TEEMO_NAMESPACE;
+using namespace LIBGET_NAMESPACE;
 
 TEST(SpeedLimitTest, test1) {
   if (http_test_datas.empty())
     return;
 
-  TEEMO::GlobalInit();
+  LIBGET::GlobalInit();
   {
-    TEEMO efd1;
+    LIBGET efd1;
 
     efd1.setThreadNum(3);
     efd1.setHashVerifyPolicy(ALWAYS, MD5, http_test_datas[0].md5);
@@ -43,7 +43,7 @@ TEST(SpeedLimitTest, test1) {
 
     future_result1.wait();
   }
-  TEEMO::GlobalUnInit();
+  LIBGET::GlobalUnInit();
 
   // set test case interval
   std::this_thread::sleep_for(std::chrono::milliseconds(5000));

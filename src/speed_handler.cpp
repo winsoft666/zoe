@@ -19,7 +19,7 @@
 #include <functional>
 #include "options.h"
 
-namespace TEEMO_NAMESPACE {
+namespace LIBGET_NAMESPACE {
 SpeedHandler::SpeedHandler(int64_t already_download,
                            Options* options,
                            std::shared_ptr<SliceManager> slice_manager)
@@ -57,4 +57,4 @@ void SpeedHandler::asyncTaskProcess() {
   }
 }
 
-}  // namespace teemo
+}  // namespace libGet

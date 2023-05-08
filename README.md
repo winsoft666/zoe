@@ -1,14 +1,14 @@
-[![Build Status](https://travis-ci.com/winsoft666/teemo.svg?branch=master)](https://travis-ci.com/winsoft666/teemo) 
-[![Vcpkg package](https://img.shields.io/badge/Vcpkg-package-blueviolet)](https://github.com/microsoft/vcpkg/tree/master/ports/teemo)
-[![badge](https://img.shields.io/badge/license-GUN-blue)](https://github.com/winsoft666/teemo/blob/master/LICENSE)
+[![Build Status](https://travis-ci.com/winsoft666/libGet.svg?branch=master)](https://travis-ci.com/winsoft666/libGet) 
+[![Vcpkg package](https://img.shields.io/badge/Vcpkg-package-blueviolet)](https://github.com/microsoft/vcpkg/tree/master/ports/libGet)
+[![badge](https://img.shields.io/badge/license-GUN-blue)](https://github.com/winsoft666/libGet/blob/master/LICENSE)
 
 English | [ 简体中文](README_ch.md)
 
 # 1. Introduction
 
-Although there are many mature and powerful download tools, such as `Free Download Manager`, `Aria2`, etc., but when I want to find a file download library that supports multiple protocols (such as http, ftp), multi-threaded, resumable, cross-platform, open source, I realized that it's a difficult work, especially developed in C++. So I developed this download library named "teemo" based on libcurl, which can support the following features:
+Although there are many mature and powerful download tools, such as `Free Download Manager`, `Aria2`, etc., but when I want to find a file download library that supports multiple protocols (such as http, ftp), multi-threaded, resumable, cross-platform, open source, I realized that it's a difficult work, especially developed in C++. So I developed this download library named "libGet" based on libcurl, which can support the following features:
 
-✅ Support Multi-protocol. Since teemo based on libcurl, so it supports all protocols that same as libcurl.
+✅ Support Multi-protocol. Since libGet based on libcurl, so it supports all protocols that same as libcurl.
 
 ✅ Support multi-threaded download.
 
@@ -32,7 +32,7 @@ Although there are many mature and powerful download tools, such as `Free Downlo
 
 # 2. Compile and Install
 ## Method 1: Using with vcpkg
-The `teemo` library has been included in Microsoft's [vcpkg](https://github.com/microsoft/vcpkg/tree/master/ports/teemo), you can use the following command to install `teemo`:
+The `libGet` library has been included in Microsoft's [vcpkg](https://github.com/microsoft/vcpkg/tree/master/ports/libGet), you can use the following command to install `libGet`:
 - 1) Clone and setup vcpkg (See more detail on [https://github.com/microsoft/vcpkg](https://github.com/microsoft/vcpkg))
 ```bash
 git clone https://github.com/Microsoft/vcpkg.git
@@ -41,10 +41,10 @@ PS> bootstrap-vcpkg.bootstrap
 Linux:~/$ ./bootstrap-vcpkg.sh
 ```
 
-- 2) Install teemo
+- 2) Install libGet
 ```bash
-PS> .\vcpkg install teemo [--triplet x64-windows-static/x64-windows/x64-windows-static-md and etc...]
-Linux:~/$ ./vcpkg install teemo
+PS> .\vcpkg install libGet [--triplet x64-windows-static/x64-windows/x64-windows-static-md and etc...]
+Linux:~/$ ./vcpkg install libGet
 ```
 
 
@@ -69,7 +69,7 @@ unit test project depend on gtest.
 vcpkg install gtest:x86-windows
 ```
 
-### Step 2: Compile teemo
+### Step 2: Compile libGet
 Firstly using CMake to generate project or makefile, then comiple it:
 
 **Windows Sample**
@@ -93,10 +93,10 @@ make
 # 3. Getting Started
 ```c++
 #include <iostream>
-#include "teemo.h"
+#include "libGet.h"
 
 int main(int argc, char** argv) {
-  using namespace teemo;
+  using namespace libGet;
 
   Teemo::GlobalInit();
 
@@ -138,11 +138,11 @@ int main(int argc, char** argv) {
 ---
 
 # 4. Command-line tool
-`teemo` is command-line download tool based on `teemo` library. 
+`libGet` is command-line download tool based on `libGet` library. 
 
 Usage:
 ```bash
-teemo_tool URL TargetFilePath [ThreadNum] [DiskCacheMb] [MD5] [TmpExpiredSeconds] [MaxSpeed]
+libGet_tool URL TargetFilePath [ThreadNum] [DiskCacheMb] [MD5] [TmpExpiredSeconds] [MaxSpeed]
 ```
 
 - URL: Download URL.

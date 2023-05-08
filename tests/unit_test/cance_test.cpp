@@ -17,16 +17,16 @@
 
 #include "gtest/gtest.h"
 #include "test_data.h"
-#include "teemo/teemo.h"
+#include "libGet/libGet.h"
 #include "test_data.h"
 #include <future>
-using namespace TEEMO_NAMESPACE;
+using namespace LIBGET_NAMESPACE;
 
 void DoCancelTest(const std::vector<TestData>& test_datas, int thread_num) {
   for (const auto& test_data : test_datas) {
     Event cancel_event;
 
-    TEEMO efd;
+    LIBGET efd;
     efd.setThreadNum(thread_num);
     efd.setStopEvent(&cancel_event);
     if (test_data.md5.length() > 0)

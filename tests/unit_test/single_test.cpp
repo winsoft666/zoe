@@ -16,19 +16,19 @@
 ******************************************************************************/
 
 #include "gtest/gtest.h"
-#include "teemo/teemo.h"
+#include "libGet/libGet.h"
 #include "test_data.h"
 #include <future>
-using namespace TEEMO_NAMESPACE;
+using namespace LIBGET_NAMESPACE;
 
 TEST(SingleTest, test1) {
   if (http_test_datas.size() == 0)
     return;
   TestData test_data = http_test_datas[0];
 
-  TEEMO::GlobalInit();
+  LIBGET::GlobalInit();
   {
-    TEEMO efd;
+    LIBGET efd;
     efd.setThreadNum(6);
     efd.setSlicePolicy(SlicePolicy::FixedNum, 10);
     if (test_data.md5.length() > 0)
@@ -48,5 +48,5 @@ TEST(SingleTest, test1) {
 
     EXPECT_TRUE(future_result.get() == SUCCESSED);
   }
-  TEEMO::GlobalUnInit();
+  LIBGET::GlobalUnInit();
 }

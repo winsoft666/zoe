@@ -16,13 +16,13 @@
 ******************************************************************************/
 
 
-#ifndef TEEMO_VERBOSE_H_
-#define TEEMO_VERBOSE_H_
+#ifndef LIBGET_VERBOSE_H_
+#define LIBGET_VERBOSE_H_
 #pragma once
 
-#include "teemo/teemo.h"
+#include "libGet/libGet.h"
 
-namespace TEEMO_NAMESPACE {
+namespace LIBGET_NAMESPACE {
   void OutputVerbose(VerboseOuputFunctor functor, const char* fmt, ...);
 }
 

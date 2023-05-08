@@ -31,7 +31,7 @@ if (MSVC AND USE_STATIC_CRT)
 endif()
 
 if (NOT BUILD_SHARED_LIBS)
-	add_definitions(-DTEEMO_STATIC)
+	add_definitions(-DLIBGET_STATIC)
 endif()
 
 include_directories(../../src)
@@ -65,15 +65,15 @@ add_test(NAME unit
 COMMAND ${CMAKE_BINARY_DIR}/${CMAKE_INSTALL_BINDIR}/unit_tests)
 
 if(BUILD_SHARED_LIBS)
-	add_dependencies(${EXE_NAME} teemo)
+	add_dependencies(${EXE_NAME} libGet)
 	
 	target_link_libraries(${EXE_NAME} 
-		$<TARGET_LINKER_FILE:teemo> )
+		$<TARGET_LINKER_FILE:libGet> )
 else()
-	add_dependencies(${EXE_NAME} teemo-static)
+	add_dependencies(${EXE_NAME} libGet-static)
 	
 	target_link_libraries(${EXE_NAME} 
-		$<TARGET_LINKER_FILE:teemo-static> )
+		$<TARGET_LINKER_FILE:libGet-static> )
 
 endif()
 

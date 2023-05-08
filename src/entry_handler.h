@@ -15,8 +15,8 @@
 *    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 ******************************************************************************/
 
-#ifndef TEEMO_ENTRY_HANDLER_H__
-#define TEEMO_ENTRY_HANDLER_H__
+#ifndef LIBGET_ENTRY_HANDLER_H__
+#define LIBGET_ENTRY_HANDLER_H__
 #pragma once
 
 #include <memory>
@@ -26,7 +26,7 @@
 #include "options.h"
 #include "curl_utils.h"
 
-namespace TEEMO_NAMESPACE {
+namespace LIBGET_NAMESPACE {
 
 class EntryHandler {
  public:
@@ -90,5 +90,5 @@ class EntryHandler {
 
   std::atomic<DownloadState> state_;
 };
-}  // namespace teemo
-#endif  // !TEEMO_ENTRY_HANDLER_H__
+}  // namespace libGet
+#endif  // !LIBGET_ENTRY_HANDLER_H__

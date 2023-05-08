@@ -15,14 +15,14 @@
 *    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 ******************************************************************************/
 
-#ifndef TEEMO_FILE_UTIL_H__
-#define TEEMO_FILE_UTIL_H__
+#ifndef LIBGET_FILE_UTIL_H__
+#define LIBGET_FILE_UTIL_H__
 #pragma once
 
 #include <stdio.h>
-#include "teemo/teemo.h"
+#include "libGet/libGet.h"
 
-namespace TEEMO_NAMESPACE {
+namespace LIBGET_NAMESPACE {
   class FileUtil {
   public:
     static int64_t GetFileSize(FILE* f);
@@ -42,6 +42,6 @@ namespace TEEMO_NAMESPACE {
     static bool CreateFixedSizeFile(const utf8string& path, int64_t fixed_size);
     static bool PathFormatting(const utf8string& path, utf8string& formatted);
   };
-}  // namespace teemo
+}  // namespace libGet
 
 #endif

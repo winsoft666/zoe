@@ -1,0 +1,8 @@
+﻿#ifndef LIBGET_CONFIG_H__
+#define LIBGET_CONFIG_H__
+#pragma once
+
+#cmakedefine LIBGET_NAMESPACE @LIBGET_NAMESPACE@
+#cmakedefine LIBGET @LIBGET@
+
+#endif //!LIBGET_CONFIG_H__

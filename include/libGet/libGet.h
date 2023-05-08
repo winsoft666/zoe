@@ -14,8 +14,8 @@
 *    You should have received a copy of the GNU General Public License
 *    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 ******************************************************************************/
-#ifndef TEEMO_H_
-#define TEEMO_H_
+#ifndef LIBGET_H_
+#define LIBGET_H_
 #pragma once
 
 #include <string>
@@ -24,25 +24,25 @@
 #include <map>
 #include "config.h"
 
-#ifdef TEEMO_STATIC
-#define TEEMO_API
+#ifdef LIBGET_STATIC
+#define LIBGET_API
 #else
-#if defined(TEEMO_EXPORTS)
+#if defined(LIBGET_EXPORTS)
 #if defined(_MSC_VER)
-#define TEEMO_API __declspec(dllexport)
+#define LIBGET_API __declspec(dllexport)
 #else
-#define TEEMO_API
+#define LIBGET_API
 #endif
 #else
 #if defined(_MSC_VER)
-#define TEEMO_API __declspec(dllimport)
+#define LIBGET_API __declspec(dllimport)
 #else
-#define TEEMO_API
+#define LIBGET_API
 #endif
 #endif
 #endif
 
-namespace TEEMO_NAMESPACE {
+namespace LIBGET_NAMESPACE {
 enum Result {
   SUCCESSED = 0,
   UNKNOWN_ERROR = 1,
@@ -82,7 +82,7 @@ enum Result {
 
 enum DownloadState { STOPPED = 0, DOWNLODING = 1, PAUSED = 2 };
 
-TEEMO_API const char* GetResultString(int enumVal);
+LIBGET_API const char* GetResultString(int enumVal);
 
 enum SlicePolicy { Auto = 0, FixedSize, FixedNum };
 
@@ -92,7 +92,7 @@ enum HashVerifyPolicy { ALWAYS = 0, ONLY_NO_FILESIZE };
 
 enum UncompletedSliceSavePolicy { ALWAYS_DISCARD = 0, SAVE_EXCEPT_FAILED };
 
-class TEEMO_API Event {
+class LIBGET_API Event {
  public:
   Event(bool setted = false);
   ~Event();
@@ -116,10 +116,10 @@ typedef std::function<void(int64_t byte_per_sec)> RealtimeSpeedFunctor;
 typedef std::function<void(const utf8string& verbose)> VerboseOuputFunctor;
 typedef std::multimap<utf8string, utf8string> HttpHeaders;
 
-class TEEMO_API TEEMO {
+class LIBGET_API LIBGET {
  public:
-  TEEMO();
-  ~TEEMO();
+  LIBGET();
+  ~LIBGET();
 
   static void GlobalInit();
   static void GlobalUnInit();
@@ -127,9 +127,9 @@ class TEEMO_API TEEMO {
   void setVerboseOutput(VerboseOuputFunctor verbose_functor) noexcept;
 
   // Pass an int specifying the maximum thread number.
-  // teemo will use these threads as much as possible.
+  // libGet will use these threads as much as possible.
   // Set to 0 or negative to switch to the default built-in thread number - 1.
-  // The number of threads cannot be greater than 100, otherwise teemo will return INVALID_THREAD_NUM.
+  // The number of threads cannot be greater than 100, otherwise libGet will return INVALID_THREAD_NUM.
   //
   Result setThreadNum(int32_t thread_num) noexcept;
   int32_t threadNum() const noexcept;
@@ -148,7 +148,7 @@ class TEEMO_API TEEMO {
   Result setFetchFileInfoRetryTimes(int32_t retry_times) noexcept;
   int32_t fetchFileInfoRetryTimes() const noexcept;
 
-  // If bUseHead is true, teemo will use HEAD method to fetch file info. Otherwise, teemo will use GET method.
+  // If bUseHead is true, libGet will use HEAD method to fetch file info. Otherwise, libGet will use GET method.
   Result setFetchFileInfoHeadMethod(bool use_head) noexcept;
   bool fetchFileInfoHeadMethod() const noexcept;
 
@@ -179,25 +179,25 @@ class TEEMO_API TEEMO {
   int32_t minDownloadSpeed() const noexcept;
   int32_t minDownloadSpeedDuration() const noexcept;  // seconds
 
-  // Pass an unsigned int specifying your maximal size for the disk cache total buffer in teemo.
+  // Pass an unsigned int specifying your maximal size for the disk cache total buffer in libGet.
   // This buffer size is by default 20971520 byte (20MB).
   //
   Result setDiskCacheSize(int32_t cache_size) noexcept;  // byte
   int32_t diskCacheSize() const noexcept;                // byte
 
-  // Set an event, teemo will stop downloading when this event set.
-  // If download is stopped for stop_event set or call stop, teemo will return CANCELED.
+  // Set an event, libGet will stop downloading when this event set.
+  // If download is stopped for stop_event set or call stop, libGet will return CANCELED.
   //
   Result setStopEvent(Event* stop_event) noexcept;
   Event* stopEvent() noexcept;
 
-  // Set false, teemo will not check whether the redirected url is the same as in the index file,
-  // Default to true, if the redirected url is different from the url in the index file, teemo will return REDIRECT_URL_DIFFERENT error.
+  // Set false, libGet will not check whether the redirected url is the same as in the index file,
+  // Default to true, if the redirected url is different from the url in the index file, libGet will return REDIRECT_URL_DIFFERENT error.
   //
   Result setRedirectedUrlCheckEnabled(bool enabled) noexcept;
   bool redirectedUrlCheckEnabled() const noexcept;
 
-  // Set true, teemo will parse Content-Md5 header filed and make sure target file's md5 is same as this value,
+  // Set true, libGet will parse Content-Md5 header filed and make sure target file's md5 is same as this value,
   // and in this case, slice files will be expired if content_md5 value that cached in index file is changed.
   // Content-Md5 is pure md5 string, not by base64.
   // Default to false.
@@ -205,7 +205,7 @@ class TEEMO_API TEEMO {
   Result setContentMd5Enabled(bool enabled) noexcept;
   bool contentMd5Enabled() const noexcept;
 
-  // Set slice policy, tell teemo how to calculate each slice size.
+  // Set slice policy, tell libGet how to calculate each slice size.
   // Default: fixed to 10485760 bytes(10MB)
   //
   Result setSlicePolicy(SlicePolicy policy, int64_t policy_value) noexcept;
@@ -231,7 +231,7 @@ class TEEMO_API TEEMO {
   utf8string proxy() const noexcept;
 
   // Set uncompleted slice save policy.
-  // Default is ALWAYS_DISCARD, because teemo doesn't know how to check slice(especially uncompleted) is valid or not.
+  // Default is ALWAYS_DISCARD, because libGet doesn't know how to check slice(especially uncompleted) is valid or not.
   //
   Result setUncompletedSliceSavePolicy(
       UncompletedSliceSavePolicy policy) noexcept;
@@ -254,7 +254,7 @@ class TEEMO_API TEEMO {
   // Resume downloading and state change to DOWNLOADING.
   void resume() noexcept;
 
-  // Stop downloading and state change to STOPPED, teemo will return CANCELED in ResultFunctor.
+  // Stop downloading and state change to STOPPED, libGet will return CANCELED in ResultFunctor.
   //
   void stop() noexcept;
 
@@ -274,8 +274,8 @@ class TEEMO_API TEEMO {
   class TeemoImpl;
   TeemoImpl* impl_;
 
-  TEEMO(const TEEMO&) = delete;
-  TEEMO& operator=(const TEEMO&) = delete;
+  LIBGET(const LIBGET&) = delete;
+  LIBGET& operator=(const LIBGET&) = delete;
 };
-}  // namespace teemo
-#endif  // !TEEMO_H_
+}  // namespace libGet
+#endif  // !LIBGET_H_

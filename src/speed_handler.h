@@ -15,14 +15,14 @@
 *    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 ******************************************************************************/
 
-#ifndef TEEMO_SPEED_HANDLER_H_
-#define TEEMO_SPEED_HANDLER_H_
+#ifndef LIBGET_SPEED_HANDLER_H_
+#define LIBGET_SPEED_HANDLER_H_
 #pragma once
 
-#include "teemo/teemo.h"
+#include "libGet/libGet.h"
 #include "slice_manager.h"
 
-namespace TEEMO_NAMESPACE {
+namespace LIBGET_NAMESPACE {
 typedef struct _Options Options;
 
 class SpeedHandler {
@@ -42,5 +42,5 @@ class SpeedHandler {
   const Options* options_;
   std::shared_ptr<SliceManager> slice_manager_;
 };
-}  // namespace teemo
-#endif  // !TEEMO_SPEED_HANDLER_H_
+}  // namespace libGet
+#endif  // !LIBGET_SPEED_HANDLER_H_

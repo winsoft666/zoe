@@ -15,7 +15,7 @@
 *    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 ******************************************************************************/
 
-#include "teemo/teemo.h"
+#include "libGet/libGet.h"
 #include <assert.h>
 #include "file_util.h"
 #include "curl_utils.h"
@@ -24,7 +24,7 @@
 #include "entry_handler.h"
 #include "string_helper.hpp"
 
-namespace TEEMO_NAMESPACE {
+namespace LIBGET_NAMESPACE {
 const char* GetResultString(int enumVal) {
   static const char* EnumStrings[] = {u8"SUCCESSED",
                                       u8"UNKNOWN_ERROR",
@@ -63,7 +63,7 @@ const char* GetResultString(int enumVal) {
   return EnumStrings[enumVal];
 }
 
-class TEEMO::TeemoImpl {
+class LIBGET::TeemoImpl {
  public:
   TeemoImpl() {}
   ~TeemoImpl() {}
@@ -79,18 +79,18 @@ class TEEMO::TeemoImpl {
   std::shared_ptr<EntryHandler> entry_handler_;
 };
 
-TEEMO::TEEMO() {
+LIBGET::LIBGET() {
   impl_ = new TeemoImpl();
 }
 
-TEEMO::~TEEMO() {
+LIBGET::~LIBGET() {
   if (impl_) {
     delete impl_;
     impl_ = nullptr;
   }
 }
 
-void TEEMO::GlobalInit() {
+void LIBGET::GlobalInit() {
   static bool has_init = false;
   if (!has_init) {
     has_init = true;
@@ -98,43 +98,43 @@ void TEEMO::GlobalInit() {
   }
 }
 
-void TEEMO::GlobalUnInit() {
+void LIBGET::GlobalUnInit() {
   GlobalCurlUnInit();
 }
 
-void TEEMO::setVerboseOutput(VerboseOuputFunctor verbose_functor) noexcept {
+void LIBGET::setVerboseOutput(VerboseOuputFunctor verbose_functor) noexcept {
   assert(impl_);
   impl_->options_.verbose_functor = verbose_functor;
 }
 
-Result TEEMO::setThreadNum(int32_t thread_num) noexcept {
+Result LIBGET::setThreadNum(int32_t thread_num) noexcept {
   assert(impl_);
   if (impl_->isDownloading())
     return ALREADY_DOWNLOADING;
   if (thread_num <= 0)
-    thread_num = TEEMO_DEFAULT_THREAD_NUM;
+    thread_num = LIBGET_DEFAULT_THREAD_NUM;
   if (thread_num > 100)
     return INVALID_THREAD_NUM;
   impl_->options_.thread_num = thread_num;
   return SUCCESSED;
 }
 
-int32_t TEEMO::threadNum() const noexcept {
+int32_t LIBGET::threadNum() const noexcept {
   assert(impl_);
   return impl_->options_.thread_num;
 }
 
-utf8string TEEMO::url() const noexcept {
+utf8string LIBGET::url() const noexcept {
   assert(impl_);
   return impl_->options_.url;
 }
 
-utf8string TEEMO::targetFilePath() const noexcept {
+utf8string LIBGET::targetFilePath() const noexcept {
   assert(impl_);
   return impl_->options_.target_file_path;
 }
 
-int64_t TEEMO::originFileSize() const noexcept {
+int64_t LIBGET::originFileSize() const noexcept {
   assert(impl_);
   int64_t ret = -1;
   if (impl_ && impl_->entry_handler_)
@@ -142,70 +142,70 @@ int64_t TEEMO::originFileSize() const noexcept {
   return ret;
 }
 
-DownloadState TEEMO::state() const noexcept {
+DownloadState LIBGET::state() const noexcept {
   assert(impl_);
   if (impl_ && impl_->entry_handler_)
     return impl_->entry_handler_->state();
   return DownloadState::STOPPED;
 }
 
-std::shared_future<TEEMO_NAMESPACE::Result> TEEMO::futureResult() noexcept {
+std::shared_future<LIBGET_NAMESPACE::Result> LIBGET::futureResult() noexcept {
   assert(impl_);
   if (impl_ && impl_->entry_handler_)
     return impl_->entry_handler_->futureResult();
-  return std::shared_future<TEEMO_NAMESPACE::Result>();
+  return std::shared_future<LIBGET_NAMESPACE::Result>();
 }
 
-Result TEEMO::setNetworkConnectionTimeout(int32_t milliseconds) noexcept {
+Result LIBGET::setNetworkConnectionTimeout(int32_t milliseconds) noexcept {
   assert(impl_);
   if (milliseconds <= 0)
-    milliseconds = TEEMO_DEFAULT_NETWORK_CONN_TIMEOUT_MS;
+    milliseconds = LIBGET_DEFAULT_NETWORK_CONN_TIMEOUT_MS;
   impl_->options_.network_conn_timeout = milliseconds;
   return SUCCESSED;
 }
 
-int32_t TEEMO::networkConnectionTimeout() const noexcept {
+int32_t LIBGET::networkConnectionTimeout() const noexcept {
   assert(impl_);
   return impl_->options_.network_conn_timeout;
 }
 
-Result TEEMO::setFetchFileInfoRetryTimes(int32_t retry_times) noexcept {
+Result LIBGET::setFetchFileInfoRetryTimes(int32_t retry_times) noexcept {
   assert(impl_);
   if (retry_times <= 0)
-    retry_times = TEEMO_DEFAULT_FETCH_FILE_INFO_RETRY_TIMES;
+    retry_times = LIBGET_DEFAULT_FETCH_FILE_INFO_RETRY_TIMES;
   impl_->options_.fetch_file_info_retry = retry_times;
   return SUCCESSED;
 }
 
-int32_t TEEMO::fetchFileInfoRetryTimes() const noexcept {
+int32_t LIBGET::fetchFileInfoRetryTimes() const noexcept {
   assert(impl_);
   return impl_->options_.fetch_file_info_retry;
 }
 
-Result TEEMO::setFetchFileInfoHeadMethod(bool use_head) noexcept {
+Result LIBGET::setFetchFileInfoHeadMethod(bool use_head) noexcept {
   assert(impl_);
   impl_->options_.use_head_method_fetch_file_info = use_head;
   return SUCCESSED;
 }
 
-bool TEEMO::fetchFileInfoHeadMethod() const noexcept {
+bool LIBGET::fetchFileInfoHeadMethod() const noexcept {
   assert(impl_);
   return impl_->options_.use_head_method_fetch_file_info;
 }
 
-Result TEEMO::setTmpFileExpiredTime(int32_t seconds) noexcept {
+Result LIBGET::setTmpFileExpiredTime(int32_t seconds) noexcept {
   assert(impl_);
   impl_->options_.tmp_file_expired_time = seconds;
 
   return SUCCESSED;
 }
 
-int32_t TEEMO::tmpFileExpiredTime() const noexcept {
+int32_t LIBGET::tmpFileExpiredTime() const noexcept {
   assert(impl_);
   return impl_->options_.tmp_file_expired_time;
 }
 
-Result TEEMO::setMaxDownloadSpeed(int32_t byte_per_seconds) noexcept {
+Result LIBGET::setMaxDownloadSpeed(int32_t byte_per_seconds) noexcept {
   assert(impl_);
   if (impl_->isDownloading())
     return ALREADY_DOWNLOADING;
@@ -216,12 +216,12 @@ Result TEEMO::setMaxDownloadSpeed(int32_t byte_per_seconds) noexcept {
   return SUCCESSED;
 }
 
-int32_t TEEMO::maxDownloadSpeed() const noexcept {
+int32_t LIBGET::maxDownloadSpeed() const noexcept {
   assert(impl_);
   return impl_->options_.max_speed;
 }
 
-Result TEEMO::setMinDownloadSpeed(int32_t byte_per_seconds,
+Result LIBGET::setMinDownloadSpeed(int32_t byte_per_seconds,
                                   int32_t duration) noexcept {
   assert(impl_);
   if (impl_->isDownloading())
@@ -234,17 +234,17 @@ Result TEEMO::setMinDownloadSpeed(int32_t byte_per_seconds,
   return SUCCESSED;
 }
 
-int32_t TEEMO::minDownloadSpeed() const noexcept {
+int32_t LIBGET::minDownloadSpeed() const noexcept {
   assert(impl_);
   return impl_->options_.min_speed;
 }
 
-int32_t TEEMO::minDownloadSpeedDuration() const noexcept {
+int32_t LIBGET::minDownloadSpeedDuration() const noexcept {
   assert(impl_);
   return impl_->options_.min_speed_duration;
 }
 
-Result TEEMO::setDiskCacheSize(int32_t cache_size) noexcept {
+Result LIBGET::setDiskCacheSize(int32_t cache_size) noexcept {
   assert(impl_);
   if (impl_->isDownloading())
     return ALREADY_DOWNLOADING;
@@ -254,57 +254,57 @@ Result TEEMO::setDiskCacheSize(int32_t cache_size) noexcept {
   return SUCCESSED;
 }
 
-int32_t TEEMO::diskCacheSize() const noexcept {
+int32_t LIBGET::diskCacheSize() const noexcept {
   assert(impl_);
   return impl_->options_.disk_cache_size;
 }
 
-Result TEEMO::setStopEvent(Event* stop_event) noexcept {
+Result LIBGET::setStopEvent(Event* stop_event) noexcept {
   assert(impl_);
   impl_->options_.user_stop_event = stop_event;
   return SUCCESSED;
 }
 
-Event* TEEMO::stopEvent() noexcept {
+Event* LIBGET::stopEvent() noexcept {
   assert(impl_);
   return impl_->options_.user_stop_event;
 }
 
-Result TEEMO::setRedirectedUrlCheckEnabled(bool enabled) noexcept {
+Result LIBGET::setRedirectedUrlCheckEnabled(bool enabled) noexcept {
   assert(impl_);
   impl_->options_.redirected_url_check_enabled = enabled;
   return SUCCESSED;
 }
 
-bool TEEMO::redirectedUrlCheckEnabled() const noexcept {
+bool LIBGET::redirectedUrlCheckEnabled() const noexcept {
   assert(impl_);
   return impl_->options_.redirected_url_check_enabled;
 }
 
-Result TEEMO::setContentMd5Enabled(bool enabled) noexcept {
+Result LIBGET::setContentMd5Enabled(bool enabled) noexcept {
   assert(impl_);
   impl_->options_.content_md5_enabled = enabled;
   return SUCCESSED;
 }
 
-bool TEEMO::contentMd5Enabled() const noexcept {
+bool LIBGET::contentMd5Enabled() const noexcept {
   assert(impl_);
   return impl_->options_.content_md5_enabled;
 }
 
-Result TEEMO::setSlicePolicy(SlicePolicy policy,
+Result LIBGET::setSlicePolicy(SlicePolicy policy,
                              int64_t policy_value) noexcept {
   assert(impl_);
   if (policy == FixedSize) {
     if (policy_value <= 0)
-      policy_value = TEEMO_DEFAULT_FIXED_SLICE_SIZE_BYTE;
+      policy_value = LIBGET_DEFAULT_FIXED_SLICE_SIZE_BYTE;
     impl_->options_.slice_policy = policy;
     impl_->options_.slice_policy_value = policy_value;
     return SUCCESSED;
   }
   else if (policy == FixedNum) {
     if (policy_value <= 0)
-      policy_value = TEEMO_DEFAULT_FIXED_SLICE_NUM;
+      policy_value = LIBGET_DEFAULT_FIXED_SLICE_NUM;
     impl_->options_.slice_policy = policy;
     impl_->options_.slice_policy_value = policy_value;
     return SUCCESSED;
@@ -318,14 +318,14 @@ Result TEEMO::setSlicePolicy(SlicePolicy policy,
   return INVALID_SLICE_POLICY;
 }
 
-void TEEMO::slicePolicy(SlicePolicy& policy, int64_t& policy_value) const
+void LIBGET::slicePolicy(SlicePolicy& policy, int64_t& policy_value) const
     noexcept {
   assert(impl_);
   policy = impl_->options_.slice_policy;
   policy_value = impl_->options_.slice_policy_value;
 }
 
-Result TEEMO::setHashVerifyPolicy(HashVerifyPolicy policy,
+Result LIBGET::setHashVerifyPolicy(HashVerifyPolicy policy,
                                   HashType hash_type,
                                   const utf8string& hash_value) noexcept {
   assert(impl_);
@@ -339,7 +339,7 @@ Result TEEMO::setHashVerifyPolicy(HashVerifyPolicy policy,
   return SUCCESSED;
 }
 
-void TEEMO::hashVerifyPolicy(HashVerifyPolicy& policy,
+void LIBGET::hashVerifyPolicy(HashVerifyPolicy& policy,
                              HashType& hash_type,
                              utf8string& hash_value) const noexcept {
   assert(impl_);
@@ -348,43 +348,43 @@ void TEEMO::hashVerifyPolicy(HashVerifyPolicy& policy,
   hash_value = impl_->options_.hash_value;
 }
 
-Result TEEMO::setHttpHeaders(const HttpHeaders& headers) noexcept {
+Result LIBGET::setHttpHeaders(const HttpHeaders& headers) noexcept {
   assert(impl_);
   impl_->options_.http_headers = headers;
 
   return SUCCESSED;
 }
 
-HttpHeaders TEEMO::httpHeaders() const noexcept {
+HttpHeaders LIBGET::httpHeaders() const noexcept {
   assert(impl_);
   return impl_->options_.http_headers;
 }
 
-Result TEEMO::setProxy(const utf8string& proxy) noexcept {
+Result LIBGET::setProxy(const utf8string& proxy) noexcept {
   assert(impl_);
   impl_->options_.proxy = proxy;
 
   return SUCCESSED;
 }
 
-utf8string TEEMO::proxy() const noexcept {
+utf8string LIBGET::proxy() const noexcept {
   assert(impl_);
   return impl_->options_.proxy;
 }
 
-Result TEEMO::setUncompletedSliceSavePolicy(UncompletedSliceSavePolicy policy) noexcept {
+Result LIBGET::setUncompletedSliceSavePolicy(UncompletedSliceSavePolicy policy) noexcept {
   assert(impl_);
   impl_->options_.uncompleted_slice_save_policy = policy;
 
   return SUCCESSED;
 }
 
-UncompletedSliceSavePolicy TEEMO::uncompletedSliceSavePolicy() const noexcept {
+UncompletedSliceSavePolicy LIBGET::uncompletedSliceSavePolicy() const noexcept {
   assert(impl_);
   return impl_->options_.uncompleted_slice_save_policy;
 }
 
-std::shared_future<Result> TEEMO::start(
+std::shared_future<Result> LIBGET::start(
     const utf8string& url,
     const utf8string& target_file_path,
     ResultFunctor result_functor,
@@ -428,21 +428,21 @@ std::shared_future<Result> TEEMO::start(
   return impl_->entry_handler_->start(&impl_->options_);
 }
 
-void TEEMO::pause() noexcept {
+void LIBGET::pause() noexcept {
   assert(impl_);
   if (impl_ && impl_->entry_handler_) {
     impl_->entry_handler_->pause();
   }
 }
 
-void TEEMO::resume() noexcept {
+void LIBGET::resume() noexcept {
   assert(impl_);
   if (impl_ && impl_->entry_handler_) {
     impl_->entry_handler_->resume();
   }
 }
 
-void TEEMO::stop() noexcept {
+void LIBGET::stop() noexcept {
   assert(impl_);
   if (impl_ && impl_->entry_handler_) {
     impl_->entry_handler_->stop();
@@ -513,4 +513,4 @@ bool Event::wait(int32_t millseconds) noexcept {
   assert(impl_);
   return impl_->wait(millseconds);
 }
-}  // namespace teemo
+}  // namespace libGet

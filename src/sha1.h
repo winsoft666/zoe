@@ -5,9 +5,9 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdint.h>
-#include "teemo/teemo.h"
+#include "libGet/libGet.h"
 
-namespace TEEMO_NAMESPACE {
+namespace LIBGET_NAMESPACE {
 
 typedef struct _Options Options;
 
@@ -37,6 +37,6 @@ class CSHA1 {
 
 Result CalculateFileSHA1(const utf8string& file_path, Options* opt, utf8string& str_hash);
 Result CalculateFileSHA1(FILE* f, Options* opt, utf8string& str_hash);
-}  // namespace teemo
+}  // namespace libGet
 
 #endif

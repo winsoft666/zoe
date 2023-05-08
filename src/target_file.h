@@ -19,10 +19,10 @@
 #define TARGET_FILE_H__
 #pragma once
 
-#include "teemo/teemo.h"
+#include "libGet/libGet.h"
 #include <mutex>
 
-namespace TEEMO_NAMESPACE {
+namespace LIBGET_NAMESPACE {
 typedef struct _Options Options;
 
 class TargetFile {
@@ -55,5 +55,5 @@ class TargetFile {
   FILE* f_;
   std::recursive_mutex file_mutex_;
 };
-}  // namespace teemo
+}  // namespace libGet
 #endif

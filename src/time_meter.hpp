@@ -15,17 +15,17 @@
 *    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 ******************************************************************************/
 
-#ifndef TEEMO_TIME_METER_H_
-#define TEEMO_TIME_METER_H_
+#ifndef LIBGET_TIME_METER_H_
+#define LIBGET_TIME_METER_H_
 #pragma once
 
-#include "teemo/config.h"
+#include "libGet/config.h"
 #include <stdint.h>
 #include <time.h>
 #include <ctime>
 #include <limits>
 
-namespace TEEMO_NAMESPACE {
+namespace LIBGET_NAMESPACE {
 class TimeMeter {
  public:
   TimeMeter() { lStartTime_ = std::clock(); }
@@ -44,6 +44,6 @@ class TimeMeter {
  private:
   std::clock_t lStartTime_;
 };
-}  // namespace teemo
+}  // namespace libGet
 
 #endif

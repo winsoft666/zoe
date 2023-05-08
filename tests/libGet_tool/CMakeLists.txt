@@ -17,7 +17,7 @@
 
 set (CMAKE_CXX_STANDARD 11)
 
-set(EXE_NAME teemo_tool)
+set(EXE_NAME libGet_tool)
 
 if (MSVC AND USE_STATIC_CRT)
     set(CompilerFlags
@@ -34,7 +34,7 @@ if (MSVC AND USE_STATIC_CRT)
 endif()
 
 if (NOT BUILD_SHARED_LIBS)
-	add_definitions(-DTEEMO_STATIC)
+	add_definitions(-DLIBGET_STATIC)
 endif()
 
 file(GLOB SOURCE_FILES 			./*.cpp)
@@ -62,15 +62,15 @@ endif()
 
 
 if(BUILD_SHARED_LIBS)
-	add_dependencies(${EXE_NAME} teemo)
+	add_dependencies(${EXE_NAME} libGet)
 	
 	target_link_libraries(${EXE_NAME} 
-		$<TARGET_LINKER_FILE:teemo> )
+		$<TARGET_LINKER_FILE:libGet> )
 else()
-	add_dependencies(${EXE_NAME} teemo-static)
+	add_dependencies(${EXE_NAME} libGet-static)
 	
 	target_link_libraries(${EXE_NAME} 
-		$<TARGET_LINKER_FILE:teemo-static> )
+		$<TARGET_LINKER_FILE:libGet-static> )
 
 endif()
 

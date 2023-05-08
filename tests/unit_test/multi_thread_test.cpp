@@ -16,16 +16,16 @@
 ******************************************************************************/
 
 #include "gtest/gtest.h"
-#include "teemo/teemo.h"
+#include "libGet/libGet.h"
 #include "test_data.h"
 #include <future>
-using namespace TEEMO_NAMESPACE;
+using namespace LIBGET_NAMESPACE;
 
 void DoTest(const std::vector<TestData>& test_datas, int thread_num) {
-  TEEMO::GlobalInit();
+  LIBGET::GlobalInit();
 
   for (const auto& test_data : test_datas) {
-    TEEMO efd;
+    LIBGET efd;
 
     efd.setThreadNum(thread_num);
     if (test_data.md5.length() > 0)
@@ -46,7 +46,7 @@ void DoTest(const std::vector<TestData>& test_datas, int thread_num) {
             .get();
   }
 
-  TEEMO::GlobalUnInit();
+  LIBGET::GlobalUnInit();
 }
 
 TEST(MultiThreadHttpTest, Http_DefaultThreadNum) {

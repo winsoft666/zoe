@@ -15,20 +15,20 @@
 *    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 ******************************************************************************/
 
-#ifndef TEEMO_OPTIONS_H_
-#define TEEMO_OPTIONS_H_
+#ifndef LIBGET_OPTIONS_H_
+#define LIBGET_OPTIONS_H_
 #pragma once
 
-#include "teemo/teemo.h"
+#include "libGet/libGet.h"
 
-namespace TEEMO_NAMESPACE {
-#define TEEMO_DEFAULT_NETWORK_CONN_TIMEOUT_MS 3000
-#define TEEMO_DEFAULT_TOTAL_DISK_CACHE_SIZE_BYTE 20971520  // 20MB
-#define TEEMO_DEFAULT_FIXED_SLICE_SIZE_BYTE 10485760  // 10MB
-#define TEEMO_DEFAULT_FIXED_SLICE_NUM 1
-#define TEEMO_DEFAULT_FETCH_FILE_INFO_RETRY_TIMES 1
-#define TEEMO_DEFAULT_THREAD_NUM 1
-#define TEEMO_DEFAULT_SLICE_MAX_FAILED_TIMES 3
+namespace LIBGET_NAMESPACE {
+#define LIBGET_DEFAULT_NETWORK_CONN_TIMEOUT_MS 3000
+#define LIBGET_DEFAULT_TOTAL_DISK_CACHE_SIZE_BYTE 20971520  // 20MB
+#define LIBGET_DEFAULT_FIXED_SLICE_SIZE_BYTE 10485760  // 10MB
+#define LIBGET_DEFAULT_FIXED_SLICE_NUM 1
+#define LIBGET_DEFAULT_FETCH_FILE_INFO_RETRY_TIMES 1
+#define LIBGET_DEFAULT_THREAD_NUM 1
+#define LIBGET_DEFAULT_SLICE_MAX_FAILED_TIMES 3
 
 typedef struct _Options {
   bool redirected_url_check_enabled;
@@ -73,8 +73,8 @@ typedef struct _Options {
     redirected_url_check_enabled = true;
     content_md5_enabled = false;
     use_head_method_fetch_file_info = true;
-    thread_num = TEEMO_DEFAULT_THREAD_NUM;
-    disk_cache_size = TEEMO_DEFAULT_TOTAL_DISK_CACHE_SIZE_BYTE;
+    thread_num = LIBGET_DEFAULT_THREAD_NUM;
+    disk_cache_size = LIBGET_DEFAULT_TOTAL_DISK_CACHE_SIZE_BYTE;
 
     slice_policy = Auto;
     slice_policy_value = 0L;
@@ -86,10 +86,10 @@ typedef struct _Options {
     min_speed = -1;
     min_speed_duration = 0;
     tmp_file_expired_time = -1;
-    fetch_file_info_retry = TEEMO_DEFAULT_FETCH_FILE_INFO_RETRY_TIMES;
-    network_conn_timeout = TEEMO_DEFAULT_NETWORK_CONN_TIMEOUT_MS;
+    fetch_file_info_retry = LIBGET_DEFAULT_FETCH_FILE_INFO_RETRY_TIMES;
+    network_conn_timeout = LIBGET_DEFAULT_NETWORK_CONN_TIMEOUT_MS;
 
-    slice_max_failed_times = TEEMO_DEFAULT_SLICE_MAX_FAILED_TIMES;
+    slice_max_failed_times = LIBGET_DEFAULT_SLICE_MAX_FAILED_TIMES;
 
     result_functor = nullptr;
     progress_functor = nullptr;
@@ -101,5 +101,5 @@ typedef struct _Options {
     uncompleted_slice_save_policy = ALWAYS_DISCARD;
   }
 } Options;
-}  // namespace teemo
-#endif  // !TEEMO_OPTIONS_H_
+}  // namespace libGet
+#endif  // !LIBGET_OPTIONS_H_

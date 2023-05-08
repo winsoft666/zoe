@@ -21,7 +21,7 @@
 #include <chrono>
 #include <algorithm>
 #include <iomanip>
-#include "teemo/teemo.h"
+#include "libGet/libGet.h"
 #include <mutex>
 #if defined(WIN32) || defined(_WIN32) || defined(__WIN32__) || defined(__NT__)
 #include <windows.h>
@@ -32,8 +32,8 @@
 #include <unistd.h>
 #endif
 
-using namespace TEEMO_NAMESPACE;
-TEEMO efd;
+using namespace LIBGET_NAMESPACE;
+LIBGET efd;
 std::mutex console_mutex;
 
 void PrintConsole(int64_t total, int64_t downloaded, int32_t speed);
@@ -78,7 +78,7 @@ void ControlSignalHandler(int s) {
 
 //
 // Usage:
-// teemo_tool URL TargetFilePath [ThreadNum] [DiskCacheMb] [MD5] [TmpExpiredSeconds] [MaxSpeed]
+// libGet_tool URL TargetFilePath [ThreadNum] [DiskCacheMb] [MD5] [TmpExpiredSeconds] [MaxSpeed]
 //
 int main(int argc, char** argv) {
   if (argc < 3) {
@@ -117,8 +117,8 @@ int main(int argc, char** argv) {
     efd.setMaxDownloadSpeed(atoi(argv[7]));
 
   int exit_code = 0;
-  TEEMO::GlobalInit();
-  FILE* f_verbose = fopen("teemo_tool_verbose.log", "wb");
+  LIBGET::GlobalInit();
+  FILE* f_verbose = fopen("libGet_tool_verbose.log", "wb");
   efd.setVerboseOutput([f_verbose](const utf8string& verbose) {
     fwrite(verbose.c_str(), 1, verbose.size(), f_verbose);
 #if defined(WIN32) || defined(_WIN32) || defined(__WIN32__) || defined(__NT__)
@@ -149,7 +149,7 @@ int main(int argc, char** argv) {
   std::cout << "Total: " << mill.count() << "ms" << std::endl;
 
   fclose(f_verbose);
-  TEEMO::GlobalUnInit();
+  LIBGET::GlobalUnInit();
   return exit_code;
 }
 

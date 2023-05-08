@@ -1,11 +1,11 @@
-[![Build Status](https://travis-ci.com/winsoft666/teemo.svg?branch=master)](https://travis-ci.com/winsoft666/teemo) 
-[![Vcpkg package](https://img.shields.io/badge/Vcpkg-package-blueviolet)](https://github.com/microsoft/vcpkg/tree/master/ports/teemo)
-[![badge](https://img.shields.io/badge/license-GUN-blue)](https://github.com/winsoft666/teemo/blob/master/LICENSE)
+[![Build Status](https://travis-ci.com/winsoft666/libGet.svg?branch=master)](https://travis-ci.com/winsoft666/libGet) 
+[![Vcpkg package](https://img.shields.io/badge/Vcpkg-package-blueviolet)](https://github.com/microsoft/vcpkg/tree/master/ports/libGet)
+[![badge](https://img.shields.io/badge/license-GUN-blue)](https://github.com/winsoft666/libGet/blob/master/LICENSE)
 
 简体中文 | [ English](README.md)
 
 # 一、介绍
-目前虽然有很多成熟且功能强大的下载工具，如`Free Download Manager`, `Aria2`等等，但当我想找一个支持多种协议(如http， ftp)、多线程下载、断点续传、跨平台的开源库时，发现很难找到满意的，特别是使用C++开发的。于是我基于libcurl开发了这个名为`"teemo"`下载库，它可以支持如下特性：
+目前虽然有很多成熟且功能强大的下载工具，如`Free Download Manager`, `Aria2`等等，但当我想找一个支持多种协议(如http， ftp)、多线程下载、断点续传、跨平台的开源库时，发现很难找到满意的，特别是使用C++开发的。于是我基于libcurl开发了这个名为`"libGet"`下载库，它可以支持如下特性：
 
 ✅ 多协议支持，由于是基于libcurl的，所以支持libcurl所支持的所有协议，如http, https, ftp等。
 
@@ -32,7 +32,7 @@
 # 二、编译与安装
 
 ## 方式一、使用vcpkg
-`teemo`库已经收录到微软的[vcpkg](https://github.com/microsoft/vcpkg/tree/master/ports/teemo)之中，可以使用如下命令快速安装:
+`libGet`库已经收录到微软的[vcpkg](https://github.com/microsoft/vcpkg/tree/master/ports/libGet)之中，可以使用如下命令快速安装:
 
 - 1) 下载安装vcpkg（详见[https://github.com/microsoft/vcpkg](https://github.com/microsoft/vcpkg)
 ```bash
@@ -42,10 +42,10 @@ PS> bootstrap-vcpkg.bootstrap
 Linux:~/$ ./bootstrap-vcpkg.sh
 ```
 
-- 2) 安装teemo
+- 2) 安装libGet
 ```bash
-PS> .\vcpkg install teemo [--triplet x64-windows-static/x64-windows/x64-windows-static-md and etc...]
-Linux:~/$ ./vcpkg install teemo
+PS> .\vcpkg install libGet [--triplet x64-windows-static/x64-windows/x64-windows-static-md and etc...]
+Linux:~/$ ./vcpkg install libGet
 ```
 
 ## 方式二、使用源码编译
@@ -90,10 +90,10 @@ make
 # 三、快速开始
 ```c++
 #include <iostream>
-#include "teemo.h"
+#include "libGet.h"
 
 int main(int argc, char** argv) {
-  using namespace teemo;
+  using namespace libGet;
 
   Teemo::GlobalInit();
 
@@ -135,10 +135,10 @@ int main(int argc, char** argv) {
 ---
 
 # 四、命令行工具
-`teemo_tool`是一个基于`teemo`库开发的命令行下载工具，用法如下：
+`libGet_tool`是一个基于`libGet`库开发的命令行下载工具，用法如下：
 
 ```bash
-teemo_tool URL TargetFilePath [ThreadNum] [DiskCacheMb] [MD5] [TmpExpiredSeconds] [MaxSpeed]
+libGet_tool URL TargetFilePath [ThreadNum] [DiskCacheMb] [MD5] [TmpExpiredSeconds] [MaxSpeed]
 ```
 
 - URL: 下载链接

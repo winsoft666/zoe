@@ -19,7 +19,7 @@
 #include <functional>
 #include "options.h"
 
-namespace TEEMO_NAMESPACE {
+namespace LIBGET_NAMESPACE {
 ProgressHandler::ProgressHandler(Options* options,
                                  std::shared_ptr<SliceManager> slice_manager)
     : options_(options), slice_manager_(slice_manager) {
@@ -48,4 +48,4 @@ void ProgressHandler::asyncTaskProcess() {
   }
 }
 
-}  // namespace teemo
+}  // namespace libGet

@@ -17,10 +17,10 @@
 
 #include "string_encode.h"
 #if defined(WIN32) || defined(_WIN32) || defined(__WIN32__) || defined(__NT__)
-#include "teemo/config.h"
+#include "libGet/config.h"
 #include <windows.h>
 
-namespace TEEMO_NAMESPACE {
+namespace LIBGET_NAMESPACE {
 std::wstring Utf8ToUnicode(const std::string& str) {
   std::wstring strRes;
   int iSize = ::MultiByteToWideChar(CP_UTF8, 0, str.c_str(), -1, NULL, 0);
@@ -65,5 +65,5 @@ std::string UnicodeToUtf8(const std::wstring& str) {
 
   return strRes;
 }
-}  // namespace teemo
+}  // namespace libGet
 #endif

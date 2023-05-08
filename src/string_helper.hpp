@@ -15,11 +15,11 @@
 *    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 ******************************************************************************/
 
-#ifndef TEEMO_STRING_HELPER_H_
-#define TEEMO_STRING_HELPER_H_
+#ifndef LIBGET_STRING_HELPER_H_
+#define LIBGET_STRING_HELPER_H_
 #pragma once
 
-#include "teemo/config.h"
+#include "libGet/config.h"
 #include <string>
 #include <vector>
 #include <algorithm>
@@ -27,7 +27,7 @@
 #include <cwctype>
 #include <iterator>
 
-namespace TEEMO_NAMESPACE {
+namespace LIBGET_NAMESPACE {
 class StringHelper {
  public:
   static char EasyCharToLowerA(char in) {
@@ -403,6 +403,6 @@ class StringHelper {
   }
 };
 
-}  // namespace teemo
+}  // namespace libGet
 
 #endif

@@ -1,8 +1,0 @@
-﻿#ifndef TEEMO_CONFIG_H__
-#define TEEMO_CONFIG_H__
-#pragma once
-
-#cmakedefine TEEMO_NAMESPACE @TEEMO_NAMESPACE@
-#cmakedefine TEEMO @TEEMO@
-
-#endif //!TEEMO_CONFIG_H__

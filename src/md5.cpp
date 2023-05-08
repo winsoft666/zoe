@@ -3,7 +3,7 @@
 #include "file_util.h"
 #include "options.h"
 
-namespace TEEMO_NAMESPACE {
+namespace LIBGET_NAMESPACE {
 namespace libmd5_internal {
 /*
  * This code implements the MD5 message-digest algorithm.
@@ -365,4 +365,4 @@ Result CalculateFileMd5(FILE* f, Options* opt, utf8string& str_hash) {
 
   return SUCCESSED;
 }
-}  // namespace teemo
+}  // namespace libGet

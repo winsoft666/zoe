@@ -15,14 +15,14 @@
 *    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 ******************************************************************************/
 
-#ifndef TEEMO_PROGRESS_HANDLER_H_
-#define TEEMO_PROGRESS_HANDLER_H_
+#ifndef LIBGET_PROGRESS_HANDLER_H_
+#define LIBGET_PROGRESS_HANDLER_H_
 #pragma once
 
-#include "teemo/teemo.h"
+#include "libGet/libGet.h"
 #include "slice_manager.h"
 
-namespace TEEMO_NAMESPACE {
+namespace LIBGET_NAMESPACE {
 typedef struct _Options Options;
 
 class ProgressHandler {
@@ -39,5 +39,5 @@ class ProgressHandler {
   const Options* options_;
   std::shared_ptr<SliceManager> slice_manager_;
 };
-}  // namespace teemo
-#endif  // !TEEMO_PROGRESS_HANDLER_H_
+}  // namespace libGet
+#endif  // !LIBGET_PROGRESS_HANDLER_H_

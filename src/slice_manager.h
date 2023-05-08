@@ -15,17 +15,17 @@
 *    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 ******************************************************************************/
 
-#ifndef TEEMO_SLICE_MANAGE_H_
-#define TEEMO_SLICE_MANAGE_H_
+#ifndef LIBGET_SLICE_MANAGE_H_
+#define LIBGET_SLICE_MANAGE_H_
 #pragma once
 
 #include <vector>
 #include <atomic>
-#include "teemo/teemo.h"
+#include "libGet/libGet.h"
 #include "target_file.h"
 #include "slice.h"
 
-namespace TEEMO_NAMESPACE {
+namespace LIBGET_NAMESPACE {
 typedef struct _Options Options;
 
 class SliceManager : public std::enable_shared_from_this<SliceManager> {
@@ -82,6 +82,6 @@ class SliceManager : public std::enable_shared_from_this<SliceManager> {
 
   Options* options_;
 };
-}  // namespace teemo
+}  // namespace libGet
 
-#endif  // !TEEMO_SLICE_MANAGE_H_
+#endif  // !LIBGET_SLICE_MANAGE_H_

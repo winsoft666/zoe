@@ -18,18 +18,18 @@
 cmake_minimum_required(VERSION 3.4 FATAL_ERROR)
 set(CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/CMake;${CMAKE_MODULE_PATH};")
 
-project(teemo CXX)
+project(libGet CXX)
 
 option(BUILD_SHARED_LIBS "Build shared libraries" ON)
 option(BUILD_TESTS "Build tests project" ON)
 option(USE_STATIC_CRT "Set to ON to build with static CRT on Windows (/MT)." OFF)
 
 if(MSVC)
-  set(TEEMO_INSTALL_CMAKE_DIR share/teemo)
+  set(LIBGET_INSTALL_CMAKE_DIR share/libGet)
 elseif(WIN32 AND NOT CYGWIN)
-  set(TEEMO_INSTALL_CMAKE_DIR CMake)
+  set(LIBGET_INSTALL_CMAKE_DIR CMake)
 else()
-  set(TEEMO_INSTALL_CMAKE_DIR lib/cmake/teemo)
+  set(LIBGET_INSTALL_CMAKE_DIR lib/cmake/libGet)
 endif()
 
 set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
@@ -48,20 +48,20 @@ set(DEBUG_LIBNAME_SUFFIX "-d"
 	CACHE STRING "Optional suffix to append to the library name for a debug build")
 mark_as_advanced(DEBUG_LIBNAME_SUFFIX)
 
-set(TEEMO_NAMESPACE "teemo" 
+set(LIBGET_NAMESPACE "libGet" 
 	CACHE STRING "Custom library's namespace")
-mark_as_advanced(TEEMO_NAMESPACE)
+mark_as_advanced(LIBGET_NAMESPACE)
 
-set(TEEMO "Teemo" 
+set(LIBGET "Teemo" 
 	CACHE STRING "Custom library's export class name")
-mark_as_advanced(TEEMO)
+mark_as_advanced(LIBGET)
 
 # Unicode Support
 add_definitions(-DUNICODE -D_UNICODE -DNOMINMAX)
 
 set_property(GLOBAL PROPERTY USE_FOLDERS ON)
 
-configure_file(${CMAKE_CURRENT_SOURCE_DIR}/include/teemo/config.h.in ${CMAKE_CURRENT_SOURCE_DIR}/include/teemo/config.h @ONLY)
+configure_file(${CMAKE_CURRENT_SOURCE_DIR}/include/libGet/config.h.in ${CMAKE_CURRENT_SOURCE_DIR}/include/libGet/config.h @ONLY)
 
 include_directories(./include)
 

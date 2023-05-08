@@ -16,15 +16,15 @@
 ******************************************************************************/
 
 #include "gtest/gtest.h"
-#include "teemo/teemo.h"
+#include "libGet/libGet.h"
 #include "test_data.h"
 #include <future>
-using namespace TEEMO_NAMESPACE;
+using namespace LIBGET_NAMESPACE;
 
 void DoBreakpointTest(const std::vector<TestData>& test_datas, int thread_num) {
   for (const auto &test_data : test_datas) {
     std::future<void> test_task = std::async(std::launch::async, [test_data, thread_num]() {
-      TEEMO efd;
+      LIBGET efd;
 
       efd.setThreadNum(thread_num / 2);
       if (test_data.md5.length() > 0)

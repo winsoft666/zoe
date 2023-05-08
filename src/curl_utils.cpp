@@ -16,13 +16,13 @@
 ******************************************************************************/
 
 #include "curl_utils.h"
-#include "teemo/config.h"
+#include "libGet/config.h"
 #include "curl/curl.h"
 #ifdef WITH_OPENSSL
 #include <openssl/crypto.h>
 #endif
 
-namespace TEEMO_NAMESPACE {
+namespace LIBGET_NAMESPACE {
 namespace {
 int THREAD_setup(void);
 int THREAD_cleanup(void);
@@ -95,4 +95,4 @@ void GlobalCurlUnInit() {
   THREAD_cleanup();
 #endif
 }
-}  // namespace teemo
+}  // namespace libGet

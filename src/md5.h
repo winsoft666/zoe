@@ -1,10 +1,10 @@
-﻿#ifndef TEEMO_MD5_MAKER_34DFDR7_H__
-#define TEEMO_MD5_MAKER_34DFDR7_H__
+﻿#ifndef LIBGET_MD5_MAKER_34DFDR7_H__
+#define LIBGET_MD5_MAKER_34DFDR7_H__
 #pragma once
 
-#include "teemo/teemo.h"
+#include "libGet/libGet.h"
 
-namespace TEEMO_NAMESPACE {
+namespace LIBGET_NAMESPACE {
 typedef struct _Options Options;
 
 namespace libmd5_internal {
@@ -27,6 +27,6 @@ void MD5SigToString(unsigned char sig[16], char* str, int len);
 // Helper function.
 Result CalculateFileMd5(const utf8string& file_path, Options* opt, utf8string& str_hash);
 Result CalculateFileMd5(FILE* f, Options* opt, utf8string& str_hash);
-}  // namespace teemo
+}  // namespace libGet
 
 #endif

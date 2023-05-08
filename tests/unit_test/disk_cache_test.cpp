@@ -17,15 +17,15 @@
 
 #include <future>
 #include "gtest/gtest.h"
-#include "teemo/teemo.h"
+#include "libGet/libGet.h"
 #include "test_data.h"
-using namespace TEEMO_NAMESPACE;
+using namespace LIBGET_NAMESPACE;
 
 void DoTest(const std::vector<TestData>& test_datas, int thread_num, int32_t disk_cache) {
-  TEEMO::GlobalInit();
+  LIBGET::GlobalInit();
 
   for (const auto& test_data : test_datas) {
-    TEEMO efd;
+    LIBGET efd;
 
     if (thread_num != -1)
       efd.setThreadNum(thread_num);
@@ -49,7 +49,7 @@ void DoTest(const std::vector<TestData>& test_datas, int thread_num, int32_t dis
             .get();
   }
 
-  TEEMO::GlobalUnInit();
+  LIBGET::GlobalUnInit();
 }
 
 TEST(DiskCacheHttpTest, Http_ThreadNum_2) {

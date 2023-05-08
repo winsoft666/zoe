@@ -18,11 +18,11 @@
 set (CMAKE_CXX_STANDARD 11)
 
 if(BUILD_SHARED_LIBS)
-	set(LIB_NAME teemo)
-	set(TEEMO_STATIC NO)
+	set(LIB_NAME libGet)
+	set(LIBGET_STATIC NO)
 else()
-	set(LIB_NAME teemo-static)
-	set(TEEMO_STATIC YES)
+	set(LIB_NAME libGet-static)
+	set(LIBGET_STATIC YES)
 endif()
 
 
@@ -42,7 +42,7 @@ endif()
 
 
 
-file(GLOB HEADER_FILES 		../include/teemo/*.h ../include/teemo/*.hpp)
+file(GLOB HEADER_FILES 		../include/libGet/*.h ../include/libGet/*.hpp)
 file(GLOB SOURCE_FILES 		./*.cpp ./*.h ./*.hpp)
 
 source_group("Source Files" 			FILES ${SOURCE_FILES})
@@ -54,7 +54,7 @@ if(BUILD_SHARED_LIBS AND MSVC)
 endif()
 
 if(BUILD_SHARED_LIBS)
-	add_definitions(-DTEEMO_EXPORTS)
+	add_definitions(-DLIBGET_EXPORTS)
 	
 	add_library(
 		${LIB_NAME}
@@ -69,7 +69,7 @@ if(BUILD_SHARED_LIBS)
 		OUTPUT_NAME ${LIB_NAME}
 		DEBUG_OUTPUT_NAME ${LIB_NAME}${DEBUG_LIBNAME_SUFFIX})
 else()
-	add_definitions(-DTEEMO_STATIC)
+	add_definitions(-DLIBGET_STATIC)
 	
 	add_library(
 		${LIB_NAME}
@@ -84,7 +84,7 @@ else()
 		DEBUG_OUTPUT_NAME ${LIB_NAME}${DEBUG_LIBNAME_SUFFIX})
 		
 	set_target_properties(${LIB_NAME} PROPERTIES 
-		INTERFACE_COMPILE_DEFINITIONS TEEMO_STATIC)
+		INTERFACE_COMPILE_DEFINITIONS LIBGET_STATIC)
 endif()
 
 
@@ -125,11 +125,11 @@ install(TARGETS ${LIB_NAME}
 	ARCHIVE DESTINATION lib)
 
 
-install(FILES ${HEADER_FILES} 			DESTINATION include/teemo)
+install(FILES ${HEADER_FILES} 			DESTINATION include/libGet)
 
 
-install(FILES ${CMAKE_CURRENT_SOURCE_DIR}/../CMake/teemo-config.cmake 
-	DESTINATION ${TEEMO_INSTALL_CMAKE_DIR})
+install(FILES ${CMAKE_CURRENT_SOURCE_DIR}/../CMake/libGet-config.cmake 
+	DESTINATION ${LIBGET_INSTALL_CMAKE_DIR})
 
 export(TARGETS ${LIB_NAME}
        APPEND FILE ${PROJECT_BINARY_DIR}/${LIB_NAME}-target.cmake
@@ -137,5 +137,5 @@ export(TARGETS ${LIB_NAME}
 
 install(EXPORT ${LIB_NAME}-target
         FILE ${LIB_NAME}-target.cmake
-        DESTINATION ${TEEMO_INSTALL_CMAKE_DIR}
+        DESTINATION ${LIBGET_INSTALL_CMAKE_DIR}
 )

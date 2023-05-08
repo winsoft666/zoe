@@ -16,21 +16,21 @@
 ******************************************************************************/
 
 #include "gtest/gtest.h"
-#include "teemo/teemo.h"
+#include "libGet/libGet.h"
 #include "test_data.h"
 #include <future>
 #include <vector>
-using namespace TEEMO_NAMESPACE;
+using namespace LIBGET_NAMESPACE;
 
 TEST(ConcurrentTest, test1) {
   if (http_test_datas.size() < 2)
     return;
 
-  TEEMO::GlobalInit();
+  LIBGET::GlobalInit();
   {
-    std::vector<std::shared_ptr<TEEMO>> efds;
+    std::vector<std::shared_ptr<LIBGET>> efds;
     for (size_t i = 0; i < http_test_datas.size(); i++) {
-      std::shared_ptr<TEEMO> t = std::make_shared<TEEMO>();
+      std::shared_ptr<LIBGET> t = std::make_shared<LIBGET>();
       efds.push_back(t);
 
       t->setThreadNum(6);
@@ -56,5 +56,5 @@ TEST(ConcurrentTest, test1) {
       efds[i]->futureResult().wait();
     }
   }
-  TEEMO::GlobalUnInit();
+  LIBGET::GlobalUnInit();
 }

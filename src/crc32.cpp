@@ -4,7 +4,7 @@
 #include "file_util.h"
 #include "options.h"
 
-namespace TEEMO_NAMESPACE {
+namespace LIBGET_NAMESPACE {
 namespace crc32_internal {
 // CRC-32 table for the following polynominal:
 // X^32+X^26+X^23+X^22+X^16+X^12+X^11+X^10+X^8+X^7+X^5+X^4+X^2+X+1
@@ -119,4 +119,4 @@ Result CalculateFileCRC32(FILE* f, Options* opt, utf8string& str_hash) {
   str_hash = szCRC;
   return SUCCESSED;
 }
-}  // namespace teemo
+}  // namespace libGet

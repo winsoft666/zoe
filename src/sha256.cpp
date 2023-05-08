@@ -4,7 +4,7 @@
 #include "file_util.h"
 #include "options.h"
 
-namespace TEEMO_NAMESPACE {
+namespace LIBGET_NAMESPACE {
 namespace sha256_internal {
 /* A block, treated as a sequence of 32-bit words. */
 #define SHA256_DATA_LENGTH 16
@@ -322,4 +322,4 @@ Result CalculateFileSHA256(FILE* f, Options* opt, utf8string& str_hash) {
 
   return SUCCESSED;
 }
-}  // namespace teemo
+}  // namespace libGet

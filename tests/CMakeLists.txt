@@ -15,6 +15,6 @@
 #    along with this program.  If not, see <http:#www.gnu.org/licenses/>.
 ############################################################################
 
-add_subdirectory(teemo_tool)
+add_subdirectory(libGet_tool)
 add_subdirectory(unit_test)
 

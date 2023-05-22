@@ -16,7 +16,6 @@
 ******************************************************************************/
 
 #include "curl_utils.h"
-#include "zoe/config.h"
 #include "curl/curl.h"
 #ifdef WITH_OPENSSL
 #include <openssl/crypto.h>

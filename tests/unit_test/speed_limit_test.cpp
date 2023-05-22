@@ -25,9 +25,9 @@ TEST(SpeedLimitTest, test1) {
   if (http_test_datas.empty())
     return;
 
-  zoe::GlobalInit();
+  Zoe::GlobalInit();
   {
-    zoe efd1;
+    Zoe efd1;
 
     efd1.setThreadNum(3);
     efd1.setHashVerifyPolicy(ALWAYS, MD5, http_test_datas[0].md5);
@@ -43,7 +43,7 @@ TEST(SpeedLimitTest, test1) {
 
     future_result1.wait();
   }
-  zoe::GlobalUnInit();
+  Zoe::GlobalUnInit();
 
   // set test case interval
   std::this_thread::sleep_for(std::chrono::milliseconds(5000));

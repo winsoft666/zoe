@@ -16,7 +16,6 @@
 ******************************************************************************/
 
 #include "file_util.h"
-#include "zoe/config.h"
 #include <assert.h>
 #if defined(WIN32) || defined(_WIN32) || defined(__WIN32__) || defined(__NT__)
 #if !defined(WIN32_LEAN_AND_MEAN)

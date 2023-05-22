@@ -18,8 +18,6 @@
 #ifndef ZOE_TIME_METER_H_
 #define ZOE_TIME_METER_H_
 #pragma once
-
-#include "zoe/config.h"
 #include <stdint.h>
 #include <time.h>
 #include <ctime>

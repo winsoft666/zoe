@@ -22,10 +22,10 @@
 using namespace zoe;
 
 void DoTest(const std::vector<TestData>& test_datas, int thread_num, int32_t disk_cache) {
-  zoe::GlobalInit();
+  Zoe::GlobalInit();
 
   for (const auto& test_data : test_datas) {
-    zoe efd;
+    Zoe efd;
 
     if (thread_num != -1)
       efd.setThreadNum(thread_num);
@@ -49,7 +49,7 @@ void DoTest(const std::vector<TestData>& test_datas, int thread_num, int32_t dis
             .get();
   }
 
-  zoe::GlobalUnInit();
+  Zoe::GlobalUnInit();
 }
 
 TEST(DiskCacheHttpTest, Http_ThreadNum_2) {

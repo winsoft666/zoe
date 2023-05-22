@@ -22,7 +22,6 @@
 #include <memory>
 #include <future>
 #include <map>
-#include "config.h"
 
 #ifdef ZOE_STATIC
 #define ZOE_API

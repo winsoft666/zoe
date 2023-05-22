@@ -33,7 +33,7 @@
 #endif
 
 using namespace zoe;
-zoe efd;
+Zoe efd;
 std::mutex console_mutex;
 
 void PrintConsole(int64_t total, int64_t downloaded, int32_t speed);
@@ -117,7 +117,7 @@ int main(int argc, char** argv) {
     efd.setMaxDownloadSpeed(atoi(argv[7]));
 
   int exit_code = 0;
-  zoe::GlobalInit();
+  Zoe::GlobalInit();
   FILE* f_verbose = fopen("libGet_tool_verbose.log", "wb");
   efd.setVerboseOutput([f_verbose](const utf8string& verbose) {
     fwrite(verbose.c_str(), 1, verbose.size(), f_verbose);
@@ -149,7 +149,7 @@ int main(int argc, char** argv) {
   std::cout << "Total: " << mill.count() << "ms" << std::endl;
 
   fclose(f_verbose);
-  zoe::GlobalUnInit();
+  Zoe::GlobalUnInit();
   return exit_code;
 }
 

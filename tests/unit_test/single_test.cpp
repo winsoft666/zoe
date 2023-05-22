@@ -26,9 +26,9 @@ TEST(SingleTest, test1) {
     return;
   TestData test_data = http_test_datas[0];
 
-  zoe::GlobalInit();
+  Zoe::GlobalInit();
   {
-    zoe efd;
+    Zoe efd;
     efd.setThreadNum(6);
     efd.setSlicePolicy(SlicePolicy::FixedNum, 10);
     if (test_data.md5.length() > 0)
@@ -48,5 +48,5 @@ TEST(SingleTest, test1) {
 
     EXPECT_TRUE(future_result.get() == SUCCESSED);
   }
-  zoe::GlobalUnInit();
+  Zoe::GlobalUnInit();
 }

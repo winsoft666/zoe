@@ -18,8 +18,6 @@
 #ifndef ZOE_STRING_HELPER_H_
 #define ZOE_STRING_HELPER_H_
 #pragma once
-
-#include "zoe/config.h"
 #include <string>
 #include <vector>
 #include <algorithm>

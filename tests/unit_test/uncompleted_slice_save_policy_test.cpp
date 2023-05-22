@@ -24,10 +24,10 @@ using namespace zoe;
 void DoTest(const std::vector<TestData>& test_datas,
             int thread_num,
             UncompletedSliceSavePolicy policy) {
-  zoe::GlobalInit();
+  Zoe::GlobalInit();
 
   for (const auto& test_data : test_datas) {
-    zoe efd;
+    Zoe efd;
 
     efd.setThreadNum(thread_num);
     if (test_data.md5.length() > 0)
@@ -66,7 +66,7 @@ void DoTest(const std::vector<TestData>& test_datas,
         .wait();
   }
 
-  zoe::GlobalUnInit();
+  Zoe::GlobalUnInit();
 }
 
 TEST(UncompletedSliceSavePolicyHttpTest, Http_DefaultThreadNum_ALWAYS_DISCARD) {

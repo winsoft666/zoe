@@ -22,10 +22,10 @@
 using namespace zoe;
 
 void DoTest(const std::vector<TestData>& test_datas, int thread_num) {
-  zoe::GlobalInit();
+  Zoe::GlobalInit();
 
   for (const auto& test_data : test_datas) {
-    zoe efd;
+    Zoe efd;
 
     efd.setThreadNum(thread_num);
     if (test_data.md5.length() > 0)
@@ -46,7 +46,7 @@ void DoTest(const std::vector<TestData>& test_datas, int thread_num) {
             .get();
   }
 
-  zoe::GlobalUnInit();
+  Zoe::GlobalUnInit();
 }
 
 TEST(MultiThreadHttpTest, Http_DefaultThreadNum) {

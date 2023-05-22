@@ -26,11 +26,11 @@ TEST(ConcurrentTest, test1) {
   if (http_test_datas.size() < 2)
     return;
 
-  zoe::GlobalInit();
+  Zoe::GlobalInit();
   {
-    std::vector<std::shared_ptr<zoe>> efds;
+    std::vector<std::shared_ptr<Zoe>> efds;
     for (size_t i = 0; i < http_test_datas.size(); i++) {
-      std::shared_ptr<zoe> t = std::make_shared<zoe>();
+      std::shared_ptr<Zoe> t = std::make_shared<Zoe>();
       efds.push_back(t);
 
       t->setThreadNum(6);
@@ -56,5 +56,5 @@ TEST(ConcurrentTest, test1) {
       efds[i]->futureResult().wait();
     }
   }
-  zoe::GlobalUnInit();
+  Zoe::GlobalUnInit();
 }

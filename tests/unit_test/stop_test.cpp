@@ -23,7 +23,7 @@ using namespace zoe;
 
 TEST(StopTest, NoWait) {
   EXPECT_NO_THROW({
-    zoe t;
+    Zoe t;
     t.stop();
   });
 }

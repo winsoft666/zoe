@@ -55,8 +55,6 @@ add_definitions(-DUNICODE -D_UNICODE -DNOMINMAX)
 
 set_property(GLOBAL PROPERTY USE_FOLDERS ON)
 
-configure_file(${CMAKE_CURRENT_SOURCE_DIR}/include/zoe/config.h.in ${CMAKE_CURRENT_SOURCE_DIR}/include/zoe/config.h @ONLY)
-
 include_directories(./include)
 
 add_subdirectory(src)

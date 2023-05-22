@@ -14,8 +14,8 @@
 *    You should have received a copy of the GNU General Public License
 *    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 ******************************************************************************/
-#ifndef LIBGET_H_
-#define LIBGET_H_
+#ifndef ZOE_H_
+#define ZOE_H_
 #pragma once
 
 #include <string>
@@ -24,25 +24,25 @@
 #include <map>
 #include "config.h"
 
-#ifdef LIBGET_STATIC
-#define LIBGET_API
+#ifdef ZOE_STATIC
+#define ZOE_API
 #else
-#if defined(LIBGET_EXPORTS)
+#if defined(ZOE_EXPORTS)
 #if defined(_MSC_VER)
-#define LIBGET_API __declspec(dllexport)
+#define ZOE_API __declspec(dllexport)
 #else
-#define LIBGET_API
+#define ZOE_API
 #endif
 #else
 #if defined(_MSC_VER)
-#define LIBGET_API __declspec(dllimport)
+#define ZOE_API __declspec(dllimport)
 #else
-#define LIBGET_API
+#define ZOE_API
 #endif
 #endif
 #endif
 
-namespace LIBGET_NAMESPACE {
+namespace zoe {
 enum Result {
   SUCCESSED = 0,
   UNKNOWN_ERROR = 1,
@@ -82,7 +82,7 @@ enum Result {
 
 enum DownloadState { STOPPED = 0, DOWNLODING = 1, PAUSED = 2 };
 
-LIBGET_API const char* GetResultString(int enumVal);
+ZOE_API const char* GetResultString(int enumVal);
 
 enum SlicePolicy { Auto = 0, FixedSize, FixedNum };
 
@@ -92,7 +92,7 @@ enum HashVerifyPolicy { ALWAYS = 0, ONLY_NO_FILESIZE };
 
 enum UncompletedSliceSavePolicy { ALWAYS_DISCARD = 0, SAVE_EXCEPT_FAILED };
 
-class LIBGET_API Event {
+class ZOE_API Event {
  public:
   Event(bool setted = false);
   ~Event();
@@ -116,10 +116,10 @@ typedef std::function<void(int64_t byte_per_sec)> RealtimeSpeedFunctor;
 typedef std::function<void(const utf8string& verbose)> VerboseOuputFunctor;
 typedef std::multimap<utf8string, utf8string> HttpHeaders;
 
-class LIBGET_API LIBGET {
+class ZOE_API Zoe {
  public:
-  LIBGET();
-  ~LIBGET();
+  Zoe();
+  ~Zoe();
 
   static void GlobalInit();
   static void GlobalUnInit();
@@ -127,9 +127,9 @@ class LIBGET_API LIBGET {
   void setVerboseOutput(VerboseOuputFunctor verbose_functor) noexcept;
 
   // Pass an int specifying the maximum thread number.
-  // libGet will use these threads as much as possible.
+  // zoe will use these threads as much as possible.
   // Set to 0 or negative to switch to the default built-in thread number - 1.
-  // The number of threads cannot be greater than 100, otherwise libGet will return INVALID_THREAD_NUM.
+  // The number of threads cannot be greater than 100, otherwise zoe will return INVALID_THREAD_NUM.
   //
   Result setThreadNum(int32_t thread_num) noexcept;
   int32_t threadNum() const noexcept;
@@ -148,7 +148,7 @@ class LIBGET_API LIBGET {
   Result setFetchFileInfoRetryTimes(int32_t retry_times) noexcept;
   int32_t fetchFileInfoRetryTimes() const noexcept;
 
-  // If bUseHead is true, libGet will use HEAD method to fetch file info. Otherwise, libGet will use GET method.
+  // If bUseHead is true, zoe will use HEAD method to fetch file info. Otherwise, zoe will use GET method.
   Result setFetchFileInfoHeadMethod(bool use_head) noexcept;
   bool fetchFileInfoHeadMethod() const noexcept;
 
@@ -179,25 +179,25 @@ class LIBGET_API LIBGET {
   int32_t minDownloadSpeed() const noexcept;
   int32_t minDownloadSpeedDuration() const noexcept;  // seconds
 
-  // Pass an unsigned int specifying your maximal size for the disk cache total buffer in libGet.
+  // Pass an unsigned int specifying your maximal size for the disk cache total buffer in zoe.
   // This buffer size is by default 20971520 byte (20MB).
   //
   Result setDiskCacheSize(int32_t cache_size) noexcept;  // byte
   int32_t diskCacheSize() const noexcept;                // byte
 
-  // Set an event, libGet will stop downloading when this event set.
-  // If download is stopped for stop_event set or call stop, libGet will return CANCELED.
+  // Set an event, zoe will stop downloading when this event set.
+  // If download is stopped for stop_event set or call stop, zoe will return CANCELED.
   //
   Result setStopEvent(Event* stop_event) noexcept;
   Event* stopEvent() noexcept;
 
-  // Set false, libGet will not check whether the redirected url is the same as in the index file,
-  // Default to true, if the redirected url is different from the url in the index file, libGet will return REDIRECT_URL_DIFFERENT error.
+  // Set false, zoe will not check whether the redirected url is the same as in the index file,
+  // Default to true, if the redirected url is different from the url in the index file, zoe will return REDIRECT_URL_DIFFERENT error.
   //
   Result setRedirectedUrlCheckEnabled(bool enabled) noexcept;
   bool redirectedUrlCheckEnabled() const noexcept;
 
-  // Set true, libGet will parse Content-Md5 header filed and make sure target file's md5 is same as this value,
+  // Set true, zoe will parse Content-Md5 header filed and make sure target file's md5 is same as this value,
   // and in this case, slice files will be expired if content_md5 value that cached in index file is changed.
   // Content-Md5 is pure md5 string, not by base64.
   // Default to false.
@@ -205,7 +205,7 @@ class LIBGET_API LIBGET {
   Result setContentMd5Enabled(bool enabled) noexcept;
   bool contentMd5Enabled() const noexcept;
 
-  // Set slice policy, tell libGet how to calculate each slice size.
+  // Set slice policy, tell zoe how to calculate each slice size.
   // Default: fixed to 10485760 bytes(10MB)
   //
   Result setSlicePolicy(SlicePolicy policy, int64_t policy_value) noexcept;
@@ -231,7 +231,7 @@ class LIBGET_API LIBGET {
   utf8string proxy() const noexcept;
 
   // Set uncompleted slice save policy.
-  // Default is ALWAYS_DISCARD, because libGet doesn't know how to check slice(especially uncompleted) is valid or not.
+  // Default is ALWAYS_DISCARD, because zoe doesn't know how to check slice(especially uncompleted) is valid or not.
   //
   Result setUncompletedSliceSavePolicy(
       UncompletedSliceSavePolicy policy) noexcept;
@@ -254,7 +254,7 @@ class LIBGET_API LIBGET {
   // Resume downloading and state change to DOWNLOADING.
   void resume() noexcept;
 
-  // Stop downloading and state change to STOPPED, libGet will return CANCELED in ResultFunctor.
+  // Stop downloading and state change to STOPPED, zoe will return CANCELED in ResultFunctor.
   //
   void stop() noexcept;
 
@@ -271,11 +271,11 @@ class LIBGET_API LIBGET {
   std::shared_future<Result> futureResult() noexcept;
 
  protected:
-  class TeemoImpl;
-  TeemoImpl* impl_;
+  class ZoeImpl;
+  ZoeImpl* impl_;
 
-  LIBGET(const LIBGET&) = delete;
-  LIBGET& operator=(const LIBGET&) = delete;
+  Zoe(const Zoe&) = delete;
+  Zoe& operator=(const Zoe&) = delete;
 };
-}  // namespace libGet
-#endif  // !LIBGET_H_
+}  // namespace zoe
+#endif  // !ZOE_H_

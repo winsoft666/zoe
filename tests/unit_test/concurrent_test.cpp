@@ -16,21 +16,21 @@
 ******************************************************************************/
 
 #include "gtest/gtest.h"
-#include "libGet/libGet.h"
+#include "zoe/zoe.h"
 #include "test_data.h"
 #include <future>
 #include <vector>
-using namespace LIBGET_NAMESPACE;
+using namespace zoe;
 
 TEST(ConcurrentTest, test1) {
   if (http_test_datas.size() < 2)
     return;
 
-  LIBGET::GlobalInit();
+  zoe::GlobalInit();
   {
-    std::vector<std::shared_ptr<LIBGET>> efds;
+    std::vector<std::shared_ptr<zoe>> efds;
     for (size_t i = 0; i < http_test_datas.size(); i++) {
-      std::shared_ptr<LIBGET> t = std::make_shared<LIBGET>();
+      std::shared_ptr<zoe> t = std::make_shared<zoe>();
       efds.push_back(t);
 
       t->setThreadNum(6);
@@ -56,5 +56,5 @@ TEST(ConcurrentTest, test1) {
       efds[i]->futureResult().wait();
     }
   }
-  LIBGET::GlobalUnInit();
+  zoe::GlobalUnInit();
 }

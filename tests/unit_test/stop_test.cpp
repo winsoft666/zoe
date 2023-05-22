@@ -16,14 +16,14 @@
 ******************************************************************************/
 
 #include "gtest/gtest.h"
-#include "libGet/libGet.h"
+#include "zoe/zoe.h"
 #include "test_data.h"
 #include <future>
-using namespace LIBGET_NAMESPACE;
+using namespace zoe;
 
 TEST(StopTest, NoWait) {
   EXPECT_NO_THROW({
-    LIBGET t;
+    zoe t;
     t.stop();
   });
 }

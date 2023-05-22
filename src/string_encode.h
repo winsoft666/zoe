@@ -15,17 +15,17 @@
 *    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 ******************************************************************************/
 
-#ifndef LIBGET_STRING_ENCODE_H_
-#define LIBGET_STRING_ENCODE_H_
+#ifndef ZOE_STRING_ENCODE_H_
+#define ZOE_STRING_ENCODE_H_
 #pragma once
 
 #include <string>
 
-namespace LIBGET_NAMESPACE {
+namespace zoe {
 #if defined(WIN32) || defined(_WIN32) || defined(__WIN32__) || defined(__NT__)
 std::wstring Utf8ToUnicode(const std::string& str);
 std::string UnicodeToUtf8(const std::wstring& str);
 #endif
-}  // namespace libGet
+}  // namespace zoe
 
 #endif

@@ -16,19 +16,19 @@
 ******************************************************************************/
 
 #include "gtest/gtest.h"
-#include "libGet/libGet.h"
+#include "zoe/zoe.h"
 #include "test_data.h"
 #include <future>
-using namespace LIBGET_NAMESPACE;
+using namespace zoe;
 
 TEST(SingleTest, test1) {
   if (http_test_datas.size() == 0)
     return;
   TestData test_data = http_test_datas[0];
 
-  LIBGET::GlobalInit();
+  zoe::GlobalInit();
   {
-    LIBGET efd;
+    zoe efd;
     efd.setThreadNum(6);
     efd.setSlicePolicy(SlicePolicy::FixedNum, 10);
     if (test_data.md5.length() > 0)
@@ -48,5 +48,5 @@ TEST(SingleTest, test1) {
 
     EXPECT_TRUE(future_result.get() == SUCCESSED);
   }
-  LIBGET::GlobalUnInit();
+  zoe::GlobalUnInit();
 }

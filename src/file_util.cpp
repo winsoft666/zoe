@@ -16,7 +16,7 @@
 ******************************************************************************/
 
 #include "file_util.h"
-#include "libGet/config.h"
+#include "zoe/config.h"
 #include <assert.h>
 #if defined(WIN32) || defined(_WIN32) || defined(__WIN32__) || defined(__NT__)
 #if !defined(WIN32_LEAN_AND_MEAN)
@@ -33,7 +33,7 @@
 #include "string_encode.h"
 #include "filesystem.hpp"
 
-namespace LIBGET_NAMESPACE {
+namespace zoe {
 
 #if defined(WIN32) || defined(_WIN32) || defined(__WIN32__) || defined(__NT__)
 #define PATH_SEPARATOR '\\'
@@ -343,4 +343,4 @@ bool FileUtil::PathFormatting(const utf8string& path, utf8string& formatted) {
 #endif
 }
 
-}  // namespace libGet
+}  // namespace zoe

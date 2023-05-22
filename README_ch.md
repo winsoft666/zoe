@@ -1,11 +1,11 @@
-[![Build Status](https://travis-ci.com/winsoft666/libGet.svg?branch=master)](https://travis-ci.com/winsoft666/libGet) 
-[![Vcpkg package](https://img.shields.io/badge/Vcpkg-package-blueviolet)](https://github.com/microsoft/vcpkg/tree/master/ports/libGet)
-[![badge](https://img.shields.io/badge/license-GUN-blue)](https://github.com/winsoft666/libGet/blob/master/LICENSE)
+[![Build Status](https://travis-ci.com/winsoft666/zoe.svg?branch=master)](https://travis-ci.com/winsoft666/zoe) 
+[![Vcpkg package](https://img.shields.io/badge/Vcpkg-package-blueviolet)](https://github.com/microsoft/vcpkg/tree/master/ports/zoe)
+[![badge](https://img.shields.io/badge/license-GUN-blue)](https://github.com/winsoft666/zoe/blob/master/LICENSE)
 
 简体中文 | [ English](README.md)
 
 # 一、介绍
-目前虽然有很多成熟且功能强大的下载工具，如`Free Download Manager`, `Aria2`等等，但当我想找一个支持多种协议(如http， ftp)、多线程下载、断点续传、跨平台的开源库时，发现很难找到满意的，特别是使用C++开发的。于是我基于libcurl开发了这个名为`"libGet"`下载库，它可以支持如下特性：
+目前虽然有很多成熟且功能强大的下载工具，如`Free Download Manager`, `Aria2`等等，但当我想找一个支持多种协议(如http， ftp)、多线程下载、断点续传、跨平台的开源库时，发现很难找到满意的，特别是使用C++开发的。于是我基于libcurl开发了这个名为`"zoe"`下载库，它可以支持如下特性：
 
 ✅ 多协议支持，由于是基于libcurl的，所以支持libcurl所支持的所有协议，如http, https, ftp等。
 
@@ -32,7 +32,7 @@
 # 二、编译与安装
 
 ## 方式一、使用vcpkg
-`libGet`库已经收录到微软的[vcpkg](https://github.com/microsoft/vcpkg/tree/master/ports/libGet)之中，可以使用如下命令快速安装:
+`zoe`库已经收录到微软的[vcpkg](https://github.com/microsoft/vcpkg/tree/master/ports/zoe)之中，可以使用如下命令快速安装:
 
 - 1) 下载安装vcpkg（详见[https://github.com/microsoft/vcpkg](https://github.com/microsoft/vcpkg)
 ```bash
@@ -42,10 +42,10 @@ PS> bootstrap-vcpkg.bootstrap
 Linux:~/$ ./bootstrap-vcpkg.sh
 ```
 
-- 2) 安装libGet
+- 2) 安装zoe
 ```bash
-PS> .\vcpkg install libGet [--triplet x64-windows-static/x64-windows/x64-windows-static-md and etc...]
-Linux:~/$ ./vcpkg install libGet
+PS> .\vcpkg install zoe [--triplet x64-windows-static/x64-windows/x64-windows-static-md and etc...]
+Linux:~/$ ./vcpkg install zoe
 ```
 
 ## 方式二、使用源码编译
@@ -90,10 +90,10 @@ make
 # 三、快速开始
 ```c++
 #include <iostream>
-#include "libGet.h"
+#include "zoe.h"
 
 int main(int argc, char** argv) {
-  using namespace libGet;
+  using namespace zoe;
 
   Teemo::GlobalInit();
 
@@ -135,7 +135,7 @@ int main(int argc, char** argv) {
 ---
 
 # 四、命令行工具
-`libGet_tool`是一个基于`libGet`库开发的命令行下载工具，用法如下：
+`libGet_tool`是一个基于`zoe`库开发的命令行下载工具，用法如下：
 
 ```bash
 libGet_tool URL TargetFilePath [ThreadNum] [DiskCacheMb] [MD5] [TmpExpiredSeconds] [MaxSpeed]

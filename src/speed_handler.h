@@ -15,14 +15,14 @@
 *    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 ******************************************************************************/
 
-#ifndef LIBGET_SPEED_HANDLER_H_
-#define LIBGET_SPEED_HANDLER_H_
+#ifndef ZOE_SPEED_HANDLER_H_
+#define ZOE_SPEED_HANDLER_H_
 #pragma once
 
-#include "libGet/libGet.h"
+#include "zoe/zoe.h"
 #include "slice_manager.h"
 
-namespace LIBGET_NAMESPACE {
+namespace zoe {
 typedef struct _Options Options;
 
 class SpeedHandler {
@@ -42,5 +42,5 @@ class SpeedHandler {
   const Options* options_;
   std::shared_ptr<SliceManager> slice_manager_;
 };
-}  // namespace libGet
-#endif  // !LIBGET_SPEED_HANDLER_H_
+}  // namespace zoe
+#endif  // !ZOE_SPEED_HANDLER_H_

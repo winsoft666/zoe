@@ -19,7 +19,7 @@
 #include <functional>
 #include "options.h"
 
-namespace LIBGET_NAMESPACE {
+namespace zoe {
 ProgressHandler::ProgressHandler(Options* options,
                                  std::shared_ptr<SliceManager> slice_manager)
     : options_(options), slice_manager_(slice_manager) {
@@ -48,4 +48,4 @@ void ProgressHandler::asyncTaskProcess() {
   }
 }
 
-}  // namespace libGet
+}  // namespace zoe

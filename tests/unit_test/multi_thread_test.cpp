@@ -16,16 +16,16 @@
 ******************************************************************************/
 
 #include "gtest/gtest.h"
-#include "libGet/libGet.h"
+#include "zoe/zoe.h"
 #include "test_data.h"
 #include <future>
-using namespace LIBGET_NAMESPACE;
+using namespace zoe;
 
 void DoTest(const std::vector<TestData>& test_datas, int thread_num) {
-  LIBGET::GlobalInit();
+  zoe::GlobalInit();
 
   for (const auto& test_data : test_datas) {
-    LIBGET efd;
+    zoe efd;
 
     efd.setThreadNum(thread_num);
     if (test_data.md5.length() > 0)
@@ -46,7 +46,7 @@ void DoTest(const std::vector<TestData>& test_datas, int thread_num) {
             .get();
   }
 
-  LIBGET::GlobalUnInit();
+  zoe::GlobalUnInit();
 }
 
 TEST(MultiThreadHttpTest, Http_DefaultThreadNum) {

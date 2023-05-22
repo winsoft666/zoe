@@ -17,7 +17,7 @@
 
 #include "gtest/gtest.h"
 #include "file_util.h"
-using namespace LIBGET_NAMESPACE;
+using namespace zoe;
 
 TEST(FixedFileTest, 100mb) {
   const int file_size = 100 * 1024 * 1024;

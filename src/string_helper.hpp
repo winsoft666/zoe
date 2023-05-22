@@ -15,11 +15,11 @@
 *    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 ******************************************************************************/
 
-#ifndef LIBGET_STRING_HELPER_H_
-#define LIBGET_STRING_HELPER_H_
+#ifndef ZOE_STRING_HELPER_H_
+#define ZOE_STRING_HELPER_H_
 #pragma once
 
-#include "libGet/config.h"
+#include "zoe/config.h"
 #include <string>
 #include <vector>
 #include <algorithm>
@@ -27,7 +27,7 @@
 #include <cwctype>
 #include <iterator>
 
-namespace LIBGET_NAMESPACE {
+namespace zoe {
 class StringHelper {
  public:
   static char EasyCharToLowerA(char in) {
@@ -403,6 +403,6 @@ class StringHelper {
   }
 };
 
-}  // namespace libGet
+}  // namespace zoe
 
 #endif

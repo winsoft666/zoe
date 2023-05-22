@@ -17,16 +17,16 @@
 
 #include "gtest/gtest.h"
 #include "test_data.h"
-#include "libGet/libGet.h"
+#include "zoe/zoe.h"
 #include "test_data.h"
 #include <future>
-using namespace LIBGET_NAMESPACE;
+using namespace zoe;
 
 void DoCancelTest(const std::vector<TestData>& test_datas, int thread_num) {
   for (const auto& test_data : test_datas) {
     Event cancel_event;
 
-    LIBGET efd;
+    zoe efd;
     efd.setThreadNum(thread_num);
     efd.setStopEvent(&cancel_event);
     if (test_data.md5.length() > 0)

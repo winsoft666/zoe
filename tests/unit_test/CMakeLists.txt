@@ -16,7 +16,7 @@ set (CMAKE_CXX_STANDARD 11)
 
 set(EXE_NAME unit_test)
 
-if (MSVC AND USE_STATIC_CRT)
+if (MSVC AND ZOE_USE_STATIC_CRT)
     set(CompilerFlags
         CMAKE_CXX_FLAGS
         CMAKE_CXX_FLAGS_DEBUG
@@ -30,8 +30,8 @@ if (MSVC AND USE_STATIC_CRT)
     endforeach()
 endif()
 
-if (NOT BUILD_SHARED_LIBS)
-	add_definitions(-DLIBGET_STATIC)
+if (NOT ZOE_BUILD_SHARED_LIBS)
+	add_definitions(-DZOE_STATIC)
 endif()
 
 include_directories(../../src)
@@ -64,16 +64,16 @@ endif()
 add_test(NAME unit
 COMMAND ${CMAKE_BINARY_DIR}/${CMAKE_INSTALL_BINDIR}/unit_tests)
 
-if(BUILD_SHARED_LIBS)
-	add_dependencies(${EXE_NAME} libGet)
+if(ZOE_BUILD_SHARED_LIBS)
+	add_dependencies(${EXE_NAME} zoe)
 	
 	target_link_libraries(${EXE_NAME} 
-		$<TARGET_LINKER_FILE:libGet> )
+		$<TARGET_LINKER_FILE:zoe> )
 else()
-	add_dependencies(${EXE_NAME} libGet-static)
+	add_dependencies(${EXE_NAME} zoe-static)
 	
 	target_link_libraries(${EXE_NAME} 
-		$<TARGET_LINKER_FILE:libGet-static> )
+		$<TARGET_LINKER_FILE:zoe-static> )
 
 endif()
 

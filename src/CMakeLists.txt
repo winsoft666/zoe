@@ -17,16 +17,22 @@
 
 set (CMAKE_CXX_STANDARD 11)
 
-if(BUILD_SHARED_LIBS)
-	set(LIB_NAME libGet)
-	set(LIBGET_STATIC NO)
+if(ZOE_BUILD_SHARED_LIBS)
+	set(ZOE_LIB_NAME zoe)
+	set(ZOE_STATIC NO)
 else()
-	set(LIB_NAME libGet-static)
-	set(LIBGET_STATIC YES)
+	set(ZOE_LIB_NAME zoe-static)
+	set(ZOE_STATIC YES)
+endif()
+
+if (MSVC)
+  add_definitions(
+    -D_WIN32
+  )
 endif()
 
 
-if (MSVC AND USE_STATIC_CRT)
+if (MSVC AND ZOE_USE_STATIC_CRT)
     set(CompilerFlags
         CMAKE_CXX_FLAGS
         CMAKE_CXX_FLAGS_DEBUG
@@ -42,22 +48,21 @@ endif()
 
 
 
-file(GLOB HEADER_FILES 		../include/libGet/*.h ../include/libGet/*.hpp)
+file(GLOB HEADER_FILES 		../include/zoe/*.h ../include/zoe/*.hpp)
 file(GLOB SOURCE_FILES 		./*.cpp ./*.h ./*.hpp)
 
-source_group("Source Files" 			FILES ${SOURCE_FILES})
-source_group("Header Files" 			FILES ${HEADER_FILES})
+group_sources(${HEADER_FILES} ${SOURCE_FILES})
 
-if(BUILD_SHARED_LIBS AND MSVC)
+if(ZOE_BUILD_SHARED_LIBS AND MSVC)
   file(GLOB_RECURSE RES_FILES "*.rc") 
   source_group("Resources" ${RES_FILES})
 endif()
 
-if(BUILD_SHARED_LIBS)
-	add_definitions(-DLIBGET_EXPORTS)
+if(ZOE_BUILD_SHARED_LIBS)
+	add_definitions(-DZOE_EXPORTS)
 	
 	add_library(
-		${LIB_NAME}
+		${ZOE_LIB_NAME}
 		SHARED
 		${HEADER_FILES}
 		${SOURCE_FILES}
@@ -65,77 +70,55 @@ if(BUILD_SHARED_LIBS)
 	)
 	
 	# set output name prefix/suffix
-	set_target_properties(${LIB_NAME} PROPERTIES 
-		OUTPUT_NAME ${LIB_NAME}
-		DEBUG_OUTPUT_NAME ${LIB_NAME}${DEBUG_LIBNAME_SUFFIX})
+	set_target_properties(${ZOE_LIB_NAME} PROPERTIES 
+		OUTPUT_NAME ${ZOE_LIB_NAME}
+		DEBUG_OUTPUT_NAME ${ZOE_LIB_NAME}${DEBUG_LIBNAME_SUFFIX})
 else()
-	add_definitions(-DLIBGET_STATIC)
+	add_definitions(-DZOE_STATIC)
 	
 	add_library(
-		${LIB_NAME}
+		${ZOE_LIB_NAME}
 		STATIC
 		${HEADER_FILES}
 		${SOURCE_FILES}
 	)
 	
 	# set output name prefix/suffix
-    set_target_properties(${LIB_NAME} PROPERTIES 
-		OUTPUT_NAME ${LIB_NAME}
-		DEBUG_OUTPUT_NAME ${LIB_NAME}${DEBUG_LIBNAME_SUFFIX})
+    set_target_properties(${ZOE_LIB_NAME} PROPERTIES 
+		OUTPUT_NAME ${ZOE_LIB_NAME}
+		DEBUG_OUTPUT_NAME ${ZOE_LIB_NAME}${DEBUG_LIBNAME_SUFFIX})
 		
-	set_target_properties(${LIB_NAME} PROPERTIES 
-		INTERFACE_COMPILE_DEFINITIONS LIBGET_STATIC)
+	set_target_properties(${ZOE_LIB_NAME} PROPERTIES 
+		INTERFACE_COMPILE_DEFINITIONS ZOE_STATIC)
 endif()
 
 
 # CURL
 find_package(CURL REQUIRED)
-target_link_libraries(${LIB_NAME} PUBLIC 
+target_link_libraries(${ZOE_LIB_NAME} PUBLIC 
 	${CURL_LIBRARIES})
-target_include_directories(${LIB_NAME} PUBLIC 
+target_include_directories(${ZOE_LIB_NAME} PUBLIC 
 	${CURL_INCLUDE_DIRS})
 
 # OpenSSL
 find_package(OpenSSL)
 if(OpenSSL_FOUND)
   add_definitions(-DWITH_OPENSSL)
-  target_link_libraries(${LIB_NAME} PUBLIC OpenSSL::SSL OpenSSL::Crypto)
+  target_link_libraries(${ZOE_LIB_NAME} PUBLIC OpenSSL::SSL OpenSSL::Crypto)
 endif()
 
 
 if (WIN32 OR _WIN32)
-	target_link_libraries(${LIB_NAME} PUBLIC 
+	target_link_libraries(${ZOE_LIB_NAME} PUBLIC 
 		Ws2_32.lib Crypt32.lib)
 endif()
 
-# Set output directory
-set_target_properties(${LIB_NAME}
-	PROPERTIES
-	ARCHIVE_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/lib"
-	LIBRARY_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/lib"
-	RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin" )
 
-target_include_directories(${LIB_NAME} INTERFACE
-	$<INSTALL_INTERFACE:include>)
+install(DIRECTORY ../include/zoe 	DESTINATION include)
 
-install(TARGETS ${LIB_NAME}
-	EXPORT ${LIB_NAME}-target
-	RUNTIME DESTINATION bin
-	LIBRARY DESTINATION lib
-	ARCHIVE DESTINATION lib)
-
-
-install(FILES ${HEADER_FILES} 			DESTINATION include/libGet)
-
-
-install(FILES ${CMAKE_CURRENT_SOURCE_DIR}/../CMake/libGet-config.cmake 
-	DESTINATION ${LIBGET_INSTALL_CMAKE_DIR})
-
-export(TARGETS ${LIB_NAME}
-       APPEND FILE ${PROJECT_BINARY_DIR}/${LIB_NAME}-target.cmake
-)
-
-install(EXPORT ${LIB_NAME}-target
-        FILE ${LIB_NAME}-target.cmake
-        DESTINATION ${LIBGET_INSTALL_CMAKE_DIR}
+install(TARGETS ${ASHE_LIB_NAME}
+    RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
+    LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
+    ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
+    OBJECTS DESTINATION ${CMAKE_INSTALL_LIBDIR}
 )

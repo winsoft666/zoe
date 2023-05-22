@@ -1,14 +1,14 @@
-[![Build Status](https://travis-ci.com/winsoft666/libGet.svg?branch=master)](https://travis-ci.com/winsoft666/libGet) 
-[![Vcpkg package](https://img.shields.io/badge/Vcpkg-package-blueviolet)](https://github.com/microsoft/vcpkg/tree/master/ports/libGet)
-[![badge](https://img.shields.io/badge/license-GUN-blue)](https://github.com/winsoft666/libGet/blob/master/LICENSE)
+[![Build Status](https://travis-ci.com/winsoft666/zoe.svg?branch=master)](https://travis-ci.com/winsoft666/zoe) 
+[![Vcpkg package](https://img.shields.io/badge/Vcpkg-package-blueviolet)](https://github.com/microsoft/vcpkg/tree/master/ports/zoe)
+[![badge](https://img.shields.io/badge/license-GUN-blue)](https://github.com/winsoft666/zoe/blob/master/LICENSE)
 
 English | [ 简体中文](README_ch.md)
 
 # 1. Introduction
 
-Although there are many mature and powerful download tools, such as `Free Download Manager`, `Aria2`, etc., but when I want to find a file download library that supports multiple protocols (such as http, ftp), multi-threaded, resumable, cross-platform, open source, I realized that it's a difficult work, especially developed in C++. So I developed this download library named "libGet" based on libcurl, which can support the following features:
+Although there are many mature and powerful download tools, such as `Free Download Manager`, `Aria2`, etc., but when I want to find a file download library that supports multiple protocols (such as http, ftp), multi-threaded, resumable, cross-platform, open source, I realized that it's a difficult work, especially developed in C++. So I developed this download library named "zoe" based on libcurl, which can support the following features:
 
-✅ Support Multi-protocol. Since libGet based on libcurl, so it supports all protocols that same as libcurl.
+✅ Support Multi-protocol. Since zoe based on libcurl, so it supports all protocols that same as libcurl.
 
 ✅ Support multi-threaded download.
 
@@ -32,7 +32,7 @@ Although there are many mature and powerful download tools, such as `Free Downlo
 
 # 2. Compile and Install
 ## Method 1: Using with vcpkg
-The `libGet` library has been included in Microsoft's [vcpkg](https://github.com/microsoft/vcpkg/tree/master/ports/libGet), you can use the following command to install `libGet`:
+The `zoe` library has been included in Microsoft's [vcpkg](https://github.com/microsoft/vcpkg/tree/master/ports/zoe), you can use the following command to install `zoe`:
 - 1) Clone and setup vcpkg (See more detail on [https://github.com/microsoft/vcpkg](https://github.com/microsoft/vcpkg))
 ```bash
 git clone https://github.com/Microsoft/vcpkg.git
@@ -41,10 +41,10 @@ PS> bootstrap-vcpkg.bootstrap
 Linux:~/$ ./bootstrap-vcpkg.sh
 ```
 
-- 2) Install libGet
+- 2) Install zoe
 ```bash
-PS> .\vcpkg install libGet [--triplet x64-windows-static/x64-windows/x64-windows-static-md and etc...]
-Linux:~/$ ./vcpkg install libGet
+PS> .\vcpkg install zoe [--triplet x64-windows-static/x64-windows/x64-windows-static-md and etc...]
+Linux:~/$ ./vcpkg install zoe
 ```
 
 
@@ -69,7 +69,7 @@ unit test project depend on gtest.
 vcpkg install gtest:x86-windows
 ```
 
-### Step 2: Compile libGet
+### Step 2: Compile zoe
 Firstly using CMake to generate project or makefile, then comiple it:
 
 **Windows Sample**
@@ -93,10 +93,10 @@ make
 # 3. Getting Started
 ```c++
 #include <iostream>
-#include "libGet.h"
+#include "zoe.h"
 
 int main(int argc, char** argv) {
-  using namespace libGet;
+  using namespace zoe;
 
   Teemo::GlobalInit();
 
@@ -138,7 +138,7 @@ int main(int argc, char** argv) {
 ---
 
 # 4. Command-line tool
-`libGet` is command-line download tool based on `libGet` library. 
+`zoe` is command-line download tool based on `zoe` library. 
 
 Usage:
 ```bash

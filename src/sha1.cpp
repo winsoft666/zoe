@@ -5,7 +5,7 @@
 #include "file_util.h"
 #include "options.h"
 
-namespace LIBGET_NAMESPACE {
+namespace zoe {
 
 namespace {
 typedef union {
@@ -393,4 +393,4 @@ Result CalculateFileSHA1(FILE* f, Options* opt, utf8string& str_hash) {
 
   return SUCCESSED;
 }
-}  // namespace libGet
+}  // namespace zoe

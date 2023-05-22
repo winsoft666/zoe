@@ -20,9 +20,9 @@
 *  MA 02110-1301, USA.
 */
 
-#include "libGet/libGet.h"
+#include "zoe/zoe.h"
 
-namespace LIBGET_NAMESPACE {
+namespace zoe {
 typedef struct _Options Options;
 
 namespace sha256_internal {
@@ -52,6 +52,6 @@ std::string sha256_digest(const struct sha256_ctx* ctx);
 
 Result CalculateFileSHA256(const utf8string& file_path, Options* opt, utf8string& str_hash);
 Result CalculateFileSHA256(FILE* f, Options* opt, utf8string& str_hash);
-}  // namespace libGet
+}  // namespace zoe
 
 #endif

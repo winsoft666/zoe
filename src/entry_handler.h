@@ -15,8 +15,8 @@
 *    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 ******************************************************************************/
 
-#ifndef LIBGET_ENTRY_HANDLER_H__
-#define LIBGET_ENTRY_HANDLER_H__
+#ifndef ZOE_ENTRY_HANDLER_H__
+#define ZOE_ENTRY_HANDLER_H__
 #pragma once
 
 #include <memory>
@@ -26,7 +26,7 @@
 #include "options.h"
 #include "curl_utils.h"
 
-namespace LIBGET_NAMESPACE {
+namespace zoe {
 
 class EntryHandler {
  public:
@@ -90,5 +90,5 @@ class EntryHandler {
 
   std::atomic<DownloadState> state_;
 };
-}  // namespace libGet
-#endif  // !LIBGET_ENTRY_HANDLER_H__
+}  // namespace zoe
+#endif  // !ZOE_ENTRY_HANDLER_H__

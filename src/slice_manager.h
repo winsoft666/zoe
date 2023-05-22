@@ -15,17 +15,17 @@
 *    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 ******************************************************************************/
 
-#ifndef LIBGET_SLICE_MANAGE_H_
-#define LIBGET_SLICE_MANAGE_H_
+#ifndef ZOE_SLICE_MANAGE_H_
+#define ZOE_SLICE_MANAGE_H_
 #pragma once
 
 #include <vector>
 #include <atomic>
-#include "libGet/libGet.h"
+#include "zoe/zoe.h"
 #include "target_file.h"
 #include "slice.h"
 
-namespace LIBGET_NAMESPACE {
+namespace zoe {
 typedef struct _Options Options;
 
 class SliceManager : public std::enable_shared_from_this<SliceManager> {
@@ -82,6 +82,6 @@ class SliceManager : public std::enable_shared_from_this<SliceManager> {
 
   Options* options_;
 };
-}  // namespace libGet
+}  // namespace zoe
 
-#endif  // !LIBGET_SLICE_MANAGE_H_
+#endif  // !ZOE_SLICE_MANAGE_H_

@@ -18,27 +18,29 @@
 cmake_minimum_required(VERSION 3.4 FATAL_ERROR)
 set(CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/CMake;${CMAKE_MODULE_PATH};")
 
-project(libGet CXX)
+project(zoe CXX)
 
-option(BUILD_SHARED_LIBS "Build shared libraries" ON)
-option(BUILD_TESTS "Build tests project" ON)
-option(USE_STATIC_CRT "Set to ON to build with static CRT on Windows (/MT)." OFF)
+function(group_sources)
+  foreach(_source IN ITEMS ${ARGN})
+  if (IS_ABSOLUTE "${_source}")
+      file(RELATIVE_PATH _source_rel "${CMAKE_CURRENT_SOURCE_DIR}" "${_source}")
+  else()
+      set(_source_rel "${_source}")
+  endif()
+  get_filename_component(_source_path "${_source_rel}" PATH)
+  string(REPLACE "/" "\\" _source_path_msvc "${_source_path}")
+  source_group("${_source_path_msvc}" FILES "${_source}")
+  endforeach()
+endfunction(group_sources)
 
-if(MSVC)
-  set(LIBGET_INSTALL_CMAKE_DIR share/libGet)
-elseif(WIN32 AND NOT CYGWIN)
-  set(LIBGET_INSTALL_CMAKE_DIR CMake)
-else()
-  set(LIBGET_INSTALL_CMAKE_DIR lib/cmake/libGet)
-endif()
 
-set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
-set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
-set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
+option(ZOE_BUILD_SHARED_LIBS "Build shared libraries" ON)
+option(ZOE_BUILD_TESTS "Build tests project" ON)
+option(ZOE_USE_STATIC_CRT "Set to ON to build with static CRT on Windows (/MT)." OFF)
 
 # Debug Output
-message(STATUS "BUILD_SHARED_LIBS=${BUILD_SHARED_LIBS}")
-message(STATUS "USE_STATIC_CRT=${USE_STATIC_CRT}")
+message(STATUS "ZOE_BUILD_SHARED_LIBS=${ZOE_BUILD_SHARED_LIBS}")
+message(STATUS "ZOE_USE_STATIC_CRT=${ZOE_USE_STATIC_CRT}")
 message(STATUS "CMAKE_TOOLCHAIN_FILE=${CMAKE_TOOLCHAIN_FILE}")
 message(STATUS "VCPKG_TARGET_TRIPLET=${VCPKG_TARGET_TRIPLET}")
 message(STATUS "CMAKE_MODULE_PATH=${CMAKE_MODULE_PATH}")
@@ -48,25 +50,17 @@ set(DEBUG_LIBNAME_SUFFIX "-d"
 	CACHE STRING "Optional suffix to append to the library name for a debug build")
 mark_as_advanced(DEBUG_LIBNAME_SUFFIX)
 
-set(LIBGET_NAMESPACE "libGet" 
-	CACHE STRING "Custom library's namespace")
-mark_as_advanced(LIBGET_NAMESPACE)
-
-set(LIBGET "Teemo" 
-	CACHE STRING "Custom library's export class name")
-mark_as_advanced(LIBGET)
-
 # Unicode Support
 add_definitions(-DUNICODE -D_UNICODE -DNOMINMAX)
 
 set_property(GLOBAL PROPERTY USE_FOLDERS ON)
 
-configure_file(${CMAKE_CURRENT_SOURCE_DIR}/include/libGet/config.h.in ${CMAKE_CURRENT_SOURCE_DIR}/include/libGet/config.h @ONLY)
+configure_file(${CMAKE_CURRENT_SOURCE_DIR}/include/zoe/config.h.in ${CMAKE_CURRENT_SOURCE_DIR}/include/zoe/config.h @ONLY)
 
 include_directories(./include)
 
 add_subdirectory(src)
 
-if(BUILD_TESTS)
+if(ZOE_BUILD_TESTS)
 	add_subdirectory(tests)
 endif()

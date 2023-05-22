@@ -1,10 +1,10 @@
-﻿#ifndef LIBGET_MD5_MAKER_34DFDR7_H__
-#define LIBGET_MD5_MAKER_34DFDR7_H__
+﻿#ifndef ZOE_MD5_MAKER_34DFDR7_H__
+#define ZOE_MD5_MAKER_34DFDR7_H__
 #pragma once
 
-#include "libGet/libGet.h"
+#include "zoe/zoe.h"
 
-namespace LIBGET_NAMESPACE {
+namespace zoe {
 typedef struct _Options Options;
 
 namespace libmd5_internal {
@@ -27,6 +27,6 @@ void MD5SigToString(unsigned char sig[16], char* str, int len);
 // Helper function.
 Result CalculateFileMd5(const utf8string& file_path, Options* opt, utf8string& str_hash);
 Result CalculateFileMd5(FILE* f, Options* opt, utf8string& str_hash);
-}  // namespace libGet
+}  // namespace zoe
 
 #endif

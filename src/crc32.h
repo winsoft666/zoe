@@ -16,9 +16,9 @@
 
 #include <stdlib.h>
 #include <stdint.h>
-#include "libGet/libGet.h"
+#include "zoe/zoe.h"
 
-namespace LIBGET_NAMESPACE {
+namespace zoe {
 typedef struct _Options Options;
 namespace crc32_internal {
 void crc32Init(uint32_t* pCrc32);
@@ -28,5 +28,5 @@ void crc32Finish(uint32_t* pCrc32);
 
 Result CalculateFileCRC32(const utf8string& file_path, Options* opt, utf8string &str_hash);
 Result CalculateFileCRC32(FILE* f, Options* opt, utf8string& str_hash);
-}  // namespace libGet
+}  // namespace zoe
 #endif /* ___CRC32_H___ */

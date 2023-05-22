@@ -4,7 +4,7 @@
 #include "file_util.h"
 #include "options.h"
 
-namespace LIBGET_NAMESPACE {
+namespace zoe {
 namespace sha256_internal {
 /* A block, treated as a sequence of 32-bit words. */
 #define SHA256_DATA_LENGTH 16
@@ -322,4 +322,4 @@ Result CalculateFileSHA256(FILE* f, Options* opt, utf8string& str_hash) {
 
   return SUCCESSED;
 }
-}  // namespace libGet
+}  // namespace zoe

@@ -32,10 +32,10 @@
 
 using json = nlohmann::json;
 
-#define INDEX_FILE_SIGN_STRING "LIBGET:EASY-FILE-DOWNLOAD(2.0)"
-#define TMP_FILE_EXTENSION ".libGet"
+#define INDEX_FILE_SIGN_STRING "zoe:EASY-FILE-DOWNLOAD(3.0)"
+#define TMP_FILE_EXTENSION ".zoe"
 
-namespace LIBGET_NAMESPACE {
+namespace zoe {
 SliceManager::SliceManager(Options* options, const utf8string& redirect_url)
     : options_(options)
     , redirect_url_(redirect_url)
@@ -48,7 +48,7 @@ SliceManager::~SliceManager() {
   target_file_.reset();
 }
 
-std::shared_ptr<LIBGET_NAMESPACE::Slice> SliceManager::getSlice(void* curlHandle) {
+std::shared_ptr<Slice> SliceManager::getSlice(void* curlHandle) {
   for (auto& s : slices_) {
     if (s->curlHandle() == curlHandle)
       return s;
@@ -56,7 +56,7 @@ std::shared_ptr<LIBGET_NAMESPACE::Slice> SliceManager::getSlice(void* curlHandle
   return nullptr;
 }
 
-std::shared_ptr<LIBGET_NAMESPACE::Slice> SliceManager::getSlice(Slice::Status status) {
+std::shared_ptr<Slice> SliceManager::getSlice(Slice::Status status) {
   for (auto& s : slices_) {
     if (s && s->status() == status) {
       return s;
@@ -240,11 +240,11 @@ Result SliceManager::makeSlices(bool accept_ranges) {
         slice_size = origin_file_size_ / options_->slice_policy_value;
     }
     else if (options_->slice_policy == Auto) {
-      if (origin_file_size_ <= LIBGET_DEFAULT_FIXED_SLICE_SIZE_BYTE * 1.5f) {
+      if (origin_file_size_ <= ZOE_DEFAULT_FIXED_SLICE_SIZE_BYTE * 1.5f) {
         slice_size = origin_file_size_;
       }
       else {
-        slice_size = LIBGET_DEFAULT_FIXED_SLICE_SIZE_BYTE;
+        slice_size = ZOE_DEFAULT_FIXED_SLICE_SIZE_BYTE;
       }
     }
 
@@ -488,4 +488,4 @@ void SliceManager::cleanup() {
   target_file_.reset();
 }
 
-}  // namespace libGet
+}  // namespace zoe

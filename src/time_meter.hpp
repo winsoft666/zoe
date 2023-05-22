@@ -15,17 +15,17 @@
 *    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 ******************************************************************************/
 
-#ifndef LIBGET_TIME_METER_H_
-#define LIBGET_TIME_METER_H_
+#ifndef ZOE_TIME_METER_H_
+#define ZOE_TIME_METER_H_
 #pragma once
 
-#include "libGet/config.h"
+#include "zoe/config.h"
 #include <stdint.h>
 #include <time.h>
 #include <ctime>
 #include <limits>
 
-namespace LIBGET_NAMESPACE {
+namespace zoe {
 class TimeMeter {
  public:
   TimeMeter() { lStartTime_ = std::clock(); }
@@ -44,6 +44,6 @@ class TimeMeter {
  private:
   std::clock_t lStartTime_;
 };
-}  // namespace libGet
+}  // namespace zoe
 
 #endif

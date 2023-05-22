@@ -33,7 +33,7 @@
     }                                                                                                    \
   } while (false)
 
-namespace LIBGET_NAMESPACE {
+namespace zoe {
 
 utf8string bool2string(bool b) {
   return (b ? "true" : "false");
@@ -137,7 +137,7 @@ int64_t EntryHandler::originFileSize() const {
   return -1;
 }
 
-LIBGET_NAMESPACE::Options* EntryHandler::options() {
+Options* EntryHandler::options() {
   return options_;
 }
 
@@ -145,7 +145,7 @@ DownloadState EntryHandler::state() const {
   return state_.load();
 }
 
-std::shared_future<LIBGET_NAMESPACE::Result> EntryHandler::futureResult() {
+std::shared_future<Result> EntryHandler::futureResult() {
   return async_task_;
 }
 
@@ -614,4 +614,4 @@ void EntryHandler::updateSliceStatus() {
     }
   } while (m);
 }
-}  // namespace libGet
+}  // namespace zoe

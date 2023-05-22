@@ -15,14 +15,14 @@
 *    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 ******************************************************************************/
 
-#ifndef LIBGET_FILE_UTIL_H__
-#define LIBGET_FILE_UTIL_H__
+#ifndef ZOE_FILE_UTIL_H__
+#define ZOE_FILE_UTIL_H__
 #pragma once
 
 #include <stdio.h>
-#include "libGet/libGet.h"
+#include "zoe/zoe.h"
 
-namespace LIBGET_NAMESPACE {
+namespace zoe {
   class FileUtil {
   public:
     static int64_t GetFileSize(FILE* f);
@@ -42,6 +42,6 @@ namespace LIBGET_NAMESPACE {
     static bool CreateFixedSizeFile(const utf8string& path, int64_t fixed_size);
     static bool PathFormatting(const utf8string& path, utf8string& formatted);
   };
-}  // namespace libGet
+}  // namespace zoe
 
 #endif

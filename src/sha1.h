@@ -5,9 +5,9 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdint.h>
-#include "libGet/libGet.h"
+#include "zoe/zoe.h"
 
-namespace LIBGET_NAMESPACE {
+namespace zoe {
 
 typedef struct _Options Options;
 
@@ -37,6 +37,6 @@ class CSHA1 {
 
 Result CalculateFileSHA1(const utf8string& file_path, Options* opt, utf8string& str_hash);
 Result CalculateFileSHA1(FILE* f, Options* opt, utf8string& str_hash);
-}  // namespace libGet
+}  // namespace zoe
 
 #endif

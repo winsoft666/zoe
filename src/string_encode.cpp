@@ -17,10 +17,10 @@
 
 #include "string_encode.h"
 #if defined(WIN32) || defined(_WIN32) || defined(__WIN32__) || defined(__NT__)
-#include "libGet/config.h"
+#include "zoe/config.h"
 #include <windows.h>
 
-namespace LIBGET_NAMESPACE {
+namespace zoe {
 std::wstring Utf8ToUnicode(const std::string& str) {
   std::wstring strRes;
   int iSize = ::MultiByteToWideChar(CP_UTF8, 0, str.c_str(), -1, NULL, 0);
@@ -65,5 +65,5 @@ std::string UnicodeToUtf8(const std::wstring& str) {
 
   return strRes;
 }
-}  // namespace libGet
+}  // namespace zoe
 #endif

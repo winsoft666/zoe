@@ -16,18 +16,18 @@
 ******************************************************************************/
 
 #include "gtest/gtest.h"
-#include "libGet/libGet.h"
+#include "zoe/zoe.h"
 #include "test_data.h"
 #include <future>
-using namespace LIBGET_NAMESPACE;
+using namespace zoe;
 
 TEST(SpeedLimitTest, test1) {
   if (http_test_datas.empty())
     return;
 
-  LIBGET::GlobalInit();
+  zoe::GlobalInit();
   {
-    LIBGET efd1;
+    zoe efd1;
 
     efd1.setThreadNum(3);
     efd1.setHashVerifyPolicy(ALWAYS, MD5, http_test_datas[0].md5);
@@ -43,7 +43,7 @@ TEST(SpeedLimitTest, test1) {
 
     future_result1.wait();
   }
-  LIBGET::GlobalUnInit();
+  zoe::GlobalUnInit();
 
   // set test case interval
   std::this_thread::sleep_for(std::chrono::milliseconds(5000));

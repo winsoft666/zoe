@@ -35,7 +35,7 @@
     }                                                                                                                     \
   } while (false)
 
-namespace LIBGET_NAMESPACE {
+namespace zoe {
 
 Slice::Slice(int32_t index,
              int64_t begin,
@@ -441,4 +441,4 @@ bool Slice::onNewData(const char* p, long data_size) {
 
   return bret;
 }
-}  // namespace libGet
+}  // namespace zoe

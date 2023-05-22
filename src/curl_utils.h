@@ -15,13 +15,13 @@
 *    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 ******************************************************************************/
 
-#ifndef LIBGET_GLOBAL_ENV_H_
-#define LIBGET_GLOBAL_ENV_H_
+#ifndef ZOE_GLOBAL_ENV_H_
+#define ZOE_GLOBAL_ENV_H_
 #pragma once
 
 #include "curl/curl.h"
 
-namespace LIBGET_NAMESPACE {
+namespace zoe {
 void GlobalCurlInit();
 void GlobalCurlUnInit();
 
@@ -36,6 +36,6 @@ class ScopedCurl {
  private:
   CURL* curl_;
 };
-}  // namespace libGet
+}  // namespace zoe
 
-#endif  // !LIBGET_GLOBAL_ENV_H_
+#endif  // !ZOE_GLOBAL_ENV_H_

@@ -15,14 +15,14 @@
 *    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 ******************************************************************************/
 
-#ifndef LIBGET_PROGRESS_HANDLER_H_
-#define LIBGET_PROGRESS_HANDLER_H_
+#ifndef ZOE_PROGRESS_HANDLER_H_
+#define ZOE_PROGRESS_HANDLER_H_
 #pragma once
 
-#include "libGet/libGet.h"
+#include "zoe/zoe.h"
 #include "slice_manager.h"
 
-namespace LIBGET_NAMESPACE {
+namespace zoe {
 typedef struct _Options Options;
 
 class ProgressHandler {
@@ -39,5 +39,5 @@ class ProgressHandler {
   const Options* options_;
   std::shared_ptr<SliceManager> slice_manager_;
 };
-}  // namespace libGet
-#endif  // !LIBGET_PROGRESS_HANDLER_H_
+}  // namespace zoe
+#endif  // !ZOE_PROGRESS_HANDLER_H_

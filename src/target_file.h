@@ -19,10 +19,10 @@
 #define TARGET_FILE_H__
 #pragma once
 
-#include "libGet/libGet.h"
+#include "zoe/zoe.h"
 #include <mutex>
 
-namespace LIBGET_NAMESPACE {
+namespace zoe {
 typedef struct _Options Options;
 
 class TargetFile {
@@ -55,5 +55,5 @@ class TargetFile {
   FILE* f_;
   std::recursive_mutex file_mutex_;
 };
-}  // namespace libGet
+}  // namespace zoe
 #endif

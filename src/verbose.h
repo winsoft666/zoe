@@ -16,13 +16,13 @@
 ******************************************************************************/
 
 
-#ifndef LIBGET_VERBOSE_H_
-#define LIBGET_VERBOSE_H_
+#ifndef ZOE_VERBOSE_H_
+#define ZOE_VERBOSE_H_
 #pragma once
 
-#include "libGet/libGet.h"
+#include "zoe/zoe.h"
 
-namespace LIBGET_NAMESPACE {
+namespace zoe {
   void OutputVerbose(VerboseOuputFunctor functor, const char* fmt, ...);
 }
 

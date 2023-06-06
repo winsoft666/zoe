@@ -10,7 +10,7 @@ Although there are many mature and powerful download tools, such as `Free Downlo
 
 ✅ Support Multi-protocol. Since zoe based on libcurl, so it supports all protocols that same as libcurl.
 
-✅ Support multi-threaded download.
+✅ Support segmented downloads.
 
 ✅ Support breakpoint resumable.
 

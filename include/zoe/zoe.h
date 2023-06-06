@@ -237,7 +237,7 @@ class ZOE_API Zoe {
   UncompletedSliceSavePolicy uncompletedSliceSavePolicy() const noexcept;
 
   // Start to download and state change to DOWNLOADING.
-  // Supported url protocol is the same as libcurl.
+  // Supported url protocol is as same as curl library.
   //
   std::shared_future<Result> start(
       const utf8string& url,
@@ -261,7 +261,7 @@ class ZOE_API Zoe {
   utf8string targetFilePath() const noexcept;
 
   // The file size of server side that will be downloaded.
-  // Set to (-1) when get original file size failed.
+  // Return -1 when get original file size failed.
   //
   int64_t originFileSize() const noexcept;
 

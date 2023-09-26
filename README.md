@@ -4,6 +4,8 @@
 
 English | [ 简体中文](README_ch.md)
 
+**The old name of project is teemo**
+
 # 1. Introduction
 
 Although there are many mature and powerful download tools, such as `Free Download Manager`, `Aria2`, etc., but when I want to find a file download library that supports multiple protocols (such as http, ftp), multi-threaded, resumable, cross-platform, open source, I realized that it's a difficult work, especially developed in C++. So I developed this download library named "zoe" based on libcurl, which can support the following features:
@@ -91,16 +93,16 @@ make
 ---
 
 # 3. Getting Started
-```c++
+```cpp
 #include <iostream>
 #include "zoe.h"
 
 int main(int argc, char** argv) {
   using namespace zoe;
 
-  Teemo::GlobalInit();
+  Zoe::GlobalInit();
 
-  Teemo efd;
+  Zoe efd;
 
   efd.setThreadNum(10);                     // Optional
   efd.setTmpFileExpiredTime(3600);          // Optional
@@ -129,7 +131,7 @@ int main(int argc, char** argv) {
 
   async_task.wait();
 
-  Teemo::GlobalUnInit();
+  Zoe::GlobalUnInit();
 
   return 0;
 }

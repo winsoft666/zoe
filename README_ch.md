@@ -4,6 +4,8 @@
 
 简体中文 | [ English](README.md)
 
+**该项目原名为teemo**
+
 # 一、介绍
 目前虽然有很多成熟且功能强大的下载工具，如`Free Download Manager`, `Aria2`等等，但当我想找一个支持多种协议(如http， ftp)、多线程下载、断点续传、跨平台的开源库时，发现很难找到满意的，特别是使用C++开发的。于是我基于libcurl开发了这个名为`"zoe"`下载库，它可以支持如下特性：
 
@@ -88,16 +90,16 @@ make
 ---
 
 # 三、快速开始
-```c++
+```cpp
 #include <iostream>
 #include "zoe.h"
 
 int main(int argc, char** argv) {
   using namespace zoe;
 
-  Teemo::GlobalInit();
+  Zoe::GlobalInit();
 
-  Teemo efd;
+  Zoe efd;
 
   efd.setThreadNum(10);                     // Optional
   efd.setTmpFileExpiredTime(3600);          // Optional
@@ -126,7 +128,7 @@ int main(int argc, char** argv) {
 
   async_task.wait();
 
-  Teemo::GlobalUnInit();
+  Zoe::GlobalUnInit();
 
   return 0;
 }

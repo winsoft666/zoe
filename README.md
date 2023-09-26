@@ -4,7 +4,7 @@
 
 English | [ 简体中文](README_ch.md)
 
-**The old name of project is teemo**
+**The old name of project is teemo. Due to illegal use, the code was added to the security software feature library. The author made the project private and modified the code structure, and now it is open source again.**
 
 # 1. Introduction
 

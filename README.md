@@ -33,7 +33,7 @@ Although there are many mature and powerful download tools, such as `Free Downlo
 ---
 
 # 2. Compile and Install
-## Method 1: Using with vcpkg
+## Method 1: Using with vcpkg(**Temporarily Unavailable**)
 The `zoe` library has been included in Microsoft's [vcpkg](https://github.com/microsoft/vcpkg/tree/master/ports/zoe), you can use the following command to install `zoe`:
 - 1) Clone and setup vcpkg (See more detail on [https://github.com/microsoft/vcpkg](https://github.com/microsoft/vcpkg))
 ```bash
@@ -109,6 +109,7 @@ int main(int argc, char** argv) {
   efd.setDiskCacheSize(20 * (2 << 19));     // Optional
   efd.setMaxDownloadSpeed(50 * (2 << 19));  // Optional
   efd.setHashVerifyPolicy(ALWAYS, MD5, "6fe294c3ef4765468af4950d44c65525"); // Optional, support MD5, CRC32, SHA256
+  // There are more options available, please check zoe.h
   efd.setVerboseOutput([](const utf8string& verbose) { // Optional
     printf("%s\n", verbose.c_str());
   });
@@ -140,11 +141,11 @@ int main(int argc, char** argv) {
 ---
 
 # 4. Command-line tool
-`zoe` is command-line download tool based on `zoe` library. 
+`zoe_tool` is command-line download tool based on `zoe` library. 
 
 Usage:
 ```bash
-libGet_tool URL TargetFilePath [ThreadNum] [DiskCacheMb] [MD5] [TmpExpiredSeconds] [MaxSpeed]
+zoe_tool URL TargetFilePath [ThreadNum] [DiskCacheMb] [MD5] [TmpExpiredSeconds] [MaxSpeed]
 ```
 
 - URL: Download URL.

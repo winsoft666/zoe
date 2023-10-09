@@ -33,7 +33,7 @@
 
 # 二、编译与安装
 
-## 方式一、使用vcpkg
+## 方式一、使用vcpkg（**暂时不可用**）
 `zoe`库已经收录到微软的[vcpkg](https://github.com/microsoft/vcpkg/tree/master/ports/zoe)之中，可以使用如下命令快速安装:
 
 - 1) 下载安装vcpkg（详见[https://github.com/microsoft/vcpkg](https://github.com/microsoft/vcpkg)
@@ -101,29 +101,30 @@ int main(int argc, char** argv) {
 
   Zoe efd;
 
-  efd.setThreadNum(10);                     // Optional
-  efd.setTmpFileExpiredTime(3600);          // Optional
-  efd.setDiskCacheSize(20 * (2 << 19));     // Optional
-  efd.setMaxDownloadSpeed(50 * (2 << 19));  // Optional
-  efd.setHashVerifyPolicy(ALWAYS, MD5, "6fe294c3ef4765468af4950d44c65525"); // Optional, support MD5, CRC32, SHA256
-  efd.setVerboseOutput([](const utf8string& verbose) { // Optional
+  efd.setThreadNum(10);                     // 可选的
+  efd.setTmpFileExpiredTime(3600);          // 可选的
+  efd.setDiskCacheSize(20 * (2 << 19));     // 可选的
+  efd.setMaxDownloadSpeed(50 * (2 << 19));  // 可选的
+  efd.setHashVerifyPolicy(ALWAYS, MD5, "6fe294c3ef4765468af4950d44c65525"); // 可选的, 支持 MD5, CRC32, SHA256
+  // 还支持其他更多的选择，请查看zoe.h
+  efd.setVerboseOutput([](const utf8string& verbose) { // 可选的
     printf("%s\n", verbose.c_str());
   });
-  efd.setHttpHeaders({  // Optional
+  efd.setHttpHeaders({  // 可选的
     {u8"Origin", u8"http://xxx.xxx.com"},
     {u8"User-Agent", u8"Mozilla/4.0 (compatible; MSIE 7.0; Windows NT 5.1)"}
    });
   
   std::shared_future<Result> async_task = efd.start(
       u8"http://xxx.xxx.com/test.exe", u8"D:\\test.exe",
-      [](Result result) {  // Optional
-        // result callback
+      [](Result result) {  // 可选的
+        // 结果回调
       },
-      [](int64_t total, int64_t downloaded) {  // Optional
-        // progress callback
+      [](int64_t total, int64_t downloaded) {  // 可选的
+        // 进度回调
       },
-      [](int64_t byte_per_secs) {  // Optional
-        // real-time speed callback
+      [](int64_t byte_per_secs) {  // 可选的
+        // 实时速率回调
       });
 
   async_task.wait();
@@ -137,12 +138,13 @@ int main(int argc, char** argv) {
 ---
 
 # 四、命令行工具
-`libGet_tool`是一个基于`zoe`库开发的命令行下载工具，用法如下：
+`zoe_tool`是一个基于`zoe`库开发的命令行下载工具，用法如下：
 
 ```bash
-libGet_tool URL TargetFilePath [ThreadNum] [DiskCacheMb] [MD5] [TmpExpiredSeconds] [MaxSpeed]
+zoe_tool URL TargetFilePath [ThreadNum] [DiskCacheMb] [MD5] [TmpExpiredSeconds] [MaxSpeed]
 ```
 
+参数解释：
 - URL: 下载链接
 - TargetFilePath: 下载的目标文件保存路径
 - ThreadNum: 线程数量，可选，默认为1

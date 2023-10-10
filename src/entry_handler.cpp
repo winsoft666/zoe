@@ -19,6 +19,7 @@
 #include <assert.h>
 #include <cinttypes>
 #include <functional>
+#include <thread>
 #include "file_util.h"
 #include "string_helper.hpp"
 #include "string_encode.h"

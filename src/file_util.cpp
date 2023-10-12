@@ -25,6 +25,7 @@
 #include <windows.h>
 #include <fileapi.h>
 #else
+#include <stdio.h>
 #include <unistd.h>
 #include <sys/stat.h>
 #include <fcntl.h>

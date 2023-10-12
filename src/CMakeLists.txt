@@ -1,4 +1,4 @@
-﻿############################################################################
+############################################################################
 #    Copyright (C) <2019-2023>, winsoft666, <winsoft666@outlook.com>.
 #
 #    This program is free software: you can redistribute it and/or modify
@@ -116,7 +116,7 @@ endif()
 
 install(DIRECTORY ../include/zoe 	DESTINATION include)
 
-install(TARGETS ${ASHE_LIB_NAME}
+install(TARGETS ${ZOE_LIB_NAME}
     RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
     LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
     ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}

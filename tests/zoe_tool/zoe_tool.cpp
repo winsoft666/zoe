@@ -78,7 +78,7 @@ void ControlSignalHandler(int s) {
 
 //
 // Usage:
-// libGet_tool URL TargetFilePath [ThreadNum] [DiskCacheMb] [MD5] [TmpExpiredSeconds] [MaxSpeed]
+// zoe_tool URL TargetFilePath [ThreadNum] [DiskCacheMb] [MD5] [TmpExpiredSeconds] [MaxSpeed]
 //
 int main(int argc, char** argv) {
   if (argc < 3) {
@@ -118,7 +118,7 @@ int main(int argc, char** argv) {
 
   int exit_code = 0;
   Zoe::GlobalInit();
-  FILE* f_verbose = fopen("libGet_tool_verbose.log", "wb");
+  FILE* f_verbose = fopen("zoe_tool_verbose.log", "wb");
   efd.setVerboseOutput([f_verbose](const utf8string& verbose) {
     fwrite(verbose.c_str(), 1, verbose.size(), f_verbose);
 #if defined(WIN32) || defined(_WIN32) || defined(__WIN32__) || defined(__NT__)

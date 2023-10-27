@@ -16,6 +16,7 @@
 ############################################################################
 
 set (CMAKE_CXX_STANDARD 11)
+set (PACKAGE_VERSION 3.0)
 
 if(ZOE_BUILD_SHARED_LIBS)
 	set(ZOE_LIB_NAME zoe)
@@ -113,12 +114,35 @@ if (WIN32 OR _WIN32)
 		Ws2_32.lib Crypt32.lib)
 endif()
 
+install(TARGETS ${ZOE_LIB_NAME}
+        EXPORT zoe-targets
+        RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
+        LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
+        ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
+        OBJECTS DESTINATION ${CMAKE_INSTALL_LIBDIR}
+)
+
+install(EXPORT zoe-targets
+    NAMESPACE zoe::
+    DESTINATION share/zoe
+)
+
+file(WRITE "${CMAKE_CURRENT_BINARY_DIR}/zoe-config.cmake.in"
+[[include(CMakeFindDependencyMacro)
+find_dependency(CURL)
+find_dependency(OpenSSL)
+include("${CMAKE_CURRENT_LIST_DIR}/zoe-targets.cmake")
+]])
+configure_file("${CMAKE_CURRENT_BINARY_DIR}/zoe-config.cmake.in" "${CMAKE_CURRENT_BINARY_DIR}/zoe-config.cmake" @ONLY)
+install(FILES ${CMAKE_CURRENT_BINARY_DIR}/zoe-config.cmake DESTINATION share/zoe)
+
+include(CMakePackageConfigHelpers)
+write_basic_package_version_file(
+    zoeConfigVersion.cmake
+    VERSION ${PACKAGE_VERSION}
+    COMPATIBILITY AnyNewerVersion
+)
+install(FILES ${CMAKE_CURRENT_BINARY_DIR}/zoeConfigVersion.cmake
+        DESTINATION share/zoe)
 
 install(DIRECTORY ../include/zoe 	DESTINATION include)
-
-install(TARGETS ${ZOE_LIB_NAME}
-    RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
-    LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
-    ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
-    OBJECTS DESTINATION ${CMAKE_INSTALL_LIBDIR}
-)

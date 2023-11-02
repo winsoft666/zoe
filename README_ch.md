@@ -33,7 +33,7 @@
 
 # 二、编译与安装
 
-## 方式一、使用vcpkg（**暂时不可用**）
+## 方式一、使用vcpkg
 `zoe`库已经收录到微软的[vcpkg](https://github.com/microsoft/vcpkg/tree/master/ports/zoe)之中，可以使用如下命令快速安装:
 
 - 1) 下载安装vcpkg（详见[https://github.com/microsoft/vcpkg](https://github.com/microsoft/vcpkg)

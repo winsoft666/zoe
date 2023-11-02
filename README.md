@@ -33,7 +33,7 @@ Although there are many mature and powerful download tools, such as `Free Downlo
 ---
 
 # 2. Compile and Install
-## Method 1: Using with vcpkg(**Temporarily Unavailable**)
+## Method 1: Using with vcpkg
 The `zoe` library has been included in Microsoft's [vcpkg](https://github.com/microsoft/vcpkg/tree/master/ports/zoe), you can use the following command to install `zoe`:
 - 1) Clone and setup vcpkg (See more detail on [https://github.com/microsoft/vcpkg](https://github.com/microsoft/vcpkg))
 ```bash

@@ -90,7 +90,7 @@ void byteSwap(UWORD32* buf, unsigned words) {
  * the data and converts bytes into longwords for this routine.
  */
 void MD5Transform(UWORD32 buf[4], UWORD32 const in[16]) {
-  register UWORD32 a, b, c, d;
+  UWORD32 a, b, c, d;
 
   a = buf[0];
   b = buf[1];

@@ -161,10 +161,11 @@ Result Slice::start(void* multi, int64_t disk_cache_size, int64_t max_speed) {
 
   CHECK_SETOPT1(curl_easy_setopt(curl_, CURLOPT_NOSIGNAL, 1L));
   CHECK_SETOPT1(curl_easy_setopt(curl_, CURLOPT_FOLLOWLOCATION, 1L));
-  CHECK_SETOPT1(curl_easy_setopt(curl_, CURLOPT_SSL_VERIFYHOST, 0L));
-  CHECK_SETOPT1(curl_easy_setopt(curl_, CURLOPT_SSL_VERIFYPEER, 0L));
-  //if (ca_path_.length() > 0)
-  //    curl_easy_setopt(curl_, CURLOPT_CAINFO, ca_path_.c_str());
+  CHECK_SETOPT1(curl_easy_setopt(curl_, CURLOPT_SSL_VERIFYHOST, slice_manager_->options()->verify_peer_host ? 2L : 0L));
+  CHECK_SETOPT1(curl_easy_setopt(curl_, CURLOPT_SSL_VERIFYPEER, slice_manager_->options()->verify_peer_certificate ? 1L : 0L));
+
+  if (slice_manager_->options()->verify_peer_certificate && slice_manager_->options()->ca_path.length() > 0)
+      CHECK_SETOPT1(curl_easy_setopt(curl_, CURLOPT_CAINFO, slice_manager_->options()->ca_path.c_str()));
 
   if (slice_manager_->options()->min_speed == -1) {
     CHECK_SETOPT1(curl_easy_setopt(curl_, CURLOPT_LOW_SPEED_LIMIT, 0L));  // disabled

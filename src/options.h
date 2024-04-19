@@ -34,6 +34,8 @@ typedef struct _Options {
   bool redirected_url_check_enabled;
   bool content_md5_enabled;
   bool use_head_method_fetch_file_info;
+  bool verify_peer_certificate;
+  bool verify_peer_host;
   int32_t thread_num;
   int32_t disk_cache_size;
   int32_t max_speed;
@@ -67,12 +69,20 @@ typedef struct _Options {
 
   utf8string proxy;
 
+  // A file path holding one or more certificates to verify the peer with.
+  // Used with verify_peer_certificate = true
+  utf8string ca_path;
+
   UncompletedSliceSavePolicy uncompleted_slice_save_policy;
 
   _Options() : internal_stop_event(true) {
     redirected_url_check_enabled = true;
     content_md5_enabled = false;
     use_head_method_fetch_file_info = true;
+
+    verify_peer_certificate = false;
+    verify_peer_host = false;
+
     thread_num = ZOE_DEFAULT_THREAD_NUM;
     disk_cache_size = ZOE_DEFAULT_TOTAL_DISK_CACHE_SIZE_BYTE;
 
@@ -99,6 +109,8 @@ typedef struct _Options {
     user_stop_event = nullptr;
 
     uncompleted_slice_save_policy = ALWAYS_DISCARD;
+
+    
   }
 } Options;
 }  // namespace zoe

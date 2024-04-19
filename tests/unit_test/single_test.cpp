@@ -29,6 +29,7 @@ TEST(SingleTest, test1) {
   Zoe::GlobalInit();
   {
     Zoe efd;
+    efd.setVerifyCAEnabled(false, "");
     efd.setThreadNum(6);
     efd.setSlicePolicy(SlicePolicy::FixedNum, 10);
     if (test_data.md5.length() > 0)

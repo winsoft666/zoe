@@ -372,6 +372,36 @@ utf8string Zoe::proxy() const noexcept {
   return impl_->options_.proxy;
 }
 
+Result Zoe::setVerifyCAEnabled(bool enabled, const utf8string& ca_path) noexcept {
+  assert(impl_);
+  impl_->options_.verify_peer_certificate = enabled;
+  impl_->options_.ca_path = ca_path;
+
+  return SUCCESSED;
+}
+
+bool Zoe::verifyCAEnabled() const noexcept {
+    assert(impl_);
+    return impl_->options_.verify_peer_certificate;
+}
+
+utf8string Zoe::caPath() const noexcept {
+    assert(impl_);
+    return impl_->options_.ca_path;
+}
+
+Result Zoe::setVerifyHostEnabled(bool enabled) noexcept {
+    assert(impl_);
+    impl_->options_.verify_peer_host = enabled;
+
+    return SUCCESSED;
+}
+
+bool Zoe::verifyHostEnabled() const noexcept {
+    assert(impl_);
+    return impl_->options_.verify_peer_host;
+}
+
 Result Zoe::setUncompletedSliceSavePolicy(UncompletedSliceSavePolicy policy) noexcept {
   assert(impl_);
   impl_->options_.uncompleted_slice_save_policy = policy;

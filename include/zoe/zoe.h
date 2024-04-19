@@ -224,10 +224,29 @@ class ZOE_API Zoe {
   Result setHttpHeaders(const HttpHeaders& headers) noexcept;
   HttpHeaders httpHeaders() const noexcept;
 
-  // set proxy string, such as http://127.0.0.1:8888
+  // Set proxy string, such as http://127.0.0.1:8888
   //
   Result setProxy(const utf8string& proxy) noexcept;
   utf8string proxy() const noexcept;
+
+  // This option determines whether zoe verifies the authenticity of the peer's certificate.
+  // This trust is based on a chain of digital signatures, rooted in certification authority (CA) certificates you supply. 
+  // zoe uses a default bundle of CA certificates (the path for that is determined at build time) and you can specify alternate certificates with the ca_path option.
+  //
+  // Default: false and ca_path is empty.
+  //
+  Result setVerifyCAEnabled(bool enabled, const utf8string& ca_path) noexcept;
+  bool verifyCAEnabled() const noexcept;
+  utf8string caPath() const noexcept;
+
+  // This option determines whether zoe verifies that the server cert is for the server it is known as.
+  // When negotiating TLS and SSL connections, the server sends a certificate indicating its identity.
+  // that certificate must indicate that the server is the server to which you meant to connect, or the connection fails.
+  // 
+  // Default: false
+  //
+  Result setVerifyHostEnabled(bool enabled) noexcept;
+  bool verifyHostEnabled() const noexcept;
 
   // Set uncompleted slice save policy.
   // Default is ALWAYS_DISCARD, because zoe doesn't know how to check slice(especially uncompleted) is valid or not.

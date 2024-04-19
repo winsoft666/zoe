@@ -475,12 +475,12 @@ bool EntryHandler::requestFileInfo(const utf8string& url, FileInfo& fileInfo) {
     CHECK_SETOPT2(curl_easy_setopt(curl, CURLOPT_NOBODY, 0L));
 
   CHECK_SETOPT2(curl_easy_setopt(curl, CURLOPT_FOLLOWLOCATION, 1L));
-  CHECK_SETOPT2(curl_easy_setopt(curl, CURLOPT_SSL_VERIFYHOST, 0L));
-  CHECK_SETOPT2(curl_easy_setopt(curl, CURLOPT_SSL_VERIFYPEER, 0L));
+  CHECK_SETOPT2(curl_easy_setopt(curl, CURLOPT_SSL_VERIFYHOST, options_->verify_peer_host ? 2L : 0L));
+  CHECK_SETOPT2(curl_easy_setopt(curl, CURLOPT_SSL_VERIFYPEER, options_->verify_peer_certificate ? 1L : 0L));
   CHECK_SETOPT2(curl_easy_setopt(curl, CURLOPT_CONNECTTIMEOUT_MS, options_->network_conn_timeout));
 
-  //if (ca_path_.length() > 0)
-  //    curl_easy_setopt(curl, CURLOPT_CAINFO, ca_path_.c_str());
+  if (options_->verify_peer_certificate && options_->ca_path.length() > 0)
+    CHECK_SETOPT2(curl_easy_setopt(curl, CURLOPT_CAINFO, options_->ca_path.c_str()));
 
   // avoid libcurl failed with "Failed writing body".
   CHECK_SETOPT2(curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, __WriteBodyCallback));

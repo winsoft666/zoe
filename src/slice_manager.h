@@ -1,5 +1,5 @@
 /*******************************************************************************
-*    Copyright (C) <2019-2023>, winsoft666, <winsoft666@outlook.com>.
+*    Copyright (C) <2019-2024>, winsoft666, <winsoft666@outlook.com>.
 *
 *    This program is free software: you can redistribute it and/or modify
 *    it under the terms of the GNU General Public License as published by
@@ -51,11 +51,16 @@ class SliceManager : public std::enable_shared_from_this<SliceManager> {
 
   int64_t totalDownloaded() const;
 
-  Result isAllSliceCompletedClearly(bool try_check_hash) const;
+  bool needVerifyHash() const;
+
+  Result checkAllSliceCompletedByFileSize() const;
+  
+  Result checkAllSliceCompletedByHash() const;
 
   Result finishDownloadProgress(bool need_check_completed, void* mult);
 
   int32_t getUnfetchAndUncompletedSliceNum() const;
+
   std::shared_ptr<Slice> getSlice(Slice::Status status);
 
   std::shared_ptr<Slice> getSlice(void* curlHandle);

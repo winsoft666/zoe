@@ -224,7 +224,7 @@ Result EntryHandler::_asyncTaskProcess() {
     }
   }
 
-  if (slice_manager_->isAllSliceCompletedClearly(false) == SUCCESSED) {
+  if (slice_manager_->originFileSize() != -1L && slice_manager_->checkAllSliceCompletedByFileSize() == SUCCESSED) {
     OutputVerbose(options_->verbose_functor, u8"All of slices have been downloaded.\n");
     return slice_manager_->finishDownloadProgress(false, multi_);
   }
@@ -396,7 +396,7 @@ Result EntryHandler::_asyncTaskProcess() {
             // only one slice that end_ is -1, so don't need loop
             slice = slice_manager_->getSlice(Slice::CURL_OK_BUT_COMPLETED_NOT_SURE);
             if (slice) {
-              if (slice_manager_->originFileSize() == -1 || slice_manager_->isAllSliceCompletedClearly(false) == SUCCESSED) {
+              if (slice_manager_->originFileSize() == -1 || slice_manager_->checkAllSliceCompletedByFileSize() == SUCCESSED) {
                 slice->setStatus(Slice::DOWNLOAD_COMPLETED);
                 slice.reset();
               }

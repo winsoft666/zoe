@@ -287,78 +287,71 @@ int64_t SliceManager::totalDownloaded() const {
   return total;
 }
 
-Result SliceManager::isAllSliceCompletedClearly(bool try_check_hash) const {
+bool SliceManager::needVerifyHash() const {
+  bool needVerify = false;
+  if (options_->hash_verify_policy == ALWAYS || (options_->hash_verify_policy == ONLY_NO_FILESIZE && origin_file_size_ == -1L)) {
+    if (options_->hash_value.length() > 0 || (content_md5_.length() > 0 && options_->content_md5_enabled)) {
+      needVerify = true;
+    }
+  }
+  return needVerify;
+}
+
+Result SliceManager::checkAllSliceCompletedByFileSize() const {
+  Result ret = NOT_CLEARLY_RESULT;
+  assert(origin_file_size_ != -1L);
+  if (origin_file_size_ != -1L) {
+    const int64_t totalDwn = totalDownloaded();
+    if (totalDwn != origin_file_size_) {
+      OutputVerbose(options_->verbose_functor, u8"Slices total size(%" PRId64 ") not qualified(%" PRId64 ").\n", totalDwn, origin_file_size_);
+      ret = SLICE_DOWNLOAD_FAILED;
+    }
+    else {
+      ret = SUCCESSED;
+    }
+  }
+
+  return ret;
+}
+
+Result SliceManager::checkAllSliceCompletedByHash() const {
+  assert(needVerifyHash());
+
   Result ret = NOT_CLEARLY_RESULT;
 
-  do {
-    const bool can_check_hash =
-        try_check_hash &&
-        (options_->hash_verify_policy == ALWAYS || (options_->hash_verify_policy == ONLY_NO_FILESIZE && origin_file_size_ == -1L)) &&
-        (options_->hash_value.length() > 0 || (content_md5_.length() > 0 && options_->content_md5_enabled));
-
-    // check file size
-    if (origin_file_size_ != -1L) {
-      const int64_t totalDwn = totalDownloaded();
-      if (totalDwn != origin_file_size_) {
-        OutputVerbose(options_->verbose_functor, u8"Slices total size(%" PRId64 ") not qualified(%" PRId64 ").\n", totalDwn, origin_file_size_);
-        ret = SLICE_DOWNLOAD_FAILED;
-        break;
-      }
-      else if (!can_check_hash) {
-        ret = SUCCESSED;
-        break;
-      }
+  utf8string expectHash;
+  if (options_->hash_verify_policy == ALWAYS || (options_->hash_verify_policy == ONLY_NO_FILESIZE && origin_file_size_ == -1L)) {
+    if (options_->hash_value.length() > 0) {
+      expectHash = options_->hash_value;
     }
+    else if (content_md5_.length() > 0 && options_->content_md5_enabled) {
+      expectHash = content_md5_;
+    }
+  }
 
-    // check hash
-    if (can_check_hash) {
-      if (options_->hash_value.length() > 0) {
-        if (options_->hash_verify_policy == ALWAYS || (options_->hash_verify_policy == ONLY_NO_FILESIZE && origin_file_size_ == -1L)) {
-          if (target_file_) {
-            utf8string str_hash;
-            OutputVerbose(options_->verbose_functor, u8"Start calculate temp file hash.\n");
+  if (!expectHash.empty()) {
+    if (target_file_) {
+      utf8string str_hash;
+      OutputVerbose(options_->verbose_functor, u8"Start calculate temp file hash.\n");
 
-            if (target_file_->calculateFileHash(options_, str_hash) == SUCCESSED) {
-              OutputVerbose(options_->verbose_functor, u8"Temp file hash: %s.\n", str_hash.c_str());
+      if (target_file_->calculateFileHash(options_, str_hash) == SUCCESSED) {
+        OutputVerbose(options_->verbose_functor, u8"Temp file hash: %s.\n", str_hash.c_str());
 
-              if (!StringHelper::IsEqual(str_hash, options_->hash_value, true)) {
-                ret = HASH_VERIFY_NOT_PASS;
-                OutputVerbose(options_->verbose_functor, u8"Hash check not pass.\n");
-              }
-              else {
-                ret = SUCCESSED;
-                OutputVerbose(options_->verbose_functor, u8"Hash check passed.\n");
-              }
-            }
-            else {
-              OutputVerbose(options_->verbose_functor, u8"Calculate temp file hash failed.\n");
-              ret = CALCULATE_HASH_FAILED;
-            }
-          }
-        }
-      }
-      else if (content_md5_.length() > 0 && options_->content_md5_enabled) {
-        OutputVerbose(options_->verbose_functor, u8"Start calculate temp file md5.\n");
-        utf8string str_md5;
-        if (target_file_->calculateFileMd5(options_, str_md5) == SUCCESSED) {
-          OutputVerbose(options_->verbose_functor, u8"Temp file md5: %s.\n", str_md5.c_str());
-
-          if (!StringHelper::IsEqual(str_md5, content_md5_, true)) {
-            ret = HASH_VERIFY_NOT_PASS;
-            OutputVerbose(options_->verbose_functor, u8"Hash check not pass.\n");
-          }
-          else {
-            ret = SUCCESSED;
-            OutputVerbose(options_->verbose_functor, u8"Hash check passed.\n");
-          }
+        if (!StringHelper::IsEqual(str_hash, expectHash, true)) {
+          ret = HASH_VERIFY_NOT_PASS;
+          OutputVerbose(options_->verbose_functor, u8"Hash check not pass.\n");
         }
         else {
-          OutputVerbose(options_->verbose_functor, u8"Calculate temp file md5 failed.\n");
-          ret = CALCULATE_HASH_FAILED;
+          ret = SUCCESSED;
+          OutputVerbose(options_->verbose_functor, u8"Hash check passed.\n");
         }
       }
+      else {
+        OutputVerbose(options_->verbose_functor, u8"Calculate temp file hash failed.\n");
+        ret = CALCULATE_HASH_FAILED;
+      }
     }
-  } while (false);
+  }
 
   return ret;
 }
@@ -388,9 +381,16 @@ Result SliceManager::finishDownloadProgress(bool need_check_completed, void* mul
 
   if (need_check_completed) {
     // is all slice download completed?
-    const Result ascc_ret = isAllSliceCompletedClearly(true);
-    if (ascc_ret != SUCCESSED) {
-      return ascc_ret;
+    if (origin_file_size_ != -1L) {
+      Result r = checkAllSliceCompletedByFileSize();
+      if (r != SUCCESSED)
+        return r;
+    }
+
+    if (needVerifyHash()) {
+      Result r = checkAllSliceCompletedByHash();
+      if (r != SUCCESSED)
+        return r;
     }
   }
 

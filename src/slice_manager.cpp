@@ -1,5 +1,5 @@
 /*******************************************************************************
-*    Copyright (C) <2019-2023>, winsoft666, <winsoft666@outlook.com>.
+*    Copyright (C) <2019-2024>, winsoft666, <winsoft666@outlook.com>.
 *
 *    This program is free software: you can redistribute it and/or modify
 *    it under the terms of the GNU General Public License as published by
@@ -221,9 +221,9 @@ Result SliceManager::makeSlices(bool accept_ranges) {
 
   assert(origin_file_size_ > 0L || origin_file_size_ == -1L);
 
-  if (origin_file_size_ == -1L || !accept_ranges) {
+  if (!accept_ranges || origin_file_size_ == -1L) {
     std::shared_ptr<Slice> slice =
-        std::make_shared<Slice>(0L, 0L, -1L, 0L, shared_from_this());
+        std::make_shared<Slice>(0L, 0L, origin_file_size_ == -1L ? origin_file_size_ : origin_file_size_ - 1, 0L, shared_from_this());
     slices_.push_back(slice);
   }
   else {

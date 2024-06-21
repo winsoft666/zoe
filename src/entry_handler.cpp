@@ -1,5 +1,5 @@
 /*******************************************************************************
-*    Copyright (C) <2019-2023>, winsoft666, <winsoft666@outlook.com>.
+*    Copyright (C) <2019-2024>, winsoft666, <winsoft666@outlook.com>.
 *
 *    This program is free software: you can redistribute it and/or modify
 *    it under the terms of the GNU General Public License as published by
@@ -199,7 +199,7 @@ Result EntryHandler::_asyncTaskProcess() {
     return FETCH_FILE_INFO_FAILED;
   }
 
-  OutputVerbose(options_->verbose_functor, u8"File size: %" PRId64 ".\n", file_info.fileSize);
+  OutputVerbose(options_->verbose_functor, u8"File size: %" PRId64 " bytes.\n", file_info.fileSize);
 
   // If target file is an empty file, create it.
   if (file_info.fileSize == 0) {
@@ -209,10 +209,10 @@ Result EntryHandler::_asyncTaskProcess() {
   }
 
   OutputVerbose(options_->verbose_functor, u8"Content MD5: %s.\n", file_info.contentMd5.c_str());
-  OutputVerbose(options_->verbose_functor, u8"Redirect URL: %s.\n", file_info.redirect_url.c_str());
+  OutputVerbose(options_->verbose_functor, u8"Redirect URL: %s.\n", file_info.redirectUrl.c_str());
 
   assert(!slice_manager_);
-  slice_manager_ = std::make_shared<SliceManager>(options_, file_info.redirect_url);
+  slice_manager_ = std::make_shared<SliceManager>(options_, file_info.redirectUrl);
 
   if (slice_manager_->loadExistSlice(file_info.fileSize, file_info.contentMd5) != SUCCESSED) {
     slice_manager_->setOriginFileSize(file_info.fileSize);
@@ -241,8 +241,8 @@ Result EntryHandler::_asyncTaskProcess() {
       std::min(slice_manager_->getUnfetchAndUncompletedSliceNum(), options_->thread_num),
       &disk_cache_per_slice, &max_speed_per_slice);
 
-  OutputVerbose(options_->verbose_functor, u8"Disk cache per slice: %" PRId64 ".\n", disk_cache_per_slice);
-  OutputVerbose(options_->verbose_functor, u8"Max speed per slice: %" PRId64 ".\n", max_speed_per_slice);
+  OutputVerbose(options_->verbose_functor, u8"Disk cache per slice: %" PRId64 " bytes.\n", disk_cache_per_slice);
+  OutputVerbose(options_->verbose_functor, u8"Max speed per slice: %" PRId64 " bytes.\n", max_speed_per_slice);
 
   Result ss_ret = SUCCESSED;
   int32_t selected = 0;
@@ -407,8 +407,7 @@ Result EntryHandler::_asyncTaskProcess() {
           }
         }
       }
-
-      if (slice) {
+      else {
         slice->setStatus(Slice::FETCHED);
         disk_cache_per_slice = 0L;
         max_speed_per_slice = 0L;
@@ -422,7 +421,8 @@ Result EntryHandler::_asyncTaskProcess() {
           }
           else {
             still_running = 1;
-            OutputVerbose(options_->verbose_functor, u8"Slice<%d> start downloading failed: %s.\n", slice->index(), GetResultString(start_ret));
+            OutputVerbose(options_->verbose_functor, u8"Slice<%d> start downloading failed: %s.\n", 
+                slice->index(), GetResultString(start_ret));
           }
         }
       }
@@ -518,7 +518,7 @@ bool EntryHandler::requestFileInfo(const utf8string& url, FileInfo& fileInfo) {
 
   char* redirect_url = nullptr;
   if (curl_easy_getinfo(curl, CURLINFO_REDIRECT_URL, &redirect_url) == CURLE_OK && redirect_url) {
-    fileInfo.redirect_url = redirect_url;
+    fileInfo.redirectUrl = redirect_url;
   }
 
   int http_code = 0;

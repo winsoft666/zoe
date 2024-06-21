@@ -34,13 +34,13 @@ class EntryHandler {
     bool acceptRanges;
     int64_t fileSize;
     utf8string contentMd5;
-    utf8string redirect_url;
+    utf8string redirectUrl;
 
     void clear() {
       acceptRanges = true;
       fileSize = -1;
       contentMd5.clear();
-      redirect_url.clear();
+      redirectUrl.clear();
     }
     _FileInfo() {
       acceptRanges = true;

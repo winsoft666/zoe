@@ -26,40 +26,40 @@
 
 namespace zoe {
 const char* GetResultString(int enumVal) {
-  static const char* EnumStrings[] = {u8"SUCCESSED",
-                                      u8"UNKNOWN_ERROR",
-                                      u8"INVALID_URL",
-                                      u8"INVALID_INDEX_FORMAT",
-                                      u8"INVALID_TARGET_FILE_PATH",
-                                      u8"INVALID_THREAD_NUM",
-                                      u8"INVALID_HASH_POLICY",
-                                      u8"INVALID_SLICE_POLICY",
-                                      u8"INVALID_NETWORK_CONN_TIMEOUT",
-                                      u8"INVALID_NETWORK_READ_TIMEOUT",
-                                      u8"INVALID_FETCH_FILE_INFO_RETRY_TIMES",
-                                      u8"ALREADY_DOWNLOADING",
-                                      u8"CANCELED",
-                                      u8"RENAME_TMP_FILE_FAILED",
-                                      u8"OPEN_INDEX_FILE_FAILED",
-                                      u8"TMP_FILE_EXPIRED",
-                                      u8"INIT_CURL_FAILED",
-                                      u8"INIT_CURL_MULTI_FAILED",
-                                      u8"SET_CURL_OPTION_FAILED",
-                                      u8"ADD_CURL_HANDLE_FAILED",
-                                      u8"CREATE_TARGET_FILE_FAILED",
-                                      u8"CREATE_TMP_FILE_FAILED",
-                                      u8"OPEN_TMP_FILE_FAILED",
-                                      u8"URL_DIFFERENT",
-                                      u8"TMP_FILE_SIZE_ERROR",
-                                      u8"TMP_FILE_CANNOT_RW",
-                                      u8"FLUSH_TMP_FILE_FAILED",
-                                      u8"UPDATE_INDEX_FILE_FAILED",
-                                      u8"SLICE_DOWNLOAD_FAILED",
-                                      u8"HASH_VERIFY_NOT_PASS",
-                                      u8"CALCULATE_HASH_FAILED",
-                                      u8"FETCH_FILE_INFO_FAILED",
-                                      u8"REDIRECT_URL_DIFFERENT",
-                                      u8"NOT_CLEARLY_RESULT"};
+  static const char* EnumStrings[] = {"SUCCESSED",
+                                      "UNKNOWN_ERROR",
+                                      "INVALID_URL",
+                                      "INVALID_INDEX_FORMAT",
+                                      "INVALID_TARGET_FILE_PATH",
+                                      "INVALID_THREAD_NUM",
+                                      "INVALID_HASH_POLICY",
+                                      "INVALID_SLICE_POLICY",
+                                      "INVALID_NETWORK_CONN_TIMEOUT",
+                                      "INVALID_NETWORK_READ_TIMEOUT",
+                                      "INVALID_FETCH_FILE_INFO_RETRY_TIMES",
+                                      "ALREADY_DOWNLOADING",
+                                      "CANCELED",
+                                      "RENAME_TMP_FILE_FAILED",
+                                      "OPEN_INDEX_FILE_FAILED",
+                                      "TMP_FILE_EXPIRED",
+                                      "INIT_CURL_FAILED",
+                                      "INIT_CURL_MULTI_FAILED",
+                                      "SET_CURL_OPTION_FAILED",
+                                      "ADD_CURL_HANDLE_FAILED",
+                                      "CREATE_TARGET_FILE_FAILED",
+                                      "CREATE_TMP_FILE_FAILED",
+                                      "OPEN_TMP_FILE_FAILED",
+                                      "URL_DIFFERENT",
+                                      "TMP_FILE_SIZE_ERROR",
+                                      "TMP_FILE_CANNOT_RW",
+                                      "FLUSH_TMP_FILE_FAILED",
+                                      "UPDATE_INDEX_FILE_FAILED",
+                                      "SLICE_DOWNLOAD_FAILED",
+                                      "HASH_VERIFY_NOT_PASS",
+                                      "CALCULATE_HASH_FAILED",
+                                      "FETCH_FILE_INFO_FAILED",
+                                      "REDIRECT_URL_DIFFERENT",
+                                      "NOT_CLEARLY_RESULT"};
   return EnumStrings[enumVal];
 }
 
@@ -222,7 +222,7 @@ int32_t Zoe::maxDownloadSpeed() const noexcept {
 }
 
 Result Zoe::setMinDownloadSpeed(int32_t byte_per_seconds,
-                                  int32_t duration) noexcept {
+                                int32_t duration) noexcept {
   assert(impl_);
   if (impl_->isDownloading())
     return ALREADY_DOWNLOADING;
@@ -293,7 +293,7 @@ bool Zoe::contentMd5Enabled() const noexcept {
 }
 
 Result Zoe::setSlicePolicy(SlicePolicy policy,
-                             int64_t policy_value) noexcept {
+                           int64_t policy_value) noexcept {
   assert(impl_);
   if (policy == FixedSize) {
     if (policy_value <= 0)
@@ -326,8 +326,8 @@ void Zoe::slicePolicy(SlicePolicy& policy, int64_t& policy_value) const
 }
 
 Result Zoe::setHashVerifyPolicy(HashVerifyPolicy policy,
-                                  HashType hash_type,
-                                  const utf8string& hash_value) noexcept {
+                                HashType hash_type,
+                                const utf8string& hash_value) noexcept {
   assert(impl_);
   if (impl_->isDownloading())
     return ALREADY_DOWNLOADING;
@@ -340,8 +340,8 @@ Result Zoe::setHashVerifyPolicy(HashVerifyPolicy policy,
 }
 
 void Zoe::hashVerifyPolicy(HashVerifyPolicy& policy,
-                             HashType& hash_type,
-                             utf8string& hash_value) const noexcept {
+                           HashType& hash_type,
+                           utf8string& hash_value) const noexcept {
   assert(impl_);
   policy = impl_->options_.hash_verify_policy;
   hash_type = impl_->options_.hash_type;
@@ -381,25 +381,25 @@ Result Zoe::setVerifyCAEnabled(bool enabled, const utf8string& ca_path) noexcept
 }
 
 bool Zoe::verifyCAEnabled() const noexcept {
-    assert(impl_);
-    return impl_->options_.verify_peer_certificate;
+  assert(impl_);
+  return impl_->options_.verify_peer_certificate;
 }
 
 utf8string Zoe::caPath() const noexcept {
-    assert(impl_);
-    return impl_->options_.ca_path;
+  assert(impl_);
+  return impl_->options_.ca_path;
 }
 
 Result Zoe::setVerifyHostEnabled(bool enabled) noexcept {
-    assert(impl_);
-    impl_->options_.verify_peer_host = enabled;
+  assert(impl_);
+  impl_->options_.verify_peer_host = enabled;
 
-    return SUCCESSED;
+  return SUCCESSED;
 }
 
 bool Zoe::verifyHostEnabled() const noexcept {
-    assert(impl_);
-    return impl_->options_.verify_peer_host;
+  assert(impl_);
+  return impl_->options_.verify_peer_host;
 }
 
 Result Zoe::setUncompletedSliceSavePolicy(UncompletedSliceSavePolicy policy) noexcept {

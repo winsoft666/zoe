@@ -26,12 +26,12 @@
 #include "verbose.h"
 #include "time_meter.hpp"
 
-#define CHECK_SETOPT2(x)                                                                                  \
-  do {                                                                                                   \
-    CURLcode __cc__ = (x);                                                                               \
-    if (__cc__ != CURLE_OK) {                                                                            \
-      OutputVerbose(options_->verbose_functor, u8"" #x " failed, return: %ld.\n", (long)__cc__); \
-    }                                                                                                    \
+#define CHECK_SETOPT2(x)                                                                    \
+  do {                                                                                      \
+    CURLcode __cc__ = (x);                                                                  \
+    if (__cc__ != CURLE_OK) {                                                               \
+      OutputVerbose(options_->verbose_functor, #x " failed, return: %ld.\n", (long)__cc__); \
+    }                                                                                       \
   } while (false)
 
 namespace zoe {
@@ -178,12 +178,12 @@ Result EntryHandler::asyncTaskProcess() {
 }
 
 Result EntryHandler::_asyncTaskProcess() {
-  OutputVerbose(options_->verbose_functor, u8"URL: %s.\n", options_->url.c_str());
-  OutputVerbose(options_->verbose_functor, u8"Thread number: %d.\n", options_->thread_num);
-  OutputVerbose(options_->verbose_functor, u8"Disk Cache Size: %ld.\n", options_->disk_cache_size);
-  OutputVerbose(options_->verbose_functor, u8"Target file path: %s.\n", options_->target_file_path.c_str());
+  OutputVerbose(options_->verbose_functor, "URL: %s.\n", options_->url.c_str());
+  OutputVerbose(options_->verbose_functor, "Thread number: %d.\n", options_->thread_num);
+  OutputVerbose(options_->verbose_functor, "Disk Cache Size: %ld.\n", options_->disk_cache_size);
+  OutputVerbose(options_->verbose_functor, "Target file path: %s.\n", options_->target_file_path.c_str());
 
-  OutputVerbose(options_->verbose_functor, u8"Fetching file size...\n");
+  OutputVerbose(options_->verbose_functor, "Fetching file size...\n");
   FileInfo file_info;
   bool fetch_size_ret = false;
   int32_t try_times = 0;
@@ -191,15 +191,15 @@ Result EntryHandler::_asyncTaskProcess() {
     fetch_size_ret = fetchFileInfo(file_info);
     if (fetch_size_ret)
       break;
-    OutputVerbose(options_->verbose_functor, u8"Fetching file size failed, retry...\n");
+    OutputVerbose(options_->verbose_functor, "Fetching file size failed, retry...\n");
   } while (++try_times <= options_->fetch_file_info_retry);
 
   if (!fetch_size_ret) {
-    OutputVerbose(options_->verbose_functor, u8"Fetch file size failed.\n");
+    OutputVerbose(options_->verbose_functor, "Fetch file size failed.\n");
     return FETCH_FILE_INFO_FAILED;
   }
 
-  OutputVerbose(options_->verbose_functor, u8"File size: %" PRId64 " bytes.\n", file_info.fileSize);
+  OutputVerbose(options_->verbose_functor, "File size: %" PRId64 " bytes.\n", file_info.fileSize);
 
   // If target file is an empty file, create it.
   if (file_info.fileSize == 0) {
@@ -208,8 +208,8 @@ Result EntryHandler::_asyncTaskProcess() {
                : CREATE_TARGET_FILE_FAILED;
   }
 
-  OutputVerbose(options_->verbose_functor, u8"Content MD5: %s.\n", file_info.contentMd5.c_str());
-  OutputVerbose(options_->verbose_functor, u8"Redirect URL: %s.\n", file_info.redirectUrl.c_str());
+  OutputVerbose(options_->verbose_functor, "Content MD5: %s.\n", file_info.contentMd5.c_str());
+  OutputVerbose(options_->verbose_functor, "Redirect URL: %s.\n", file_info.redirectUrl.c_str());
 
   assert(!slice_manager_);
   slice_manager_ = std::make_shared<SliceManager>(options_, file_info.redirectUrl);
@@ -225,13 +225,13 @@ Result EntryHandler::_asyncTaskProcess() {
   }
 
   if (slice_manager_->originFileSize() != -1L && slice_manager_->checkAllSliceCompletedByFileSize() == SUCCESSED) {
-    OutputVerbose(options_->verbose_functor, u8"All of slices have been downloaded.\n");
+    OutputVerbose(options_->verbose_functor, "All of slices have been downloaded.\n");
     return slice_manager_->finishDownloadProgress(false, multi_);
   }
 
   multi_ = curl_multi_init();
   if (!multi_) {
-    OutputVerbose(options_->verbose_functor, u8"curl_multi_init failed.\n");
+    OutputVerbose(options_->verbose_functor, "curl_multi_init failed.\n");
     return INIT_CURL_MULTI_FAILED;
   }
 
@@ -241,8 +241,8 @@ Result EntryHandler::_asyncTaskProcess() {
       std::min(slice_manager_->getUnfetchAndUncompletedSliceNum(), options_->thread_num),
       &disk_cache_per_slice, &max_speed_per_slice);
 
-  OutputVerbose(options_->verbose_functor, u8"Disk cache per slice: %" PRId64 " bytes.\n", disk_cache_per_slice);
-  OutputVerbose(options_->verbose_functor, u8"Max speed per slice: %" PRId64 " bytes.\n", max_speed_per_slice);
+  OutputVerbose(options_->verbose_functor, "Disk cache per slice: %" PRId64 " bytes.\n", disk_cache_per_slice);
+  OutputVerbose(options_->verbose_functor, "Max speed per slice: %" PRId64 " bytes.\n", max_speed_per_slice);
 
   Result ss_ret = SUCCESSED;
   int32_t selected = 0;
@@ -258,7 +258,7 @@ Result EntryHandler::_asyncTaskProcess() {
     ss_ret = slice->start(multi_, disk_cache_per_slice, max_speed_per_slice);
     if (ss_ret != SUCCESSED) {
       OutputVerbose(options_->verbose_functor,
-                    u8"Slice<%d> start downloading failed: %s.\n",
+                    "Slice<%d> start downloading failed: %s.\n",
                     slice->index(), GetResultString(ss_ret));
 
       // fatal error, return immediately!
@@ -266,12 +266,12 @@ Result EntryHandler::_asyncTaskProcess() {
       multi_ = nullptr;
       return ss_ret;
     }
-    OutputVerbose(options_->verbose_functor, u8"Slice<%d> start downloading.\n", slice->index());
+    OutputVerbose(options_->verbose_functor, "Slice<%d> start downloading.\n", slice->index());
     selected++;
   }
 
   if (selected == 0) {
-    OutputVerbose(options_->verbose_functor, u8"No available slice.\n");
+    OutputVerbose(options_->verbose_functor, "No available slice.\n");
     curl_multi_cleanup(multi_);
     multi_ = nullptr;
     return UNKNOWN_ERROR;
@@ -313,7 +313,7 @@ Result EntryHandler::_asyncTaskProcess() {
   int still_running = 0;
 
   CURLMcode mcode = curl_multi_perform(multi_, &still_running);
-  OutputVerbose(options_->verbose_functor, u8"Start downloading.\n");
+  OutputVerbose(options_->verbose_functor, "Start downloading.\n");
 
   TimeMeter flush_time_meter;
 
@@ -356,7 +356,7 @@ Result EntryHandler::_asyncTaskProcess() {
     mcode = curl_multi_fdset(multi_, &fdread, &fdwrite, &fdexcep, &maxfd);
     if (mcode != CURLM_CALL_MULTI_PERFORM && mcode != CURLM_OK) {
       OutputVerbose(options_->verbose_functor,
-                    u8"curl_multi_fdset failed, code: %ld(%s).\n", (long)mcode, curl_multi_strerror(mcode));
+                    "curl_multi_fdset failed, code: %ld(%s).\n", (long)mcode, curl_multi_strerror(mcode));
       break;
     }
 
@@ -389,7 +389,7 @@ Result EntryHandler::_asyncTaskProcess() {
           if (slice->failedTimes() >= options_->slice_max_failed_times)
             slice.reset();
           else
-            OutputVerbose(options_->verbose_functor, u8"Re-download slice<%d>.\n", slice->index());
+            OutputVerbose(options_->verbose_functor, "Re-download slice<%d>.\n", slice->index());
         }
         else {
           if (!slice_manager_->getSlice(Slice::DOWNLOADING)) {
@@ -401,7 +401,7 @@ Result EntryHandler::_asyncTaskProcess() {
                 slice.reset();
               }
               else {
-                OutputVerbose(options_->verbose_functor, u8"Re-download slice<%d>.\n", slice->index());
+                OutputVerbose(options_->verbose_functor, "Re-download slice<%d>.\n", slice->index());
               }
             }
           }
@@ -417,19 +417,19 @@ Result EntryHandler::_asyncTaskProcess() {
         if (still_running <= 0) {
           if (start_ret == SUCCESSED) {
             curl_multi_perform(multi_, &still_running);
-            OutputVerbose(options_->verbose_functor, u8"Slice<%d> start downloading.\n", slice->index());
+            OutputVerbose(options_->verbose_functor, "Slice<%d> start downloading.\n", slice->index());
           }
           else {
             still_running = 1;
-            OutputVerbose(options_->verbose_functor, u8"Slice<%d> start downloading failed: %s.\n", 
-                slice->index(), GetResultString(start_ret));
+            OutputVerbose(options_->verbose_functor, "Slice<%d> start downloading failed: %s.\n",
+                          slice->index(), GetResultString(start_ret));
           }
         }
       }
     }
   } while (still_running > 0 || user_paused_.load());
 
-  OutputVerbose(options_->verbose_functor, u8"Downloading end.\n");
+  OutputVerbose(options_->verbose_functor, "Downloading end.\n");
 
   Result ret = slice_manager_->finishDownloadProgress(true, multi_);
 
@@ -441,7 +441,7 @@ Result EntryHandler::_asyncTaskProcess() {
   state_.store(DownloadState::STOPPED);
 
   if (ret == SUCCESSED) {
-    OutputVerbose(options_->verbose_functor, u8"All success!\n");
+    OutputVerbose(options_->verbose_functor, "All success!\n");
     return ret;
   }
 
@@ -496,7 +496,7 @@ bool EntryHandler::requestFileInfo(const utf8string& url, FileInfo& fileInfo) {
   const HttpHeaders& headers = options_->http_headers;
   if (headers.size() > 0) {
     for (const auto& it : headers) {
-      utf8string headerStr = it.first + u8": " + it.second;
+      utf8string headerStr = it.first + ": " + it.second;
       headerChunk = curl_slist_append(headerChunk, headerStr.c_str());
     }
     CHECK_SETOPT2(curl_easy_setopt(curl, CURLOPT_HTTPHEADER, headerChunk));
@@ -511,7 +511,7 @@ bool EntryHandler::requestFileInfo(const utf8string& url, FileInfo& fileInfo) {
 
   if (ret_code != CURLE_OK) {
     OutputVerbose(options_->verbose_functor,
-                  u8"curl_easy_perform failed, CURLcode: %ld(%s).\n",
+                  "curl_easy_perform failed, CURLcode: %ld(%s).\n",
                   (long)ret_code, curl_easy_strerror(ret_code));
     return false;
   }
@@ -525,7 +525,7 @@ bool EntryHandler::requestFileInfo(const utf8string& url, FileInfo& fileInfo) {
   if ((ret_code = curl_easy_getinfo(curl, CURLINFO_RESPONSE_CODE, &http_code)) != CURLE_OK) {
     OutputVerbose(
         options_->verbose_functor,
-        u8"Get CURLINFO_RESPONSE_CODE failed, CURLcode: %ld(%s).\n",
+        "Get CURLINFO_RESPONSE_CODE failed, CURLcode: %ld(%s).\n",
         (long)ret_code, curl_easy_strerror(ret_code));
     return false;
   }
@@ -534,7 +534,7 @@ bool EntryHandler::requestFileInfo(const utf8string& url, FileInfo& fileInfo) {
     // A 350 response code is sent by the server in response to a file-related command that
     // requires further commands in order for the operation to be completed
     OutputVerbose(options_->verbose_functor,
-                  u8"HTTP response code error, code: %ld.\n",
+                  "HTTP response code error, code: %ld.\n",
                   (long)http_code);
     return false;
   }
@@ -604,7 +604,7 @@ void EntryHandler::updateSliceStatus() {
       }
       else {
         OutputVerbose(options_->verbose_functor,
-                      u8"Slice<%d> download failed %ld(%s).\n",
+                      "Slice<%d> download failed %ld(%s).\n",
                       slice->index(), m->data.result,
                       curl_easy_strerror(m->data.result));
 

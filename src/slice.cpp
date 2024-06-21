@@ -27,12 +27,12 @@
 #include "verbose.h"
 #include "slice_manager.h"
 
-#define CHECK_SETOPT1(x)                                                                                                  \
-  do {                                                                                                                    \
-    CURLcode __cc__ = (x);                                                                                                \
-    if (__cc__ != CURLE_OK) {                                                                                             \
-      OutputVerbose(slice_manager_->options()->verbose_functor, u8"" #x " failed, return: %ld.\n", (long)__cc__); \
-    }                                                                                                                     \
+#define CHECK_SETOPT1(x)                                                                                     \
+  do {                                                                                                       \
+    CURLcode __cc__ = (x);                                                                                   \
+    if (__cc__ != CURLE_OK) {                                                                                \
+      OutputVerbose(slice_manager_->options()->verbose_functor, #x " failed, return: %ld.\n", (long)__cc__); \
+    }                                                                                                        \
   } while (false)
 
 namespace zoe {
@@ -144,7 +144,7 @@ Result Slice::start(void* multi, int64_t disk_cache_size, int64_t max_speed) {
 
   curl_ = curl_easy_init();
   if (!curl_) {
-    OutputVerbose(slice_manager_->options()->verbose_functor, u8"curl_easy_init failed.\n");
+    OutputVerbose(slice_manager_->options()->verbose_functor, "curl_easy_init failed.\n");
     freeDiskCacheBuffer();
     status_ = DOWNLOAD_FAILED;
     return INIT_CURL_FAILED;
@@ -165,7 +165,7 @@ Result Slice::start(void* multi, int64_t disk_cache_size, int64_t max_speed) {
   CHECK_SETOPT1(curl_easy_setopt(curl_, CURLOPT_SSL_VERIFYPEER, slice_manager_->options()->verify_peer_certificate ? 1L : 0L));
 
   if (slice_manager_->options()->verify_peer_certificate && slice_manager_->options()->ca_path.length() > 0)
-      CHECK_SETOPT1(curl_easy_setopt(curl_, CURLOPT_CAINFO, slice_manager_->options()->ca_path.c_str()));
+    CHECK_SETOPT1(curl_easy_setopt(curl_, CURLOPT_CAINFO, slice_manager_->options()->ca_path.c_str()));
 
   if (slice_manager_->options()->min_speed == -1) {
     CHECK_SETOPT1(curl_easy_setopt(curl_, CURLOPT_LOW_SPEED_LIMIT, 0L));  // disabled
@@ -187,7 +187,7 @@ Result Slice::start(void* multi, int64_t disk_cache_size, int64_t max_speed) {
   const HttpHeaders& headers = slice_manager_->options()->http_headers;
   if (headers.size() > 0) {
     for (const auto& it : headers) {
-      utf8string headerStr = it.first + u8": " + it.second;
+      utf8string headerStr = it.first + ": " + it.second;
       header_chunk_ = curl_slist_append(header_chunk_, headerStr.c_str());
     }
     CHECK_SETOPT1(curl_easy_setopt(curl_, CURLOPT_HTTPHEADER, header_chunk_));
@@ -198,10 +198,10 @@ Result Slice::start(void* multi, int64_t disk_cache_size, int64_t max_speed) {
     snprintf(range, sizeof(range), "%" PRId64 "-%" PRId64, begin_ + disk_capacity_, end_);
     if (strlen(range) > 0) {
       const CURLcode err = curl_easy_setopt(curl_, CURLOPT_RANGE, range);
-      OutputVerbose(slice_manager_->options()->verbose_functor, u8"Slice<%d>, Range: %s.\n", index_, range);
+      OutputVerbose(slice_manager_->options()->verbose_functor, "Slice<%d>, Range: %s.\n", index_, range);
       if (err != CURLE_OK) {
         OutputVerbose(slice_manager_->options()->verbose_functor,
-                      u8"CURLOPT_RANGE failed: %ld(%s).\n", (long)err,
+                      "CURLOPT_RANGE failed: %ld(%s).\n", (long)err,
                       curl_easy_strerror(err));
         curl_easy_cleanup(curl_);
         curl_ = nullptr;
@@ -215,10 +215,10 @@ Result Slice::start(void* multi, int64_t disk_cache_size, int64_t max_speed) {
     curl_off_t offset = begin_ + disk_capacity_;
     CURLcode err = curl_easy_setopt(curl_, CURLOPT_RESUME_FROM_LARGE, offset);
     OutputVerbose(slice_manager_->options()->verbose_functor,
-                  u8"Slice<%d>, Range: %" PRId64 "-INFINITE.\n", index_, offset);
+                  "Slice<%d>, Range: %" PRId64 "-INFINITE.\n", index_, offset);
     if (err != CURLE_OK) {
       OutputVerbose(slice_manager_->options()->verbose_functor,
-                    u8"CURLOPT_RESUME_FROM_LARGE failed: %ld(%s).\n",
+                    "CURLOPT_RESUME_FROM_LARGE failed: %ld(%s).\n",
                     (long)err, curl_easy_strerror(err));
 
       curl_easy_cleanup(curl_);
@@ -234,7 +234,7 @@ Result Slice::start(void* multi, int64_t disk_cache_size, int64_t max_speed) {
   CURLMcode m_code = curl_multi_add_handle(multi, curl_);
   if (m_code != CURLM_OK) {
     OutputVerbose(slice_manager_->options()->verbose_functor,
-                  u8"curl_multi_add_handle failed: %ld(%s).\n",
+                  "curl_multi_add_handle failed: %ld(%s).\n",
                   (long)m_code, curl_multi_strerror(m_code));
     curl_easy_cleanup(curl_);
     curl_ = nullptr;
@@ -255,7 +255,7 @@ Result Slice::stop(void* multi) {
       const CURLMcode code = curl_multi_remove_handle(multi, curl_);
       if (code != CURLM_CALL_MULTI_PERFORM && code != CURLM_OK) {
         OutputVerbose(slice_manager_->options()->verbose_functor,
-                      u8"curl_multi_remove_handle failed: %ld(%s).\n",
+                      "curl_multi_remove_handle failed: %ld(%s).\n",
                       (long)code, curl_multi_strerror(code));
       }
     }
@@ -427,7 +427,7 @@ bool Slice::onNewData(const char* p, long data_size) {
     if (written != data_size) {
       OutputVerbose(
           slice_manager_->options()->verbose_functor,
-          u8"Warning: only write a part of buffer to file: %" PRId64 "/%" PRId64 ".\n",
+          "Warning: only write a part of buffer to file: %" PRId64 "/%" PRId64 ".\n",
           written, data_size);
     }
     std::atomic_fetch_add(&disk_capacity_, written);

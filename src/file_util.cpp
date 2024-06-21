@@ -198,8 +198,10 @@ void FileUtil::Close(FILE* f) {
 
 bool FileUtil::CreateFixedSizeFile(const utf8string& path, int64_t fixed_size) {
   utf8string str_dir = GetDirectory(path);
-  if (str_dir.length() > 0 && !CreateDirectories(str_dir))
-    return false;
+  if (!str_dir.empty() && !IsExist(str_dir)) {
+    if (!CreateDirectories(str_dir))
+      return false;
+  }
 
 #if defined(WIN32) || defined(_WIN32) || defined(__WIN32__) || defined(__NT__)
   bool prealloc = false;

@@ -180,7 +180,7 @@ Result EntryHandler::asyncTaskProcess() {
 Result EntryHandler::_asyncTaskProcess() {
   OutputVerbose(options_->verbose_functor, "URL: %s.\n", options_->url.c_str());
   OutputVerbose(options_->verbose_functor, "Thread number: %d.\n", options_->thread_num);
-  OutputVerbose(options_->verbose_functor, "Disk Cache Size: %ld.\n", options_->disk_cache_size);
+  OutputVerbose(options_->verbose_functor, "Disk Cache Size: %ld bytes.\n", options_->disk_cache_size);
   OutputVerbose(options_->verbose_functor, "Target file path: %s.\n", options_->target_file_path.c_str());
 
   OutputVerbose(options_->verbose_functor, "Fetching file size...\n");

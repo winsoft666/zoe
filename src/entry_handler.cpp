@@ -158,6 +158,8 @@ Result EntryHandler::asyncTaskProcess() {
 
   const Result ret = _asyncTaskProcess();
 
+  state_.store(DownloadState::STOPPED);
+
   options_->internal_stop_event.set();
 
   if (speed_handler_)

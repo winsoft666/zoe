@@ -1,5 +1,5 @@
 /*******************************************************************************
-*    Copyright (C) <2019-2023>, winsoft666, <winsoft666@outlook.com>.
+*    Copyright (C) <2019-2024>, winsoft666, <winsoft666@outlook.com>.
 *
 *    This program is free software: you can redistribute it and/or modify
 *    it under the terms of the GNU General Public License as published by
@@ -117,16 +117,16 @@ typedef std::multimap<utf8string, utf8string> HttpHeaders;
 
 class ZOE_API Zoe {
  public:
-  Zoe();
-  ~Zoe();
+  Zoe() noexcept;
+  virtual ~Zoe() noexcept;
 
   static void GlobalInit();
   static void GlobalUnInit();
 
   void setVerboseOutput(VerboseOuputFunctor verbose_functor) noexcept;
 
-  // Pass an int specifying the maximum thread number.
-  // zoe will use these threads as much as possible.
+  // Pass an int specifying the maximum thread number. zoe will use these threads as much as possible.
+  // 
   // Set to 0 or negative to switch to the default built-in thread number - 1.
   // The number of threads cannot be greater than 100, otherwise zoe will return INVALID_THREAD_NUM.
   //
@@ -134,33 +134,42 @@ class ZOE_API Zoe {
   int32_t threadNum() const noexcept;
 
   // Pass an int. It should contain the maximum time in milliseconds that you allow the connection phase to the server to take.
-  // This only limits the connection phase, it has no impact once it has connected.
+  // This only affects the connection phase, it has no impact once it has connected.
+  // 
   // Set to 0 or negative to switch to the default built-in connection timeout - 3000 milliseconds.
   //
-  Result setNetworkConnectionTimeout(
-      int32_t milliseconds) noexcept;                 // milliseconds
+  Result setNetworkConnectionTimeout( int32_t milliseconds) noexcept; // milliseconds
   int32_t networkConnectionTimeout() const noexcept;  // milliseconds
 
   // Pass an int specifying the retry times when request file information(such as file size) failed.
+  // 
   // Set to 0 or negative to switch to the default built-in retry times - 1.
   //
   Result setFetchFileInfoRetryTimes(int32_t retry_times) noexcept;
   int32_t fetchFileInfoRetryTimes() const noexcept;
 
-  // If bUseHead is true, zoe will use HEAD method to fetch file info. Otherwise, zoe will use GET method.
+  // If use_head is true, zoe will use HEAD method to fetch file info. Otherwise, zoe will use GET method.
+  //
   Result setFetchFileInfoHeadMethod(bool use_head) noexcept;
   bool fetchFileInfoHeadMethod() const noexcept;
 
   // Pass an int as parameter.
-  // If the interval seconds that from the saved time of temporary file to present greater than or equal to this parameter, the temporary file will be discarded.
+  // 
+  // If the interval seconds that from the saved time of temporary file to present greater than or equal to this parameter, 
+  //    the temporary file will be discarded.
+  // 
   // Default to -1, never expired.
   //
   Result setTmpFileExpiredTime(int32_t seconds) noexcept;  // seconds
   int32_t tmpFileExpiredTime() const noexcept;             // seconds
 
   // Pass an int as parameter.
-  // If a download exceeds this speed (counted in bytes per second) the transfer will pause to keep the speed less than or equal to the parameter value.
-  // Defaults to -1, unlimited speed.
+  // 
+  // If a download exceeds this speed (counted in bytes per second) the transfer will 
+  //   pause to keep the speed less than or equal to the parameter value.
+  // 
+  // Defaults is -1, unlimited speed.
+  // 
   // Set to 0 or negative to switch to the default built-in limit - -1(unlimited speed).
   // This option doesn't affect transfer speeds done with FILE:// URLs.
   //
@@ -168,13 +177,15 @@ class ZOE_API Zoe {
   int32_t maxDownloadSpeed() const noexcept;
 
   // Pass an int as parameter.
+  // 
   // If a download less than this speed (counted in bytes per second) during "low speed time" seconds,
-  // the transfer will be considered as failed.
-  // Default to -1, unlimited speed.
+  //   the transfer will be considered as failed.
+  // 
+  // Default is -1, unlimited speed.
+  // 
   // Set to 0 or negative to switch to the default built-in limit - -1(unlimited speed).
   //
-  Result setMinDownloadSpeed(int32_t byte_per_seconds,
-                             int32_t duration) noexcept;  // seconds
+  Result setMinDownloadSpeed(int32_t byte_per_seconds, int32_t duration) noexcept;  // seconds
   int32_t minDownloadSpeed() const noexcept;
   int32_t minDownloadSpeedDuration() const noexcept;  // seconds
 
@@ -191,15 +202,17 @@ class ZOE_API Zoe {
   Event* stopEvent() noexcept;
 
   // Set false, zoe will not check whether the redirected url is the same as in the index file,
-  // Default to true, if the redirected url is different from the url in the index file, zoe will return REDIRECT_URL_DIFFERENT error.
+  // Default is true, if the redirected url is different from the url in the index file, 
+  //   zoe will return REDIRECT_URL_DIFFERENT error.
   //
   Result setRedirectedUrlCheckEnabled(bool enabled) noexcept;
   bool redirectedUrlCheckEnabled() const noexcept;
 
   // Set true, zoe will parse Content-Md5 header filed and make sure target file's md5 is same as this value,
-  // and in this case, slice files will be expired if content_md5 value that cached in index file is changed.
+  //   and in this case, slice files will be expired if content_md5 value that cached in index file is changed.
   // Content-Md5 is pure md5 string, not by base64.
-  // Default to false.
+  // 
+  // Default is false.
   //
   Result setContentMd5Enabled(bool enabled) noexcept;
   bool contentMd5Enabled() const noexcept;
@@ -231,7 +244,8 @@ class ZOE_API Zoe {
 
   // This option determines whether zoe verifies the authenticity of the peer's certificate.
   // This trust is based on a chain of digital signatures, rooted in certification authority (CA) certificates you supply. 
-  // zoe uses a default bundle of CA certificates (the path for that is determined at build time) and you can specify alternate certificates with the ca_path option.
+  // zoe uses a default bundle of CA certificates (the path for that is determined at build time) and 
+  //   you can specify alternate certificates with the ca_path option.
   //
   // Default: false and ca_path is empty.
   //
@@ -248,14 +262,14 @@ class ZOE_API Zoe {
   Result setVerifyHostEnabled(bool enabled) noexcept;
   bool verifyHostEnabled() const noexcept;
 
-  // Set uncompleted slice save policy.
+  // Set slice save policy when the download task not completed.
+  // 
   // Default is ALWAYS_DISCARD, because zoe doesn't know how to check slice(especially uncompleted) is valid or not.
   //
-  Result setUncompletedSliceSavePolicy(
-      UncompletedSliceSavePolicy policy) noexcept;
+  Result setUncompletedSliceSavePolicy( UncompletedSliceSavePolicy policy) noexcept;
   UncompletedSliceSavePolicy uncompletedSliceSavePolicy() const noexcept;
 
-  // Start to download and state change to DOWNLOADING.
+  // Start to download and change state to DOWNLOADING.
   // Supported url protocol is as same as curl library.
   //
   std::shared_future<Result> start(
@@ -265,14 +279,15 @@ class ZOE_API Zoe {
       ProgressFunctor progress_functor,
       RealtimeSpeedFunctor realtime_speed_functor) noexcept;
 
-  // Pause downloading and state change to PAUSED.
+  // Pause downloading and change state to PAUSED.
   //
   void pause() noexcept;
 
-  // Resume downloading and state change to DOWNLOADING.
+  // Resume downloading and change state to DOWNLOADING.
+  //
   void resume() noexcept;
 
-  // Stop downloading and state change to STOPPED, zoe will return CANCELED in ResultFunctor.
+  // Stop downloading and change state to STOPPED, zoe will return CANCELED in ResultFunctor.
   //
   void stop() noexcept;
 

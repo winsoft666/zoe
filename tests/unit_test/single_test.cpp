@@ -1,5 +1,5 @@
 /*******************************************************************************
-*    Copyright (C) <2019-2023>, winsoft666, <winsoft666@outlook.com>.
+*    Copyright (C) <2019-2024>, winsoft666, <winsoft666@outlook.com>.
 *
 *    This program is free software: you can redistribute it and/or modify
 *    it under the terms of the GNU General Public License as published by
@@ -28,14 +28,16 @@ TEST(SingleTest, test1) {
 
   Zoe::GlobalInit();
   {
-    Zoe efd;
-    efd.setVerifyCAEnabled(false, "");
-    efd.setThreadNum(6);
-    efd.setSlicePolicy(SlicePolicy::FixedNum, 10);
+    Zoe z;
+    z.setVerifyCAEnabled(false, "");
+    z.setThreadNum(6);
+    z.setSlicePolicy(SlicePolicy::FixedNum, 10);
     if (test_data.md5.length() > 0)
-      efd.setHashVerifyPolicy(ALWAYS, MD5, test_data.md5);
+      z.setHashVerifyPolicy(ALWAYS, MD5, test_data.md5);
+    z.setFetchFileInfoHeadMethod(true);
+    z.setHttpHeaders({ {"User-Agent", "Zoe"}});
 
-    std::shared_future<Result> future_result = efd.start(
+    std::shared_future<Result> future_result = z.start(
         test_data.url, test_data.target_file_path,
         [](Result result) {
           printf("\nResult: %s\n", GetResultString(result));
@@ -48,6 +50,7 @@ TEST(SingleTest, test1) {
         nullptr);
 
     EXPECT_TRUE(future_result.get() == SUCCESSED);
+    DownloadState s = z.state();
   }
   Zoe::GlobalUnInit();
 }

@@ -1,5 +1,5 @@
 /*******************************************************************************
-*    Copyright (C) <2019-2023>, winsoft666, <winsoft666@outlook.com>.
+*    Copyright (C) <2019-2024>, winsoft666, <winsoft666@outlook.com>.
 *
 *    This program is free software: you can redistribute it and/or modify
 *    it under the terms of the GNU General Public License as published by
@@ -79,11 +79,11 @@ class Zoe::ZoeImpl {
   std::shared_ptr<EntryHandler> entry_handler_;
 };
 
-Zoe::Zoe() {
+Zoe::Zoe() noexcept {
   impl_ = new ZoeImpl();
 }
 
-Zoe::~Zoe() {
+Zoe::~Zoe() noexcept {
   if (impl_) {
     delete impl_;
     impl_ = nullptr;

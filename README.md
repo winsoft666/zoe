@@ -11,7 +11,7 @@ A C++ file download library.
 
 - Multi-protocol, such as HTTP(s), FTP(s)...
 
-- Segmented downloads and breakpoint resumable.
+- Segmented downloads and breakpoint transmission.
   
 - Limit download speed.
 

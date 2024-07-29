@@ -269,10 +269,10 @@ std::string sha256_digest(const struct sha256_ctx* ctx) {
 }
 }  // namespace sha256_internal
 
-Result CalculateFileSHA256(const utf8string& file_path, Options* opt, utf8string& str_hash) {
+ZoeResult CalculateFileSHA256(const utf8string& file_path, Options* opt, utf8string& str_hash) {
   FILE* f = FileUtil::Open(file_path, "rb");
   if (!f)
-    return CALCULATE_HASH_FAILED;
+    return ZoeResult::CALCULATE_HASH_FAILED;
 
   sha256_internal::SHA256_CTX sha256Ctx;
   sha256_internal::sha256_init(&sha256Ctx);
@@ -283,7 +283,7 @@ Result CalculateFileSHA256(const utf8string& file_path, Options* opt, utf8string
   while ((dwReadBytes = fread(szData, 1, 1024, f)) > 0) {
     if (opt && (opt->internal_stop_event.isSetted() || (opt->user_stop_event && opt->user_stop_event->isSetted()))) {
       fclose(f);
-      return CANCELED;
+      return ZoeResult::CANCELED;
     }
     sha256_internal::sha256_update(&sha256Ctx, szData, dwReadBytes);
   }
@@ -293,12 +293,12 @@ Result CalculateFileSHA256(const utf8string& file_path, Options* opt, utf8string
 
   str_hash = sha256_internal::sha256_digest(&sha256Ctx);
 
-  return SUCCESSED;
+  return ZoeResult::SUCCESSED;
 }
 
-Result CalculateFileSHA256(FILE* f, Options* opt, utf8string& str_hash) {
+ZoeResult CalculateFileSHA256(FILE* f, Options* opt, utf8string& str_hash) {
   if (!f)
-    return CALCULATE_HASH_FAILED;
+    return ZoeResult::CALCULATE_HASH_FAILED;
 
   FileUtil::Seek(f, 0L, SEEK_SET);
 
@@ -311,7 +311,7 @@ Result CalculateFileSHA256(FILE* f, Options* opt, utf8string& str_hash) {
   while ((dwReadBytes = fread(szData, 1, 1024, f)) > 0) {
     if (opt && (opt->internal_stop_event.isSetted() ||
                 (opt->user_stop_event && opt->user_stop_event->isSetted()))) {
-      return CANCELED;
+      return ZoeResult::CANCELED;
     }
     sha256_internal::sha256_update(&sha256Ctx, szData, dwReadBytes);
   }
@@ -320,6 +320,6 @@ Result CalculateFileSHA256(FILE* f, Options* opt, utf8string& str_hash) {
 
   str_hash = sha256_internal::sha256_digest(&sha256Ctx);
 
-  return SUCCESSED;
+  return ZoeResult::SUCCESSED;
 }
 }  // namespace zoe

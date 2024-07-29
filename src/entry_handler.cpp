@@ -49,7 +49,7 @@ EntryHandler::EntryHandler()
     , speed_handler_(nullptr) {
   user_paused_.store(false);
   user_stopped_.store(false);
-  state_.store(DownloadState::STOPPED);
+  state_.store(DownloadState::Stopped);
 }
 
 EntryHandler::~EntryHandler() {
@@ -104,7 +104,7 @@ static size_t __WriteHeaderCallback(char* buffer,
   return total;
 }
 
-std::shared_future<Result> EntryHandler::start(Options* options) {
+std::shared_future<ZoeResult> EntryHandler::start(Options* options) {
   options_ = options;
   async_task_ = std::async(std::launch::async,
                            std::bind(&EntryHandler::asyncTaskProcess, this));
@@ -114,14 +114,14 @@ std::shared_future<Result> EntryHandler::start(Options* options) {
 void EntryHandler::pause() {
   if (slice_manager_) {
     user_paused_.store(true);
-    state_.store(DownloadState::PAUSED);
+    state_.store(DownloadState::Paused);
   }
 }
 
 void EntryHandler::resume() {
   if (slice_manager_) {
     user_paused_.store(false);
-    state_.store(DownloadState::DOWNLODING);
+    state_.store(DownloadState::Downloading);
   }
 }
 
@@ -129,7 +129,7 @@ void EntryHandler::stop() {
   user_stopped_.store(true);
   options_->internal_stop_event.set();
   cancelFetchFileInfo();
-  state_.store(DownloadState::STOPPED);
+  state_.store(DownloadState::Stopped);
 }
 
 int64_t EntryHandler::originFileSize() const {
@@ -146,19 +146,19 @@ DownloadState EntryHandler::state() const {
   return state_.load();
 }
 
-std::shared_future<Result> EntryHandler::futureResult() {
+std::shared_future<ZoeResult> EntryHandler::futureResult() {
   return async_task_;
 }
 
-Result EntryHandler::asyncTaskProcess() {
+ZoeResult EntryHandler::asyncTaskProcess() {
   options_->internal_stop_event.unset();
   user_paused_.store(false);
   user_stopped_.store(false);
-  state_.store(DownloadState::DOWNLODING);
+  state_.store(DownloadState::Downloading);
 
-  const Result ret = _asyncTaskProcess();
+  const ZoeResult ret = _asyncTaskProcess();
 
-  state_.store(DownloadState::STOPPED);
+  state_.store(DownloadState::Stopped);
 
   options_->internal_stop_event.set();
 
@@ -179,7 +179,7 @@ Result EntryHandler::asyncTaskProcess() {
   return ret;
 }
 
-Result EntryHandler::_asyncTaskProcess() {
+ZoeResult EntryHandler::_asyncTaskProcess() {
   OutputVerbose(options_->verbose_functor, "URL: %s.\n", options_->url.c_str());
   OutputVerbose(options_->verbose_functor, "Thread number: %d.\n", options_->thread_num);
   OutputVerbose(options_->verbose_functor, "Disk Cache Size: %ld bytes.\n", options_->disk_cache_size);
@@ -198,7 +198,7 @@ Result EntryHandler::_asyncTaskProcess() {
 
   if (!fetch_size_ret) {
     OutputVerbose(options_->verbose_functor, "Fetch file size failed.\n");
-    return FETCH_FILE_INFO_FAILED;
+    return ZoeResult::FETCH_FILE_INFO_FAILED;
   }
 
   OutputVerbose(options_->verbose_functor, "File size: %" PRId64 " bytes.\n", file_info.fileSize);
@@ -206,8 +206,8 @@ Result EntryHandler::_asyncTaskProcess() {
   // If target file is an empty file, create it.
   if (file_info.fileSize == 0) {
     return FileUtil::CreateFixedSizeFile(options_->target_file_path, 0)
-               ? SUCCESSED
-               : CREATE_TARGET_FILE_FAILED;
+               ? ZoeResult::SUCCESSED
+               : ZoeResult::CREATE_TARGET_FILE_FAILED;
   }
 
   OutputVerbose(options_->verbose_functor, "Content MD5: %s.\n", file_info.contentMd5.c_str());
@@ -216,17 +216,17 @@ Result EntryHandler::_asyncTaskProcess() {
   assert(!slice_manager_);
   slice_manager_ = std::make_shared<SliceManager>(options_, file_info.redirectUrl);
 
-  if (slice_manager_->loadExistSlice(file_info.fileSize, file_info.contentMd5) != SUCCESSED) {
+  if (slice_manager_->loadExistSlice(file_info.fileSize, file_info.contentMd5) != ZoeResult::SUCCESSED) {
     slice_manager_->setOriginFileSize(file_info.fileSize);
     slice_manager_->setContentMd5(file_info.contentMd5);
 
-    const Result ms_ret = slice_manager_->makeSlices(file_info.acceptRanges);
-    if (ms_ret != SUCCESSED) {
+    const ZoeResult ms_ret = slice_manager_->makeSlices(file_info.acceptRanges);
+    if (ms_ret != ZoeResult::SUCCESSED) {
       return ms_ret;
     }
   }
 
-  if (slice_manager_->originFileSize() != -1L && slice_manager_->checkAllSliceCompletedByFileSize() == SUCCESSED) {
+  if (slice_manager_->originFileSize() != -1L && slice_manager_->checkAllSliceCompletedByFileSize() == ZoeResult::SUCCESSED) {
     OutputVerbose(options_->verbose_functor, "All of slices have been downloaded.\n");
     return slice_manager_->finishDownloadProgress(false, multi_);
   }
@@ -234,7 +234,7 @@ Result EntryHandler::_asyncTaskProcess() {
   multi_ = curl_multi_init();
   if (!multi_) {
     OutputVerbose(options_->verbose_functor, "curl_multi_init failed.\n");
-    return INIT_CURL_MULTI_FAILED;
+    return ZoeResult::INIT_CURL_MULTI_FAILED;
   }
 
   int64_t disk_cache_per_slice = 0L;
@@ -246,22 +246,22 @@ Result EntryHandler::_asyncTaskProcess() {
   OutputVerbose(options_->verbose_functor, "Disk cache per slice: %" PRId64 " bytes.\n", disk_cache_per_slice);
   OutputVerbose(options_->verbose_functor, "Max speed per slice: %" PRId64 " bytes.\n", max_speed_per_slice);
 
-  Result ss_ret = SUCCESSED;
+  ZoeResult ss_ret = ZoeResult::SUCCESSED;
   int32_t selected = 0;
   while (true) {
     if (selected >= options_->thread_num)
       break;
 
-    std::shared_ptr<Slice> slice = slice_manager_->getSlice(Slice::UNFETCH);
+    std::shared_ptr<Slice> slice = slice_manager_->getSlice(Slice::SliceStatus::UNFETCH);
     if (!slice)
       break;
 
-    slice->setStatus(Slice::FETCHED);
+    slice->setStatus(Slice::SliceStatus::FETCHED);
     ss_ret = slice->start(multi_, disk_cache_per_slice, max_speed_per_slice);
-    if (ss_ret != SUCCESSED) {
+    if (ss_ret != ZoeResult::SUCCESSED) {
       OutputVerbose(options_->verbose_functor,
                     "Slice<%d> start downloading failed: %s.\n",
-                    slice->index(), GetResultString(ss_ret));
+                    slice->index(), Zoe::GetResultString(ss_ret));
 
       // fatal error, return immediately!
       curl_multi_cleanup(multi_);
@@ -276,7 +276,7 @@ Result EntryHandler::_asyncTaskProcess() {
     OutputVerbose(options_->verbose_functor, "No available slice.\n");
     curl_multi_cleanup(multi_);
     multi_ = nullptr;
-    return UNKNOWN_ERROR;
+    return ZoeResult::UNKNOWN_ERROR;
   }
 
   if (options_->progress_functor)
@@ -383,10 +383,10 @@ Result EntryHandler::_asyncTaskProcess() {
       updateSliceStatus();
 
       // Get a slice that not be fetched(of cause not completed).
-      std::shared_ptr<Slice> slice = slice_manager_->getSlice(Slice::UNFETCH);
+      std::shared_ptr<Slice> slice = slice_manager_->getSlice(Slice::SliceStatus::UNFETCH);
       if (!slice) {
         // Try to download the slice that is failed previous again.
-        slice = slice_manager_->getSlice(Slice::DOWNLOAD_FAILED);
+        slice = slice_manager_->getSlice(Slice::SliceStatus::DOWNLOAD_FAILED);
         if (slice) {
           if (slice->failedTimes() >= options_->slice_max_failed_times)
             slice.reset();
@@ -394,12 +394,12 @@ Result EntryHandler::_asyncTaskProcess() {
             OutputVerbose(options_->verbose_functor, "Re-download slice<%d>.\n", slice->index());
         }
         else {
-          if (!slice_manager_->getSlice(Slice::DOWNLOADING)) {
+          if (!slice_manager_->getSlice(Slice::SliceStatus::DOWNLOADING)) {
             // only one slice that end_ is -1, so don't need loop
-            slice = slice_manager_->getSlice(Slice::CURL_OK_BUT_COMPLETED_NOT_SURE);
+            slice = slice_manager_->getSlice(Slice::SliceStatus::CURL_OK_BUT_COMPLETED_NOT_SURE);
             if (slice) {
-              if (slice_manager_->originFileSize() == -1 || slice_manager_->checkAllSliceCompletedByFileSize() == SUCCESSED) {
-                slice->setStatus(Slice::DOWNLOAD_COMPLETED);
+              if (slice_manager_->originFileSize() == -1 || slice_manager_->checkAllSliceCompletedByFileSize() == ZoeResult::SUCCESSED) {
+                slice->setStatus(Slice::SliceStatus::DOWNLOAD_COMPLETED);
                 slice.reset();
               }
               else {
@@ -410,21 +410,21 @@ Result EntryHandler::_asyncTaskProcess() {
         }
       }
       else {
-        slice->setStatus(Slice::FETCHED);
+        slice->setStatus(Slice::SliceStatus::FETCHED);
         disk_cache_per_slice = 0L;
         max_speed_per_slice = 0L;
         calculateSliceInfo(still_running + 1, &disk_cache_per_slice, &max_speed_per_slice);
 
-        const Result start_ret = slice->start(multi_, disk_cache_per_slice, max_speed_per_slice);
+        const ZoeResult start_ret = slice->start(multi_, disk_cache_per_slice, max_speed_per_slice);
         if (still_running <= 0) {
-          if (start_ret == SUCCESSED) {
+          if (start_ret == ZoeResult::SUCCESSED) {
             curl_multi_perform(multi_, &still_running);
             OutputVerbose(options_->verbose_functor, "Slice<%d> start downloading.\n", slice->index());
           }
           else {
             still_running = 1;
             OutputVerbose(options_->verbose_functor, "Slice<%d> start downloading failed: %s.\n",
-                          slice->index(), GetResultString(start_ret));
+                          slice->index(), Zoe::GetResultString(start_ret));
           }
         }
       }
@@ -433,23 +433,23 @@ Result EntryHandler::_asyncTaskProcess() {
 
   OutputVerbose(options_->verbose_functor, "Downloading end.\n");
 
-  Result ret = slice_manager_->finishDownloadProgress(true, multi_);
+  ZoeResult ret = slice_manager_->finishDownloadProgress(true, multi_);
 
   if (multi_) {
     curl_multi_cleanup(multi_);
     multi_ = nullptr;
   }
 
-  state_.store(DownloadState::STOPPED);
+  state_.store(DownloadState::Stopped);
 
-  if (ret == SUCCESSED) {
+  if (ret == ZoeResult::SUCCESSED) {
     OutputVerbose(options_->verbose_functor, "All success!\n");
     return ret;
   }
 
   if (user_stopped_.load() ||
       (options_->user_stop_event && options_->user_stop_event->isSetted()))
-    ret = CANCELED;  // user cancel, ignore other failed reason
+    ret = ZoeResult::CANCELED;  // user cancel, ignore other failed reason
 
   return ret;
 }
@@ -589,16 +589,16 @@ void EntryHandler::updateSliceStatus() {
 
       if (m->data.result == CURLE_OK) {
         if (slice->isDataCompletedClearly()) {
-          slice->setStatus(Slice::DOWNLOAD_COMPLETED);
+          slice->setStatus(Slice::SliceStatus::DOWNLOAD_COMPLETED);
           slice->stop(multi_);
         }
         else {
           if (slice->end() == -1) {
-            slice->setStatus(Slice::CURL_OK_BUT_COMPLETED_NOT_SURE);
+            slice->setStatus(Slice::SliceStatus::CURL_OK_BUT_COMPLETED_NOT_SURE);
             slice->stop(multi_);
           }
           else {
-            slice->setStatus(Slice::DOWNLOAD_FAILED);
+            slice->setStatus(Slice::SliceStatus::DOWNLOAD_FAILED);
             slice->increaseFailedTimes();
             slice->stop(multi_);
           }
@@ -610,7 +610,7 @@ void EntryHandler::updateSliceStatus() {
                       slice->index(), m->data.result,
                       curl_easy_strerror(m->data.result));
 
-        slice->setStatus(Slice::DOWNLOAD_FAILED);
+        slice->setStatus(Slice::SliceStatus::DOWNLOAD_FAILED);
         slice->increaseFailedTimes();
         slice->stop(multi_);
       }

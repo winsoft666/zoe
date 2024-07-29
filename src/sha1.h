@@ -35,8 +35,8 @@ class CSHA1 {
   void Transform(uint32_t state[5], unsigned char buffer[64]);
 };
 
-Result CalculateFileSHA1(const utf8string& file_path, Options* opt, utf8string& str_hash);
-Result CalculateFileSHA1(FILE* f, Options* opt, utf8string& str_hash);
+ZoeResult CalculateFileSHA1(const utf8string& file_path, Options* opt, utf8string& str_hash);
+ZoeResult CalculateFileSHA1(FILE* f, Options* opt, utf8string& str_hash);
 }  // namespace zoe
 
 #endif

@@ -334,10 +334,10 @@ void CSHA1::GetHash(unsigned char* uDest) {
     uDest[i] = m_digest[i];
 }
 
-Result CalculateFileSHA1(const utf8string& file_path, Options* opt, utf8string& str_hash) {
+ZoeResult CalculateFileSHA1(const utf8string& file_path, Options* opt, utf8string& str_hash) {
   FILE* f = FileUtil::Open(file_path, "rb");
   if (!f)
-    return CALCULATE_HASH_FAILED;
+    return ZoeResult::CALCULATE_HASH_FAILED;
 
   CSHA1 sha1;
   sha1.Reset();
@@ -348,7 +348,7 @@ Result CalculateFileSHA1(const utf8string& file_path, Options* opt, utf8string& 
   while ((dwReadBytes = fread(szData, 1, 1024, f)) > 0) {
     if (opt && (opt->internal_stop_event.isSetted() || (opt->user_stop_event && opt->user_stop_event->isSetted()))) {
       fclose(f);
-      return CANCELED;
+      return ZoeResult::CANCELED;
     }
     sha1.Update(szData, dwReadBytes);
   }
@@ -361,12 +361,12 @@ Result CalculateFileSHA1(const utf8string& file_path, Options* opt, utf8string& 
 
   str_hash = szSHA1;
 
-  return SUCCESSED;
+  return ZoeResult::SUCCESSED;
 }
 
-Result CalculateFileSHA1(FILE* f, Options* opt, utf8string& str_hash) {
+ZoeResult CalculateFileSHA1(FILE* f, Options* opt, utf8string& str_hash) {
   if (!f)
-    return CALCULATE_HASH_FAILED;
+    return ZoeResult::CALCULATE_HASH_FAILED;
 
   FileUtil::Seek(f, 0L, SEEK_SET);
 
@@ -379,7 +379,7 @@ Result CalculateFileSHA1(FILE* f, Options* opt, utf8string& str_hash) {
   while ((dwReadBytes = fread(szData, 1, 1024, f)) > 0) {
     if (opt && (opt->internal_stop_event.isSetted() ||
                 (opt->user_stop_event && opt->user_stop_event->isSetted()))) {
-      return CANCELED;
+      return ZoeResult::CANCELED;
     }
     sha1.Update(szData, dwReadBytes);
   }
@@ -391,6 +391,6 @@ Result CalculateFileSHA1(FILE* f, Options* opt, utf8string& str_hash) {
 
   str_hash = szSHA1;
 
-  return SUCCESSED;
+  return ZoeResult::SUCCESSED;
 }
 }  // namespace zoe

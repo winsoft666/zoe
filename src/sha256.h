@@ -50,8 +50,8 @@ void sha256_digest(const struct sha256_ctx* ctx, unsigned char* digest);
 std::string sha256_digest(const struct sha256_ctx* ctx);
 }  // namespace sha256_internal
 
-Result CalculateFileSHA256(const utf8string& file_path, Options* opt, utf8string& str_hash);
-Result CalculateFileSHA256(FILE* f, Options* opt, utf8string& str_hash);
+ZoeResult CalculateFileSHA256(const utf8string& file_path, Options* opt, utf8string& str_hash);
+ZoeResult CalculateFileSHA256(FILE* f, Options* opt, utf8string& str_hash);
 }  // namespace zoe
 
 #endif

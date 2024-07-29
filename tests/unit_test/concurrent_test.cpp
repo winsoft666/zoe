@@ -36,13 +36,13 @@ TEST(ConcurrentTest, test1) {
       t->setThreadNum(6);
       t->setSlicePolicy(SlicePolicy::FixedNum, 10);
       if (http_test_datas[i].md5.length() > 0)
-        t->setHashVerifyPolicy(ALWAYS, MD5, http_test_datas[i].md5);
+        t->setHashVerifyPolicy(HashVerifyPolicy::AlwaysVerify, HashType::MD5, http_test_datas[i].md5);
 
       t->start(
           http_test_datas[i].url, http_test_datas[i].target_file_path,
-          [i](Result result) {
-            printf("\n[%d] Result: %s\n", i, GetResultString(result));
-            EXPECT_TRUE(result == SUCCESSED);
+          [i](ZoeResult result) {
+            printf("\n[%d] ZoeResult: %s\n", i, Zoe::GetResultString(result));
+            EXPECT_TRUE(result == ZoeResult::SUCCESSED);
           },
           [i](int64_t total, int64_t downloaded) {
             if (total > 0)

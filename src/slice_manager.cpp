@@ -56,7 +56,7 @@ std::shared_ptr<Slice> SliceManager::getSlice(void* curlHandle) {
   return nullptr;
 }
 
-std::shared_ptr<Slice> SliceManager::getSlice(Slice::Status status) {
+std::shared_ptr<Slice> SliceManager::getSlice(Slice::SliceStatus status) {
   for (auto& s : slices_) {
     if (s && s->status() == status) {
       return s;
@@ -77,11 +77,11 @@ utf8string SliceManager::indexFilePath() const {
   return index_file_path_;
 }
 
-Result SliceManager::loadExistSlice(int64_t cur_file_size,
-                                    const utf8string& cur_content_md5) {
+ZoeResult SliceManager::loadExistSlice(int64_t cur_file_size,
+                                       const utf8string& cur_content_md5) {
   FILE* file = FileUtil::Open(index_file_path_, "rb");
   if (!file)
-    return OPEN_INDEX_FILE_FAILED;
+    return ZoeResult::OPEN_INDEX_FILE_FAILED;
 
   const int64_t file_size = FileUtil::GetFileSize(file);
   FileUtil::Seek(file, 0, SEEK_SET);
@@ -92,7 +92,7 @@ Result SliceManager::loadExistSlice(int64_t cur_file_size,
   try {
     utf8string str_sign(file_content.data(), strlen(INDEX_FILE_SIGN_STRING));
     if (str_sign != INDEX_FILE_SIGN_STRING)
-      return INVALID_INDEX_FORMAT;
+      return ZoeResult::INVALID_INDEX_FORMAT;
 
     utf8string str_json(file_content.data() + strlen(INDEX_FILE_SIGN_STRING));
     json j = json::parse(str_json);
@@ -101,7 +101,7 @@ Result SliceManager::loadExistSlice(int64_t cur_file_size,
     if (options_->tmp_file_expired_time >= 0) {
       time_t now = time(nullptr);
       if (now - last_update_time > options_->tmp_file_expired_time)
-        return TMP_FILE_EXPIRED;
+        return ZoeResult::TMP_FILE_EXPIRED;
     }
 
     int64_t pre_file_size = j["file_size"];
@@ -110,7 +110,7 @@ Result SliceManager::loadExistSlice(int64_t cur_file_size,
           options_->verbose_functor,
           "File size has changed, tmp file expired: %lld -> %lld.\n",
           pre_file_size, cur_file_size);
-      return TMP_FILE_EXPIRED;
+      return ZoeResult::TMP_FILE_EXPIRED;
     }
     utf8string pre_content_md5 = j["content_md5"].get<utf8string>();
     if (!StringHelper::IsEqual(pre_content_md5, cur_content_md5, true) && options_->content_md5_enabled) {
@@ -118,28 +118,28 @@ Result SliceManager::loadExistSlice(int64_t cur_file_size,
           options_->verbose_functor,
           "Content md5 has changed, tmp file expired: %s -> %s.\n",
           pre_content_md5.c_str(), cur_content_md5.c_str());
-      return TMP_FILE_EXPIRED;
+      return ZoeResult::TMP_FILE_EXPIRED;
     }
     utf8string tmp_file_path = j["target_tmp_file_path"].get<utf8string>();
 
     if (!FileUtil::IsRW(tmp_file_path))
-      return TMP_FILE_CANNOT_RW;
+      return ZoeResult::TMP_FILE_CANNOT_RW;
 
     std::shared_ptr<TargetFile> target_file =
         std::make_shared<TargetFile>(tmp_file_path);
 
     if (!target_file->open())
-      return OPEN_TMP_FILE_FAILED;
+      return ZoeResult::OPEN_TMP_FILE_FAILED;
 
     if (target_file->fileSize() != cur_file_size)
-      return TMP_FILE_SIZE_ERROR;
+      return ZoeResult::TMP_FILE_SIZE_ERROR;
 
     if (j["url"].get<utf8string>() != options_->url)
-      return URL_DIFFERENT;
+      return ZoeResult::URL_DIFFERENT;
 
     if (j["redirect_url"].get<utf8string>() != redirect_url_ &&
         options_->redirected_url_check_enabled)
-      return REDIRECT_URL_DIFFERENT;
+      return ZoeResult::REDIRECT_URL_DIFFERENT;
 
     if (options_->url.length() == 0)
       options_->url = j["url"].get<utf8string>();
@@ -162,14 +162,14 @@ Result SliceManager::loadExistSlice(int64_t cur_file_size,
                   "Load exist slice exception: %s.\n",
                   e.what() ? e.what() : "");
     slices_.clear();
-    return INVALID_INDEX_FORMAT;
+    return ZoeResult::INVALID_INDEX_FORMAT;
   }
 
   content_md5_ = cur_content_md5;
   origin_file_size_ = cur_file_size;
   OutputVerbose(options_->verbose_functor, "Load exist slice success.\n");
   dumpSlice();
-  return SUCCESSED;
+  return ZoeResult::SUCCESSED;
 }
 
 bool SliceManager::flushAllSlices() {
@@ -202,7 +202,7 @@ std::shared_ptr<TargetFile> SliceManager::targetFile() const {
   return target_file_;
 }
 
-Result SliceManager::makeSlices(bool accept_ranges) {
+ZoeResult SliceManager::makeSlices(bool accept_ranges) {
   slices_.clear();
   utf8string tmp_file_path = options_->target_file_path + TMP_FILE_EXTENSION;
   if (target_file_)
@@ -216,7 +216,7 @@ Result SliceManager::makeSlices(bool accept_ranges) {
 #else
     OutputVerbose(options_->verbose_functor, "Create target file failed.\n");
 #endif
-    return CREATE_TARGET_FILE_FAILED;
+    return ZoeResult::CREATE_TARGET_FILE_FAILED;
   }
 
   assert(origin_file_size_ > 0L || origin_file_size_ == -1L);
@@ -232,14 +232,14 @@ Result SliceManager::makeSlices(bool accept_ranges) {
     int64_t cur_end = 0L;
     int32_t slice_index = 0;
 
-    if (options_->slice_policy == FixedSize) {
+    if (options_->slice_policy == SlicePolicy::FixedSize) {
       slice_size = options_->slice_policy_value;
     }
-    else if (options_->slice_policy == FixedNum) {
+    else if (options_->slice_policy == SlicePolicy::FixedNum) {
       if (options_->slice_policy_value > 0)
         slice_size = origin_file_size_ / options_->slice_policy_value;
     }
-    else if (options_->slice_policy == Auto) {
+    else if (options_->slice_policy == SlicePolicy::Auto) {
       if (origin_file_size_ <= ZOE_DEFAULT_FIXED_SLICE_SIZE_BYTE * 1.5f) {
         slice_size = origin_file_size_;
       }
@@ -255,7 +255,7 @@ Result SliceManager::makeSlices(bool accept_ranges) {
 
         cur_end = std::min(cur_begin + slice_size - 1, origin_file_size_ - 1);
         // final slice contains all of remainder space.
-        if (options_->slice_policy == FixedNum &&
+        if (options_->slice_policy == SlicePolicy::FixedNum &&
             slice_index == options_->slice_policy_value) {
           cur_end = origin_file_size_ - 1L;
         }
@@ -276,7 +276,7 @@ Result SliceManager::makeSlices(bool accept_ranges) {
   }
 
   dumpSlice();
-  return SUCCESSED;
+  return ZoeResult::SUCCESSED;
 }
 
 int64_t SliceManager::totalDownloaded() const {
@@ -289,7 +289,7 @@ int64_t SliceManager::totalDownloaded() const {
 
 bool SliceManager::needVerifyHash() const {
   bool needVerify = false;
-  if (options_->hash_verify_policy == ALWAYS || (options_->hash_verify_policy == ONLY_NO_FILESIZE && origin_file_size_ == -1L)) {
+  if (options_->hash_verify_policy == HashVerifyPolicy::AlwaysVerify || (options_->hash_verify_policy == HashVerifyPolicy::OnlyNoFileSize && origin_file_size_ == -1L)) {
     if (options_->hash_value.length() > 0 || (content_md5_.length() > 0 && options_->content_md5_enabled)) {
       needVerify = true;
     }
@@ -297,31 +297,31 @@ bool SliceManager::needVerifyHash() const {
   return needVerify;
 }
 
-Result SliceManager::checkAllSliceCompletedByFileSize() const {
-  Result ret = NOT_CLEARLY_RESULT;
+ZoeResult SliceManager::checkAllSliceCompletedByFileSize() const {
+  ZoeResult ret = ZoeResult::NOT_CLEARLY_RESULT;
   assert(origin_file_size_ != -1L);
   if (origin_file_size_ != -1L) {
     const int64_t totalDwn = totalDownloaded();
     if (totalDwn != origin_file_size_) {
       OutputVerbose(options_->verbose_functor, "Slices total size(%" PRId64 ") not qualified(%" PRId64 ").\n",
                     totalDwn, origin_file_size_);
-      ret = SLICE_DOWNLOAD_FAILED;
+      ret = ZoeResult::SLICE_DOWNLOAD_FAILED;
     }
     else {
-      ret = SUCCESSED;
+      ret = ZoeResult::SUCCESSED;
     }
   }
 
   return ret;
 }
 
-Result SliceManager::checkAllSliceCompletedByHash() const {
+ZoeResult SliceManager::checkAllSliceCompletedByHash() const {
   assert(needVerifyHash());
 
-  Result ret = NOT_CLEARLY_RESULT;
+  ZoeResult ret = ZoeResult::NOT_CLEARLY_RESULT;
 
   utf8string expectHash;
-  if (options_->hash_verify_policy == ALWAYS || (options_->hash_verify_policy == ONLY_NO_FILESIZE && origin_file_size_ == -1L)) {
+  if (options_->hash_verify_policy == HashVerifyPolicy::AlwaysVerify || (options_->hash_verify_policy == HashVerifyPolicy::OnlyNoFileSize && origin_file_size_ == -1L)) {
     if (options_->hash_value.length() > 0) {
       expectHash = options_->hash_value;
     }
@@ -335,21 +335,21 @@ Result SliceManager::checkAllSliceCompletedByHash() const {
       utf8string str_hash;
       OutputVerbose(options_->verbose_functor, "Start calculate temp file hash.\n");
 
-      if (target_file_->calculateFileHash(options_, str_hash) == SUCCESSED) {
+      if (target_file_->calculateFileHash(options_, str_hash) == ZoeResult::SUCCESSED) {
         OutputVerbose(options_->verbose_functor, "Temp file hash: %s.\n", str_hash.c_str());
 
         if (!StringHelper::IsEqual(str_hash, expectHash, true)) {
-          ret = HASH_VERIFY_NOT_PASS;
+          ret = ZoeResult::HASH_VERIFY_NOT_PASS;
           OutputVerbose(options_->verbose_functor, "Hash check not pass.\n");
         }
         else {
-          ret = SUCCESSED;
+          ret = ZoeResult::SUCCESSED;
           OutputVerbose(options_->verbose_functor, "Hash check passed.\n");
         }
       }
       else {
         OutputVerbose(options_->verbose_functor, "Calculate temp file hash failed.\n");
-        ret = CALCULATE_HASH_FAILED;
+        ret = ZoeResult::CALCULATE_HASH_FAILED;
       }
     }
   }
@@ -357,15 +357,15 @@ Result SliceManager::checkAllSliceCompletedByHash() const {
   return ret;
 }
 
-Result SliceManager::finishDownloadProgress(bool need_check_completed, void* mult) {
+ZoeResult SliceManager::finishDownloadProgress(bool need_check_completed, void* mult) {
   // first of all, flush buffer to disk
   OutputVerbose(options_->verbose_functor, "Start flushing cache to disk.\n");
-  Result stop_ret = SUCCESSED;
+  ZoeResult stop_ret = ZoeResult::SUCCESSED;
   for (auto& s : slices_) {
     assert(s);
     if (s) {
-      const Result r = s->stop(mult);
-      if (r != SUCCESSED)
+      const ZoeResult r = s->stop(mult);
+      if (r != ZoeResult::SUCCESSED)
         stop_ret = r;
     }
   }
@@ -376,21 +376,21 @@ Result SliceManager::finishDownloadProgress(bool need_check_completed, void* mul
   }
 
   // check stop operate result
-  if (stop_ret != SUCCESSED) {
+  if (stop_ret != ZoeResult::SUCCESSED) {
     return stop_ret;
   }
 
   if (need_check_completed) {
     // is all slice download completed?
     if (origin_file_size_ != -1L) {
-      Result r = checkAllSliceCompletedByFileSize();
-      if (r != SUCCESSED)
+      ZoeResult r = checkAllSliceCompletedByFileSize();
+      if (r != ZoeResult::SUCCESSED)
         return r;
     }
 
     if (needVerifyHash()) {
-      Result r = checkAllSliceCompletedByHash();
-      if (r != SUCCESSED)
+      ZoeResult r = checkAllSliceCompletedByHash();
+      if (r != ZoeResult::SUCCESSED)
         return r;
     }
   }
@@ -404,7 +404,7 @@ Result SliceManager::finishDownloadProgress(bool need_check_completed, void* mul
                   "Rename file failed, GLE: %u, %s => %s.\n",
                   error_code, target_file_->filePath().c_str(),
                   options_->target_file_path.c_str());
-    return RENAME_TMP_FILE_FAILED;
+    return ZoeResult::RENAME_TMP_FILE_FAILED;
   }
 
   if (!FileUtil::RemoveFile(index_file_path_)) {
@@ -414,13 +414,13 @@ Result SliceManager::finishDownloadProgress(bool need_check_completed, void* mul
 
   OutputVerbose(options_->verbose_functor, "Flush cache to disk successful.\n");
 
-  return SUCCESSED;
+  return ZoeResult::SUCCESSED;
 }
 
 int32_t SliceManager::getUnfetchAndUncompletedSliceNum() const {
   int32_t num = 0;
   for (auto& it : slices_) {
-    if (it && !it->isDataCompletedClearly() && it->status() == Slice::UNFETCH)
+    if (it && !it->isDataCompletedClearly() && it->status() == Slice::SliceStatus::UNFETCH)
       num++;
   }
   return num;

@@ -16,7 +16,7 @@
 ############################################################################
 
 set (CMAKE_CXX_STANDARD 11)
-set (PACKAGE_VERSION 3.2)
+set (PACKAGE_VERSION 4.1)
 
 if(ZOE_BUILD_SHARED_LIBS)
 	set(ZOE_LIB_NAME zoe)

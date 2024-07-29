@@ -99,32 +99,32 @@ bool TargetFile::renameTo(Options* opt,
   return ret;
 }
 
-Result TargetFile::calculateFileHash(Options* opt, utf8string& str_hash) {
+ZoeResult TargetFile::calculateFileHash(Options* opt, utf8string& str_hash) {
   std::lock_guard<std::recursive_mutex> lg(file_mutex_);
 
-  Result ret = CALCULATE_HASH_FAILED;
-  if (opt->hash_type == MD5) {
+  ZoeResult ret = ZoeResult::CALCULATE_HASH_FAILED;
+  if (opt->hash_type == HashType::MD5) {
     ret = f_ ? CalculateFileMd5(f_, opt, str_hash)
              : CalculateFileMd5(file_path_, opt, str_hash);
   }
-  else if (opt->hash_type == CRC32) {
+  else if (opt->hash_type == HashType::CRC32) {
     ret = f_ ? CalculateFileCRC32(f_, opt, str_hash)
              : CalculateFileCRC32(file_path_, opt, str_hash);
   }
-  else if (opt->hash_type == SHA1) {
+  else if (opt->hash_type == HashType::SHA1) {
     ret = f_ ? CalculateFileSHA1(f_, opt, str_hash)
              : CalculateFileSHA1(file_path_, opt, str_hash);
   }
-  else if (opt->hash_type == SHA256) {
+  else if (opt->hash_type == HashType::SHA256) {
     ret = f_ ? CalculateFileSHA256(f_, opt, str_hash)
              : CalculateFileSHA256(file_path_, opt, str_hash);
   }
   return ret;
 }
 
-Result TargetFile::calculateFileMd5(Options* opt, utf8string& str_hash) {
+ZoeResult TargetFile::calculateFileMd5(Options* opt, utf8string& str_hash) {
   std::lock_guard<std::recursive_mutex> lg(file_mutex_);
-  Result ret = CALCULATE_HASH_FAILED;
+  ZoeResult ret = ZoeResult::CALCULATE_HASH_FAILED;
 
   ret = f_ ? CalculateFileMd5(f_, opt, str_hash)
            : CalculateFileMd5(file_path_, opt, str_hash);

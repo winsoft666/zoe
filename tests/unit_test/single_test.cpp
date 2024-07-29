@@ -33,15 +33,15 @@ TEST(SingleTest, test1) {
     z.setThreadNum(6);
     z.setSlicePolicy(SlicePolicy::FixedNum, 10);
     if (test_data.md5.length() > 0)
-      z.setHashVerifyPolicy(ALWAYS, MD5, test_data.md5);
-    z.setFetchFileInfoHeadMethod(true);
+      z.setHashVerifyPolicy(HashVerifyPolicy::AlwaysVerify, HashType::MD5, test_data.md5);
+    z.setFetchFileInfoHeadMethodEnabled(true);
     z.setHttpHeaders({ {"User-Agent", "Zoe"}});
 
-    std::shared_future<Result> future_result = z.start(
+    std::shared_future<ZoeResult> future_result = z.start(
         test_data.url, test_data.target_file_path,
-        [](Result result) {
-          printf("\nResult: %s\n", GetResultString(result));
-          EXPECT_TRUE(result == SUCCESSED);
+        [](ZoeResult result) {
+          printf("\nResult: %s\n", Zoe::GetResultString(result));
+          EXPECT_TRUE(result == ZoeResult::SUCCESSED);
         },
         [](int64_t total, int64_t downloaded) {
           if (total > 0)
@@ -49,7 +49,7 @@ TEST(SingleTest, test1) {
         },
         nullptr);
 
-    EXPECT_TRUE(future_result.get() == SUCCESSED);
+    EXPECT_TRUE(future_result.get() == ZoeResult::SUCCESSED);
     DownloadState s = z.state();
   }
   Zoe::GlobalUnInit();

@@ -51,7 +51,7 @@ class EntryHandler {
   EntryHandler();
   virtual ~EntryHandler();
 
-  std::shared_future<Result> start(Options* options);
+  std::shared_future<ZoeResult> start(Options* options);
   void pause();
   void resume();
   void stop();
@@ -61,10 +61,10 @@ class EntryHandler {
 
   DownloadState state() const;
 
-  std::shared_future<Result> futureResult();
+  std::shared_future<ZoeResult> futureResult();
  protected:
-  Result asyncTaskProcess();
-  Result _asyncTaskProcess();
+  ZoeResult asyncTaskProcess();
+  ZoeResult _asyncTaskProcess();
 
   bool fetchFileInfo(FileInfo& fileInfo);
   bool requestFileInfo(const utf8string& url, FileInfo& fileInfo);
@@ -75,7 +75,7 @@ class EntryHandler {
   void updateSliceStatus();
 
  protected:
-  std::shared_future<Result> async_task_;
+  std::shared_future<ZoeResult> async_task_;
   Options* options_;
   std::shared_ptr<SliceManager> slice_manager_;
   std::shared_ptr<ProgressHandler> progress_handler_;

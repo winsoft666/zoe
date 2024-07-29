@@ -33,7 +33,7 @@
 #endif
 
 using namespace zoe;
-Zoe efd;
+Zoe z;
 std::mutex console_mutex;
 
 void PrintConsole(int64_t total, int64_t downloaded, int32_t speed);
@@ -62,7 +62,7 @@ BOOL WINAPI ControlSignalHandler(DWORD fdwCtrlType) {
     case CTRL_BREAK_EVENT:
     case CTRL_LOGOFF_EVENT:
     case CTRL_SHUTDOWN_EVENT:
-      efd.stop();
+      z.stop();
       return TRUE;
 
     default:
@@ -72,7 +72,7 @@ BOOL WINAPI ControlSignalHandler(DWORD fdwCtrlType) {
 #else
 
 void ControlSignalHandler(int s) {
-  efd.stop();
+  z.stop();
 }
 #endif
 
@@ -103,23 +103,23 @@ int main(int argc, char** argv) {
   char* target_file_path = argv[2];
 
   if (argc >= 4)
-    efd.setThreadNum(atoi(argv[3]));
+    z.setThreadNum(atoi(argv[3]));
   if (argc >= 5)
-    efd.setDiskCacheSize(atoi(argv[4]) * 1024 * 1024);
+    z.setDiskCacheSize(atoi(argv[4]) * 1024 * 1024);
   if (argc >= 6) {
     if (strlen(argv[5]) > 0) {
-      efd.setHashVerifyPolicy(ALWAYS, MD5, argv[5]);
+      z.setHashVerifyPolicy(HashVerifyPolicy::AlwaysVerify, HashType::MD5, argv[5]);
     }
   }
   if (argc >= 7)
-    efd.setTmpFileExpiredTime(atoi(argv[6]));
+    z.setExpiredTimeOfTmpFile(atoi(argv[6]));
   if (argc >= 8)
-    efd.setMaxDownloadSpeed(atoi(argv[7]));
+    z.setMaxDownloadSpeed(atoi(argv[7]));
 
   int exit_code = 0;
   Zoe::GlobalInit();
   FILE* f_verbose = fopen("zoe_tool_verbose.log", "wb");
-  efd.setVerboseOutput([f_verbose](const utf8string& verbose) {
+  z.setVerboseOutput([f_verbose](const utf8string& verbose) {
     fwrite(verbose.c_str(), 1, verbose.size(), f_verbose);
 #if defined(WIN32) || defined(_WIN32) || defined(__WIN32__) || defined(__NT__)
     OutputDebugStringA(verbose.c_str());
@@ -129,14 +129,15 @@ int main(int argc, char** argv) {
   auto start_time = std::chrono::high_resolution_clock::now();
   std::chrono::time_point<std::chrono::high_resolution_clock> end_time;
 
-  std::shared_future<Result> aysnc_task = efd.start(
+  std::shared_future<ZoeResult> aysnc_task = z.start(
       url, target_file_path,
-      [=, &exit_code, &end_time](Result result) {
-        std::cout << std::endl << GetResultString(result) << std::endl;
-        exit_code = result;
+      [=, &exit_code, &end_time](ZoeResult result) {
+        std::cout << std::endl
+                  << Zoe::GetResultString(result) << std::endl;
+        exit_code = (int)result;
 
         end_time = std::chrono::high_resolution_clock::now();
-        if (result == Result::SUCCESSED) {
+        if (result == ZoeResult::SUCCESSED) {
         }
       },
       [](int64_t total, int64_t downloaded) { PrintConsole(total, downloaded, -1); },

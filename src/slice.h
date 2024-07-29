@@ -35,7 +35,7 @@ namespace zoe {
 class SliceManager;
 class Slice {
  public:
-  enum Status {
+  enum class SliceStatus {
     UNFETCH = 0,
     FETCHED = 1,
     DOWNLOADING = 2,
@@ -62,11 +62,11 @@ class Slice {
   int32_t index() const;
   void* curlHandle();
 
-  Result start(void* multi, int64_t disk_cache_size, int64_t max_speed);
-  Result stop(void* multi); // must setStatus first
+  ZoeResult start(void* multi, int64_t disk_cache_size, int64_t max_speed);
+  ZoeResult stop(void* multi);  // must setStatus first
 
-  void setStatus(Slice::Status s);
-  Status status() const;
+  void setStatus(SliceStatus s);
+  SliceStatus status() const;
 
   void increaseFailedTimes();
   int32_t failedTimes() const;
@@ -76,22 +76,24 @@ class Slice {
 
   bool onNewData(const char* p, long size);
   bool flushToDisk();
+
  protected:
   void freeDiskCacheBuffer();
+
  protected:
   int32_t index_;
-  int64_t begin_; // data range is [begin_, end_]
+  int64_t begin_;  // data range is [begin_, end_]
   int64_t end_;
   std::atomic<int64_t> disk_capacity_;  // data size in disk file
 
   void* curl_;
   struct curl_slist* header_chunk_;
 
-  int64_t disk_cache_size_;  // byte
-  std::atomic<int64_t> disk_cache_capacity_; // data size in cache.
+  int64_t disk_cache_size_;                   // byte
+  std::atomic<int64_t> disk_cache_capacity_;  // data size in cache.
   char* disk_cache_buffer_;
 
-  Status status_;
+  SliceStatus status_;
   int32_t failed_times_;
 
   std::shared_ptr<SliceManager> slice_manager_;

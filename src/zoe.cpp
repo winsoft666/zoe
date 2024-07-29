@@ -23,9 +23,10 @@
 #include "options.h"
 #include "entry_handler.h"
 #include "string_helper.hpp"
+#include "string_encode.h"
 
 namespace zoe {
-const char* GetResultString(int enumVal) {
+const char* Zoe::GetResultString(ZoeResult enumVal) {
   static const char* EnumStrings[] = {"SUCCESSED",
                                       "UNKNOWN_ERROR",
                                       "INVALID_URL",
@@ -60,7 +61,7 @@ const char* GetResultString(int enumVal) {
                                       "FETCH_FILE_INFO_FAILED",
                                       "REDIRECT_URL_DIFFERENT",
                                       "NOT_CLEARLY_RESULT"};
-  return EnumStrings[enumVal];
+  return EnumStrings[(int)enumVal];
 }
 
 class Zoe::ZoeImpl {
@@ -71,7 +72,7 @@ class Zoe::ZoeImpl {
   bool isDownloading() {
     if (!entry_handler_)
       return false;
-    return entry_handler_->state() != DownloadState::STOPPED;
+    return entry_handler_->state() != DownloadState::Stopped;
   }
 
  public:
@@ -107,16 +108,16 @@ void Zoe::setVerboseOutput(VerboseOuputFunctor verbose_functor) noexcept {
   impl_->options_.verbose_functor = verbose_functor;
 }
 
-Result Zoe::setThreadNum(int32_t thread_num) noexcept {
+ZoeResult Zoe::setThreadNum(int32_t thread_num) noexcept {
   assert(impl_);
   if (impl_->isDownloading())
-    return ALREADY_DOWNLOADING;
+    return ZoeResult::ALREADY_DOWNLOADING;
   if (thread_num <= 0)
     thread_num = ZOE_DEFAULT_THREAD_NUM;
   if (thread_num > 100)
-    return INVALID_THREAD_NUM;
+    return ZoeResult::INVALID_THREAD_NUM;
   impl_->options_.thread_num = thread_num;
-  return SUCCESSED;
+  return ZoeResult::SUCCESSED;
 }
 
 int32_t Zoe::threadNum() const noexcept {
@@ -146,22 +147,22 @@ DownloadState Zoe::state() const noexcept {
   assert(impl_);
   if (impl_ && impl_->entry_handler_)
     return impl_->entry_handler_->state();
-  return DownloadState::STOPPED;
+  return DownloadState::Stopped;
 }
 
-std::shared_future<Result> Zoe::futureResult() noexcept {
+std::shared_future<ZoeResult> Zoe::futureResult() noexcept {
   assert(impl_);
   if (impl_ && impl_->entry_handler_)
     return impl_->entry_handler_->futureResult();
-  return std::shared_future<Result>();
+  return std::shared_future<ZoeResult>();
 }
 
-Result Zoe::setNetworkConnectionTimeout(int32_t milliseconds) noexcept {
+ZoeResult Zoe::setNetworkConnectionTimeout(int32_t milliseconds) noexcept {
   assert(impl_);
   if (milliseconds <= 0)
     milliseconds = ZOE_DEFAULT_NETWORK_CONN_TIMEOUT_MS;
   impl_->options_.network_conn_timeout = milliseconds;
-  return SUCCESSED;
+  return ZoeResult::SUCCESSED;
 }
 
 int32_t Zoe::networkConnectionTimeout() const noexcept {
@@ -169,51 +170,51 @@ int32_t Zoe::networkConnectionTimeout() const noexcept {
   return impl_->options_.network_conn_timeout;
 }
 
-Result Zoe::setFetchFileInfoRetryTimes(int32_t retry_times) noexcept {
+ZoeResult Zoe::setRetryTimesOfFetchFileInfo(int32_t retry_times) noexcept {
   assert(impl_);
   if (retry_times <= 0)
     retry_times = ZOE_DEFAULT_FETCH_FILE_INFO_RETRY_TIMES;
   impl_->options_.fetch_file_info_retry = retry_times;
-  return SUCCESSED;
+  return ZoeResult::SUCCESSED;
 }
 
-int32_t Zoe::fetchFileInfoRetryTimes() const noexcept {
+int32_t Zoe::retryTimesOfFetchFileInfo() const noexcept {
   assert(impl_);
   return impl_->options_.fetch_file_info_retry;
 }
 
-Result Zoe::setFetchFileInfoHeadMethod(bool use_head) noexcept {
+ZoeResult Zoe::setFetchFileInfoHeadMethodEnabled(bool use_head) noexcept {
   assert(impl_);
   impl_->options_.use_head_method_fetch_file_info = use_head;
-  return SUCCESSED;
+  return ZoeResult::SUCCESSED;
 }
 
-bool Zoe::fetchFileInfoHeadMethod() const noexcept {
+bool Zoe::fetchFileInfoHeadMethodEnabled() const noexcept {
   assert(impl_);
   return impl_->options_.use_head_method_fetch_file_info;
 }
 
-Result Zoe::setTmpFileExpiredTime(int32_t seconds) noexcept {
+ZoeResult Zoe::setExpiredTimeOfTmpFile(int32_t seconds) noexcept {
   assert(impl_);
   impl_->options_.tmp_file_expired_time = seconds;
 
-  return SUCCESSED;
+  return ZoeResult::SUCCESSED;
 }
 
-int32_t Zoe::tmpFileExpiredTime() const noexcept {
+int32_t Zoe::expiredTimeOfTmpFile() const noexcept {
   assert(impl_);
   return impl_->options_.tmp_file_expired_time;
 }
 
-Result Zoe::setMaxDownloadSpeed(int32_t byte_per_seconds) noexcept {
+ZoeResult Zoe::setMaxDownloadSpeed(int32_t byte_per_seconds) noexcept {
   assert(impl_);
   if (impl_->isDownloading())
-    return ALREADY_DOWNLOADING;
+    return ZoeResult::ALREADY_DOWNLOADING;
   if (byte_per_seconds <= 0)
     byte_per_seconds = -1;
   impl_->options_.max_speed = byte_per_seconds;
 
-  return SUCCESSED;
+  return ZoeResult::SUCCESSED;
 }
 
 int32_t Zoe::maxDownloadSpeed() const noexcept {
@@ -221,17 +222,17 @@ int32_t Zoe::maxDownloadSpeed() const noexcept {
   return impl_->options_.max_speed;
 }
 
-Result Zoe::setMinDownloadSpeed(int32_t byte_per_seconds,
-                                int32_t duration) noexcept {
+ZoeResult Zoe::setMinDownloadSpeed(int32_t byte_per_seconds,
+                                   int32_t duration) noexcept {
   assert(impl_);
   if (impl_->isDownloading())
-    return ALREADY_DOWNLOADING;
+    return ZoeResult::ALREADY_DOWNLOADING;
   if (byte_per_seconds <= 0)
     byte_per_seconds = -1;
   impl_->options_.min_speed = byte_per_seconds;
   impl_->options_.min_speed_duration = duration;
 
-  return SUCCESSED;
+  return ZoeResult::SUCCESSED;
 }
 
 int32_t Zoe::minDownloadSpeed() const noexcept {
@@ -244,14 +245,14 @@ int32_t Zoe::minDownloadSpeedDuration() const noexcept {
   return impl_->options_.min_speed_duration;
 }
 
-Result Zoe::setDiskCacheSize(int32_t cache_size) noexcept {
+ZoeResult Zoe::setDiskCacheSize(int32_t cache_size) noexcept {
   assert(impl_);
   if (impl_->isDownloading())
-    return ALREADY_DOWNLOADING;
+    return ZoeResult::ALREADY_DOWNLOADING;
   if (cache_size < 0)
     cache_size = 0;
   impl_->options_.disk_cache_size = cache_size;
-  return SUCCESSED;
+  return ZoeResult::SUCCESSED;
 }
 
 int32_t Zoe::diskCacheSize() const noexcept {
@@ -259,21 +260,21 @@ int32_t Zoe::diskCacheSize() const noexcept {
   return impl_->options_.disk_cache_size;
 }
 
-Result Zoe::setStopEvent(Event* stop_event) noexcept {
+ZoeResult Zoe::setStopEvent(ZoeEvent* stop_event) noexcept {
   assert(impl_);
   impl_->options_.user_stop_event = stop_event;
-  return SUCCESSED;
+  return ZoeResult::SUCCESSED;
 }
 
-Event* Zoe::stopEvent() noexcept {
+ZoeEvent* Zoe::stopEvent() noexcept {
   assert(impl_);
   return impl_->options_.user_stop_event;
 }
 
-Result Zoe::setRedirectedUrlCheckEnabled(bool enabled) noexcept {
+ZoeResult Zoe::setRedirectedUrlCheckEnabled(bool enabled) noexcept {
   assert(impl_);
   impl_->options_.redirected_url_check_enabled = enabled;
-  return SUCCESSED;
+  return ZoeResult::SUCCESSED;
 }
 
 bool Zoe::redirectedUrlCheckEnabled() const noexcept {
@@ -281,10 +282,10 @@ bool Zoe::redirectedUrlCheckEnabled() const noexcept {
   return impl_->options_.redirected_url_check_enabled;
 }
 
-Result Zoe::setContentMd5Enabled(bool enabled) noexcept {
+ZoeResult Zoe::setContentMd5Enabled(bool enabled) noexcept {
   assert(impl_);
   impl_->options_.content_md5_enabled = enabled;
-  return SUCCESSED;
+  return ZoeResult::SUCCESSED;
 }
 
 bool Zoe::contentMd5Enabled() const noexcept {
@@ -292,30 +293,30 @@ bool Zoe::contentMd5Enabled() const noexcept {
   return impl_->options_.content_md5_enabled;
 }
 
-Result Zoe::setSlicePolicy(SlicePolicy policy,
-                           int64_t policy_value) noexcept {
+ZoeResult Zoe::setSlicePolicy(SlicePolicy policy,
+                              int64_t policy_value) noexcept {
   assert(impl_);
-  if (policy == FixedSize) {
+  if (policy == SlicePolicy::FixedSize) {
     if (policy_value <= 0)
       policy_value = ZOE_DEFAULT_FIXED_SLICE_SIZE_BYTE;
     impl_->options_.slice_policy = policy;
     impl_->options_.slice_policy_value = policy_value;
-    return SUCCESSED;
+    return ZoeResult::SUCCESSED;
   }
-  else if (policy == FixedNum) {
+  else if (policy == SlicePolicy::FixedNum) {
     if (policy_value <= 0)
       policy_value = ZOE_DEFAULT_FIXED_SLICE_NUM;
     impl_->options_.slice_policy = policy;
     impl_->options_.slice_policy_value = policy_value;
-    return SUCCESSED;
+    return ZoeResult::SUCCESSED;
   }
-  else if (policy == Auto) {
+  else if (policy == SlicePolicy::Auto) {
     impl_->options_.slice_policy = policy;
     impl_->options_.slice_policy_value = 0L;
-    return SUCCESSED;
+    return ZoeResult::SUCCESSED;
   }
   assert(false);
-  return INVALID_SLICE_POLICY;
+  return ZoeResult::INVALID_SLICE_POLICY;
 }
 
 void Zoe::slicePolicy(SlicePolicy& policy, int64_t& policy_value) const
@@ -325,18 +326,18 @@ void Zoe::slicePolicy(SlicePolicy& policy, int64_t& policy_value) const
   policy_value = impl_->options_.slice_policy_value;
 }
 
-Result Zoe::setHashVerifyPolicy(HashVerifyPolicy policy,
-                                HashType hash_type,
-                                const utf8string& hash_value) noexcept {
+ZoeResult Zoe::setHashVerifyPolicy(HashVerifyPolicy policy,
+                                   HashType hash_type,
+                                   const utf8string& hash_value) noexcept {
   assert(impl_);
   if (impl_->isDownloading())
-    return ALREADY_DOWNLOADING;
+    return ZoeResult::ALREADY_DOWNLOADING;
 
   impl_->options_.hash_verify_policy = policy;
   impl_->options_.hash_type = hash_type;
   impl_->options_.hash_value = hash_value;
 
-  return SUCCESSED;
+  return ZoeResult::SUCCESSED;
 }
 
 void Zoe::hashVerifyPolicy(HashVerifyPolicy& policy,
@@ -348,11 +349,11 @@ void Zoe::hashVerifyPolicy(HashVerifyPolicy& policy,
   hash_value = impl_->options_.hash_value;
 }
 
-Result Zoe::setHttpHeaders(const HttpHeaders& headers) noexcept {
+ZoeResult Zoe::setHttpHeaders(const HttpHeaders& headers) noexcept {
   assert(impl_);
   impl_->options_.http_headers = headers;
 
-  return SUCCESSED;
+  return ZoeResult::SUCCESSED;
 }
 
 HttpHeaders Zoe::httpHeaders() const noexcept {
@@ -360,11 +361,11 @@ HttpHeaders Zoe::httpHeaders() const noexcept {
   return impl_->options_.http_headers;
 }
 
-Result Zoe::setProxy(const utf8string& proxy) noexcept {
+ZoeResult Zoe::setProxy(const utf8string& proxy) noexcept {
   assert(impl_);
   impl_->options_.proxy = proxy;
 
-  return SUCCESSED;
+  return ZoeResult::SUCCESSED;
 }
 
 utf8string Zoe::proxy() const noexcept {
@@ -372,12 +373,12 @@ utf8string Zoe::proxy() const noexcept {
   return impl_->options_.proxy;
 }
 
-Result Zoe::setVerifyCAEnabled(bool enabled, const utf8string& ca_path) noexcept {
+ZoeResult Zoe::setVerifyCAEnabled(bool enabled, const utf8string& ca_path) noexcept {
   assert(impl_);
   impl_->options_.verify_peer_certificate = enabled;
   impl_->options_.ca_path = ca_path;
 
-  return SUCCESSED;
+  return ZoeResult::SUCCESSED;
 }
 
 bool Zoe::verifyCAEnabled() const noexcept {
@@ -390,11 +391,11 @@ utf8string Zoe::caPath() const noexcept {
   return impl_->options_.ca_path;
 }
 
-Result Zoe::setVerifyHostEnabled(bool enabled) noexcept {
+ZoeResult Zoe::setVerifyHostEnabled(bool enabled) noexcept {
   assert(impl_);
   impl_->options_.verify_peer_host = enabled;
 
-  return SUCCESSED;
+  return ZoeResult::SUCCESSED;
 }
 
 bool Zoe::verifyHostEnabled() const noexcept {
@@ -402,11 +403,11 @@ bool Zoe::verifyHostEnabled() const noexcept {
   return impl_->options_.verify_peer_host;
 }
 
-Result Zoe::setUncompletedSliceSavePolicy(UncompletedSliceSavePolicy policy) noexcept {
+ZoeResult Zoe::setUncompletedSliceSavePolicy(UncompletedSliceSavePolicy policy) noexcept {
   assert(impl_);
   impl_->options_.uncompleted_slice_save_policy = policy;
 
-  return SUCCESSED;
+  return ZoeResult::SUCCESSED;
 }
 
 UncompletedSliceSavePolicy Zoe::uncompletedSliceSavePolicy() const noexcept {
@@ -414,29 +415,29 @@ UncompletedSliceSavePolicy Zoe::uncompletedSliceSavePolicy() const noexcept {
   return impl_->options_.uncompleted_slice_save_policy;
 }
 
-std::shared_future<Result> Zoe::start(
+std::shared_future<ZoeResult> Zoe::start(
     const utf8string& url,
     const utf8string& target_file_path,
     ResultFunctor result_functor,
     ProgressFunctor progress_functor,
     RealtimeSpeedFunctor realtime_speed_functor) noexcept {
   assert(impl_);
-  Result ret = SUCCESSED;
+  ZoeResult ret = ZoeResult::SUCCESSED;
 
   utf8string target_path_formatted;
 
   if (impl_->isDownloading()) {
-    ret = ALREADY_DOWNLOADING;
+    ret = ZoeResult::ALREADY_DOWNLOADING;
   }
   else if (url.length() == 0) {
-    ret = INVALID_URL;
+    ret = ZoeResult::INVALID_URL;
   }
   else {
     if (!FileUtil::PathFormatting(target_file_path, target_path_formatted))
-      ret = INVALID_TARGET_FILE_PATH;
+      ret = ZoeResult::INVALID_TARGET_FILE_PATH;
   }
 
-  if (ret != SUCCESSED) {
+  if (ret != ZoeResult::SUCCESSED) {
     return std::async(std::launch::async, [result_functor, ret]() {
       if (result_functor)
         result_functor(ret);
@@ -457,6 +458,20 @@ std::shared_future<Result> Zoe::start(
 
   return impl_->entry_handler_->start(&impl_->options_);
 }
+
+#if defined(WIN32) || defined(_WIN32) || defined(__WIN32__) || defined(__NT__)
+std::shared_future<ZoeResult> Zoe::start(
+    const std::wstring& url,
+    const std::wstring& target_file_path,
+    ResultFunctor result_functor,
+    ProgressFunctor progress_functor,
+    RealtimeSpeedFunctor realtime_speed_functor) noexcept {
+  utf8string url_u8 = UnicodeToUtf8(url);
+  utf8string target_file_path_u8 = UnicodeToUtf8(target_file_path);
+
+  return start(url_u8, target_file_path_u8, result_functor, progress_functor, realtime_speed_functor);
+}
+#endif
 
 void Zoe::pause() noexcept {
   assert(impl_);
@@ -479,7 +494,7 @@ void Zoe::stop() noexcept {
   }
 }
 
-class Event::EventImpl {
+class ZoeEvent::EventImpl {
  public:
   EventImpl(bool setted)
       : setted_(setted) {}
@@ -513,10 +528,10 @@ class Event::EventImpl {
   std::condition_variable setted_cond_var_;
 };
 
-Event::Event(bool setted)
+ZoeEvent::ZoeEvent(bool setted)
     : impl_(new EventImpl(setted)) {}
 
-Event::~Event() {
+ZoeEvent::~ZoeEvent() {
   assert(impl_);
   if (impl_) {
     delete impl_;
@@ -524,22 +539,22 @@ Event::~Event() {
   }
 }
 
-void Event::set() noexcept {
+void ZoeEvent::set() noexcept {
   assert(impl_);
   impl_->set();
 }
 
-void Event::unset() noexcept {
+void ZoeEvent::unset() noexcept {
   assert(impl_);
   impl_->unset();
 }
 
-bool Event::isSetted() noexcept {
+bool ZoeEvent::isSetted() noexcept {
   assert(impl_);
   return impl_->isSetted();
 }
 
-bool Event::wait(int32_t millseconds) noexcept {
+bool ZoeEvent::wait(int32_t millseconds) noexcept {
   assert(impl_);
   return impl_->wait(millseconds);
 }

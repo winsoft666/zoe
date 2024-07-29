@@ -28,13 +28,13 @@ void DoBreakpointTest(const std::vector<TestData>& test_datas, int thread_num) {
 
       efd.setThreadNum(thread_num / 2);
       if (test_data.md5.length() > 0)
-        efd.setHashVerifyPolicy(ALWAYS, MD5, test_data.md5);
+        efd.setHashVerifyPolicy(HashVerifyPolicy::AlwaysVerify, HashType::MD5, test_data.md5);
 
-      std::shared_future<Result> r = efd.start(
+      std::shared_future<ZoeResult> r = efd.start(
           test_data.url, test_data.target_file_path,
-          [test_data](Result result) {
-            printf("\nResult: %s\n", GetResultString(result));
-            EXPECT_TRUE(result == SUCCESSED || result == CANCELED);
+          [test_data](ZoeResult result) {
+            printf("\nResult: %s\n", Zoe::GetResultString(result));
+            EXPECT_TRUE(result == ZoeResult::SUCCESSED || result == ZoeResult::CANCELED);
           },
           [](int64_t total, int64_t downloaded) {
             if (total > 0)
@@ -50,12 +50,12 @@ void DoBreakpointTest(const std::vector<TestData>& test_datas, int thread_num) {
 
       efd.setThreadNum(thread_num);
 
-      Result ret =
+      ZoeResult ret =
           efd.start(
                  test_data.url, test_data.target_file_path,
-                 [test_data](Result result) {
-                   printf("\nResult: %s\n", GetResultString(result));
-                   EXPECT_TRUE(result == SUCCESSED);
+                 [test_data](ZoeResult result) {
+                   printf("\nResult: %s\n", Zoe::GetResultString(result));
+                   EXPECT_TRUE(result == ZoeResult::SUCCESSED);
                  },
                  [](int64_t total, int64_t downloaded) {
                    if (total > 0)

@@ -64,10 +64,10 @@ void crc32Finish(uint32_t* pCrc32) {
 }
 }  // namespace crc32_internal
 
-Result CalculateFileCRC32(const utf8string& file_path, Options* opt, utf8string& str_hash) {
+ZoeResult CalculateFileCRC32(const utf8string& file_path, Options* opt, utf8string& str_hash) {
   FILE* f = FileUtil::Open(file_path, "rb");
   if (!f)
-    return CALCULATE_HASH_FAILED;
+    return ZoeResult::CALCULATE_HASH_FAILED;
 
   uint32_t ulCRC32 = 0;
   crc32_internal::crc32Init(&ulCRC32);
@@ -78,7 +78,7 @@ Result CalculateFileCRC32(const utf8string& file_path, Options* opt, utf8string&
   while ((dwReadBytes = fread(szData, 1, 1024, f)) > 0) {
     if (opt && (opt->internal_stop_event.isSetted() || (opt->user_stop_event && opt->user_stop_event->isSetted()))) {
       fclose(f);
-      return CANCELED;
+      return ZoeResult::CANCELED;
     }
     crc32_internal::crc32Update(&ulCRC32, szData, dwReadBytes);
   }
@@ -89,12 +89,12 @@ Result CalculateFileCRC32(const utf8string& file_path, Options* opt, utf8string&
   char szCRC[10] = {0};
   snprintf(szCRC, sizeof(szCRC), "%08x", ulCRC32);
   str_hash = szCRC;
-  return SUCCESSED;
+  return ZoeResult::SUCCESSED;
 }
 
-Result CalculateFileCRC32(FILE* f, Options* opt, utf8string& str_hash) {
+ZoeResult CalculateFileCRC32(FILE* f, Options* opt, utf8string& str_hash) {
   if (!f)
-    return CALCULATE_HASH_FAILED;
+    return ZoeResult::CALCULATE_HASH_FAILED;
 
   FileUtil::Seek(f, 0L, SEEK_SET);
 
@@ -107,7 +107,7 @@ Result CalculateFileCRC32(FILE* f, Options* opt, utf8string& str_hash) {
   while ((dwReadBytes = fread(szData, 1, 1024, f)) > 0) {
     if (opt && (opt->internal_stop_event.isSetted() ||
                 (opt->user_stop_event && opt->user_stop_event->isSetted()))) {
-      return CANCELED;
+      return ZoeResult::CANCELED;
     }
     crc32_internal::crc32Update(&ulCRC32, szData, dwReadBytes);
   }
@@ -117,6 +117,6 @@ Result CalculateFileCRC32(FILE* f, Options* opt, utf8string& str_hash) {
   char szCRC[10] = {0};
   snprintf(szCRC, sizeof(szCRC), "%08x", ulCRC32);
   str_hash = szCRC;
-  return SUCCESSED;
+  return ZoeResult::SUCCESSED;
 }
 }  // namespace zoe

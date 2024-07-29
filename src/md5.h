@@ -25,8 +25,8 @@ void MD5SigToString(unsigned char sig[16], char* str, int len);
 }  // namespace libmd5_internal
 
 // Helper function.
-Result CalculateFileMd5(const utf8string& file_path, Options* opt, utf8string& str_hash);
-Result CalculateFileMd5(FILE* f, Options* opt, utf8string& str_hash);
+ZoeResult CalculateFileMd5(const utf8string& file_path, Options* opt, utf8string& str_hash);
+ZoeResult CalculateFileMd5(FILE* f, Options* opt, utf8string& str_hash);
 }  // namespace zoe
 
 #endif

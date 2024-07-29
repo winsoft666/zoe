@@ -36,8 +36,8 @@ class TargetFile {
   bool renameTo(Options* opt,
                 const utf8string& new_file_path,
                 bool need_reopen);
-  Result calculateFileHash(Options* opt, utf8string& str_hash);
-  Result calculateFileMd5(Options* opt, utf8string& str_hash);
+  ZoeResult calculateFileHash(Options* opt, utf8string& str_hash);
+  ZoeResult calculateFileMd5(Options* opt, utf8string& str_hash);
 
   int64_t fileSize();
 

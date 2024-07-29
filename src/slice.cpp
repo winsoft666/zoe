@@ -49,7 +49,7 @@ Slice::Slice(int32_t index,
     , header_chunk_(nullptr)
     , disk_cache_size_(0L)
     , disk_cache_buffer_(nullptr)
-    , status_(Slice::UNFETCH)
+    , status_(SliceStatus::UNFETCH)
     , failed_times_(0)
     , slice_manager_(slice_manager) {
 #if defined(WIN32) || defined(_WIN32) || defined(__WIN32__) || defined(__NT__)
@@ -63,7 +63,7 @@ Slice::Slice(int32_t index,
   assert(end_ == -1 || (end_ + 1 >= begin_ + disk_capacity_.load()));
 
   if (isDataCompletedClearly())
-    status_ = DOWNLOAD_COMPLETED;
+    status_ = SliceStatus::DOWNLOAD_COMPLETED;
 }
 
 Slice::~Slice() {
@@ -121,14 +121,14 @@ static size_t __SliceWriteBodyCallback(char* buffer,
   return write_size;
 }
 
-Result Slice::start(void* multi, int64_t disk_cache_size, int64_t max_speed) {
+ZoeResult Slice::start(void* multi, int64_t disk_cache_size, int64_t max_speed) {
   if (!slice_manager_)
-    return UNKNOWN_ERROR;
+    return ZoeResult::UNKNOWN_ERROR;
 
   if (!slice_manager_->options())
-    return UNKNOWN_ERROR;
+    return ZoeResult::UNKNOWN_ERROR;
 
-  status_ = DOWNLOADING;
+  status_ = SliceStatus::DOWNLOADING;
 
   disk_cache_size_ = disk_cache_size;
   if (disk_cache_size_ > 0) {
@@ -146,8 +146,8 @@ Result Slice::start(void* multi, int64_t disk_cache_size, int64_t max_speed) {
   if (!curl_) {
     OutputVerbose(slice_manager_->options()->verbose_functor, "curl_easy_init failed.\n");
     freeDiskCacheBuffer();
-    status_ = DOWNLOAD_FAILED;
-    return INIT_CURL_FAILED;
+    status_ = SliceStatus::DOWNLOAD_FAILED;
+    return ZoeResult::INIT_CURL_FAILED;
   }
 
   CHECK_SETOPT1(curl_easy_setopt(curl_, CURLOPT_VERBOSE, 0L));
@@ -206,8 +206,8 @@ Result Slice::start(void* multi, int64_t disk_cache_size, int64_t max_speed) {
         curl_easy_cleanup(curl_);
         curl_ = nullptr;
         freeDiskCacheBuffer();
-        status_ = DOWNLOAD_FAILED;
-        return SET_CURL_OPTION_FAILED;
+        status_ = SliceStatus::DOWNLOAD_FAILED;
+        return ZoeResult::SET_CURL_OPTION_FAILED;
       }
     }
   }
@@ -226,8 +226,8 @@ Result Slice::start(void* multi, int64_t disk_cache_size, int64_t max_speed) {
 
       freeDiskCacheBuffer();
 
-      status_ = DOWNLOAD_FAILED;
-      return SET_CURL_OPTION_FAILED;
+      status_ = SliceStatus::DOWNLOAD_FAILED;
+      return ZoeResult::SET_CURL_OPTION_FAILED;
     }
   }
 
@@ -241,15 +241,15 @@ Result Slice::start(void* multi, int64_t disk_cache_size, int64_t max_speed) {
 
     freeDiskCacheBuffer();
 
-    status_ = DOWNLOAD_FAILED;
-    return ADD_CURL_HANDLE_FAILED;
+    status_ = SliceStatus::DOWNLOAD_FAILED;
+    return ZoeResult::ADD_CURL_HANDLE_FAILED;
   }
 
-  return SUCCESSED;
+  return ZoeResult::SUCCESSED;
 }
 
-Result Slice::stop(void* multi) {
-  Result ret = SUCCESSED;
+ZoeResult Slice::stop(void* multi) {
+  ZoeResult ret = ZoeResult::SUCCESSED;
   if (curl_) {
     if (multi) {
       const CURLMcode code = curl_multi_remove_handle(multi, curl_);
@@ -271,19 +271,19 @@ Result Slice::stop(void* multi) {
 
   bool discard_downloaded = false;
 
-  if (status_ == UNFETCH ||
-      status_ == FETCHED ||
-      status_ == DOWNLOAD_COMPLETED ||
-      status_ == CURL_OK_BUT_COMPLETED_NOT_SURE) {
+  if (status_ == SliceStatus::UNFETCH ||
+      status_ == SliceStatus::FETCHED ||
+      status_ == SliceStatus::DOWNLOAD_COMPLETED ||
+      status_ == SliceStatus::CURL_OK_BUT_COMPLETED_NOT_SURE) {
     discard_downloaded = false;
   }
   else {
     const UncompletedSliceSavePolicy policy = slice_manager_->options()->uncompleted_slice_save_policy;
-    if (policy == ALWAYS_DISCARD) {
+    if (policy == UncompletedSliceSavePolicy::AlwaysDiscard) {
       discard_downloaded = true;
     }
-    else if (policy == SAVE_EXCEPT_FAILED) {
-      discard_downloaded = (status_ == DOWNLOAD_FAILED);
+    else if (policy == UncompletedSliceSavePolicy::SaveExceptFailed) {
+      discard_downloaded = (status_ == SliceStatus::DOWNLOAD_FAILED);
     }
   }
 
@@ -292,7 +292,7 @@ Result Slice::stop(void* multi) {
     disk_cache_capacity_.store(0);
   }
   else if (!flushToDisk()) {
-    ret = FLUSH_TMP_FILE_FAILED;
+    ret = ZoeResult::FLUSH_TMP_FILE_FAILED;
   }
 
   freeDiskCacheBuffer();
@@ -300,11 +300,11 @@ Result Slice::stop(void* multi) {
   return ret;
 }
 
-void Slice::setStatus(Slice::Status s) {
+void Slice::setStatus(Slice::SliceStatus s) {
   status_ = s;
 }
 
-Slice::Status Slice::status() const {
+Slice::SliceStatus Slice::status() const {
   return status_;
 }
 

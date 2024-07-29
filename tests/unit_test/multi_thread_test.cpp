@@ -29,14 +29,14 @@ void DoTest(const std::vector<TestData>& test_datas, int thread_num) {
 
     efd.setThreadNum(thread_num);
     if (test_data.md5.length() > 0)
-      efd.setHashVerifyPolicy(ALWAYS, MD5, test_data.md5);
+      efd.setHashVerifyPolicy(HashVerifyPolicy::AlwaysVerify, HashType::MD5, test_data.md5);
 
-    Result ret =
+    ZoeResult ret =
         efd.start(
                test_data.url, test_data.target_file_path,
-               [test_data](Result result) {
-                 printf("\nResult: %s\n", GetResultString(result));
-                 EXPECT_TRUE(result == SUCCESSED);
+               [test_data](ZoeResult result) {
+                 printf("\nResult: %s\n", Zoe::GetResultString(result));
+                 EXPECT_TRUE(result == ZoeResult::SUCCESSED);
                },
                [](int64_t total, int64_t downloaded) {
                  if (total > 0)

@@ -26,7 +26,7 @@ void crc32Update(uint32_t* pCrc32, unsigned char* pData, uint32_t uSize);
 void crc32Finish(uint32_t* pCrc32);
 }  // namespace crc32_internal
 
-Result CalculateFileCRC32(const utf8string& file_path, Options* opt, utf8string& str_hash);
-Result CalculateFileCRC32(FILE* f, Options* opt, utf8string& str_hash);
+ZoeResult CalculateFileCRC32(const utf8string& file_path, Options* opt, utf8string& str_hash);
+ZoeResult CalculateFileCRC32(FILE* f, Options* opt, utf8string& str_hash);
 }  // namespace zoe
 #endif /* ___CRC32_H___ */

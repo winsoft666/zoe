@@ -33,7 +33,7 @@ class SliceManager : public std::enable_shared_from_this<SliceManager> {
   SliceManager(Options* options, const utf8string& redirect_url);
   virtual ~SliceManager();
 
-  Result loadExistSlice(int64_t cur_file_size,
+  ZoeResult loadExistSlice(int64_t cur_file_size,
                         const utf8string& cur_content_md5);
 
   bool flushAllSlices();
@@ -47,21 +47,21 @@ class SliceManager : public std::enable_shared_from_this<SliceManager> {
 
   std::shared_ptr<TargetFile> targetFile() const;
 
-  Result makeSlices(bool accept_ranges);
+  ZoeResult makeSlices(bool accept_ranges);
 
   int64_t totalDownloaded() const;
 
   bool needVerifyHash() const;
 
-  Result checkAllSliceCompletedByFileSize() const;
+  ZoeResult checkAllSliceCompletedByFileSize() const;
   
-  Result checkAllSliceCompletedByHash() const;
+  ZoeResult checkAllSliceCompletedByHash() const;
 
-  Result finishDownloadProgress(bool need_check_completed, void* mult);
+  ZoeResult finishDownloadProgress(bool need_check_completed, void* mult);
 
   int32_t getUnfetchAndUncompletedSliceNum() const;
 
-  std::shared_ptr<Slice> getSlice(Slice::Status status);
+  std::shared_ptr<Slice> getSlice(Slice::SliceStatus status);
 
   std::shared_ptr<Slice> getSlice(void* curlHandle);
 

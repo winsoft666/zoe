@@ -303,12 +303,12 @@ void MD5SigToString(unsigned char signature[16], char* str, int len) {
 }
 }  // namespace libmd5_internal
 
-Result CalculateFileMd5(const utf8string& file_path,
+ZoeResult CalculateFileMd5(const utf8string& file_path,
                         Options* opt,
                         utf8string& str_hash) {
   FILE* f = FileUtil::Open(file_path, "rb");
   if (!f)
-    return CALCULATE_HASH_FAILED;
+    return ZoeResult::CALCULATE_HASH_FAILED;
 
   unsigned char szMd5Sig[16] = {0};
   char szMd5[33] = {0};
@@ -322,7 +322,7 @@ Result CalculateFileMd5(const utf8string& file_path,
     if (opt && (opt->internal_stop_event.isSetted() ||
                 (opt->user_stop_event && opt->user_stop_event->isSetted()))) {
       FileUtil::Close(f);
-      return CANCELED;
+      return ZoeResult::CANCELED;
     }
     libmd5_internal::MD5Update(&md5Context, szData, dwReadBytes);
   }
@@ -334,12 +334,13 @@ Result CalculateFileMd5(const utf8string& file_path,
 
   str_hash = szMd5;
 
-  return SUCCESSED;
+  return ZoeResult::SUCCESSED;
 }
 
-Result CalculateFileMd5(FILE* f, Options* opt, utf8string& str_hash) {
+ZoeResult CalculateFileMd5(FILE* f, Options* opt, utf8string& str_hash) {
   if (!f)
-    return CALCULATE_HASH_FAILED;
+    return ZoeResult::CALCULATE_HASH_FAILED;
+
   FileUtil::Seek(f, 0L, SEEK_SET);
 
   unsigned char szMd5Sig[16] = {0};
@@ -353,7 +354,7 @@ Result CalculateFileMd5(FILE* f, Options* opt, utf8string& str_hash) {
   while ((dwReadBytes = fread(szData, 1, 1024, f)) > 0) {
     if (opt && (opt->internal_stop_event.isSetted() ||
                 (opt->user_stop_event && opt->user_stop_event->isSetted()))) {
-      return CANCELED;
+      return ZoeResult::CANCELED;
     }
     libmd5_internal::MD5Update(&md5Context, szData, dwReadBytes);
   }
@@ -363,6 +364,6 @@ Result CalculateFileMd5(FILE* f, Options* opt, utf8string& str_hash) {
 
   str_hash = szMd5;
 
-  return SUCCESSED;
+  return ZoeResult::SUCCESSED;
 }
 }  // namespace zoe

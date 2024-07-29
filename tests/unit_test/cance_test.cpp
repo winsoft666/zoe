@@ -24,25 +24,25 @@ using namespace zoe;
 
 void DoCancelTest(const std::vector<TestData>& test_datas, int thread_num) {
   for (const auto& test_data : test_datas) {
-    Event cancel_event;
+    ZoeEvent cancel_event;
 
     Zoe efd;
     efd.setThreadNum(thread_num);
     efd.setStopEvent(&cancel_event);
     if (test_data.md5.length() > 0)
-      efd.setHashVerifyPolicy(ALWAYS, MD5, test_data.md5);
+      efd.setHashVerifyPolicy(HashVerifyPolicy::AlwaysVerify, HashType::MD5, test_data.md5);
 
     std::thread t = std::thread([&cancel_event]() {
       std::this_thread::sleep_for(std::chrono::milliseconds(500));
       cancel_event.set();
     });
 
-    Result ret =
+    ZoeResult ret =
         efd.start(
                test_data.url, test_data.target_file_path,
-               [test_data](Result result) {
-                 printf("\nResult: %s\n", GetResultString(result));
-                 EXPECT_TRUE(result == SUCCESSED || result == CANCELED);
+               [test_data](ZoeResult result) {
+                 printf("\nResult: %s\n", Zoe::GetResultString(result));
+                 EXPECT_TRUE(result == ZoeResult::SUCCESSED || result == ZoeResult::CANCELED);
                },
                [](int64_t total, int64_t downloaded) {
                  if (total > 0)

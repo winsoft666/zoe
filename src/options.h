@@ -59,8 +59,8 @@ typedef struct _Options {
   RealtimeSpeedFunctor speed_functor;
   VerboseOuputFunctor verbose_functor;
 
-  mutable Event internal_stop_event;
-  Event* user_stop_event;
+  mutable ZoeEvent internal_stop_event;
+  ZoeEvent* user_stop_event;
 
   utf8string url;
   utf8string target_file_path;
@@ -86,11 +86,11 @@ typedef struct _Options {
     thread_num = ZOE_DEFAULT_THREAD_NUM;
     disk_cache_size = ZOE_DEFAULT_TOTAL_DISK_CACHE_SIZE_BYTE;
 
-    slice_policy = Auto;
+    slice_policy = SlicePolicy::Auto;
     slice_policy_value = 0L;
 
-    hash_verify_policy = ALWAYS;
-    hash_type = MD5;
+    hash_verify_policy = HashVerifyPolicy::AlwaysVerify;
+    hash_type = HashType::MD5;
 
     max_speed = -1;
     min_speed = -1;
@@ -108,9 +108,7 @@ typedef struct _Options {
 
     user_stop_event = nullptr;
 
-    uncompleted_slice_save_policy = ALWAYS_DISCARD;
-
-    
+    uncompleted_slice_save_policy = UncompletedSliceSavePolicy::AlwaysDiscard;
   }
 } Options;
 }  // namespace zoe

@@ -73,6 +73,8 @@ typedef struct _Options {
   // Used with verify_peer_certificate = true
   utf8string ca_path;
 
+  utf8string cookie_list;
+
   UncompletedSliceSavePolicy uncompleted_slice_save_policy;
 
   _Options() : internal_stop_event(true) {

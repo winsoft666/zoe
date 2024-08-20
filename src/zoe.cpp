@@ -403,6 +403,18 @@ bool Zoe::verifyHostEnabled() const noexcept {
   return impl_->options_.verify_peer_host;
 }
 
+ZoeResult Zoe::setCookieList(const utf8string& cookie_list) noexcept {
+  assert(impl_);
+  impl_->options_.cookie_list = cookie_list;
+
+  return ZoeResult::SUCCESSED;
+}
+
+utf8string Zoe::cookieList() const noexcept {
+  assert(impl_);
+  return impl_->options_.cookie_list;
+}
+
 ZoeResult Zoe::setUncompletedSliceSavePolicy(UncompletedSliceSavePolicy policy) noexcept {
   assert(impl_);
   impl_->options_.uncompleted_slice_save_policy = policy;

@@ -494,6 +494,10 @@ bool EntryHandler::requestFileInfo(const utf8string& url, FileInfo& fileInfo) {
     CHECK_SETOPT2(curl_easy_setopt(curl, CURLOPT_PROXY, options_->proxy.c_str()));
   }
 
+  if (options_->cookie_list.length() > 0) {
+      CHECK_SETOPT2(curl_easy_setopt(curl, CURLOPT_COOKIELIST, options_->cookie_list.c_str()));
+  }
+
   struct curl_slist* headerChunk = nullptr;
   const HttpHeaders& headers = options_->http_headers;
   if (headers.size() > 0) {

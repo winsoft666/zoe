@@ -159,6 +159,10 @@ ZoeResult Slice::start(void* multi, int64_t disk_cache_size, int64_t max_speed) 
     CHECK_SETOPT1(curl_easy_setopt(curl_, CURLOPT_PROXY, slice_manager_->options()->proxy.c_str()));
   }
 
+  if (slice_manager_->options()->cookie_list.length() > 0) {
+    CHECK_SETOPT1(curl_easy_setopt(curl_, CURLOPT_COOKIELIST, slice_manager_->options()->cookie_list.c_str()));
+  }
+
   CHECK_SETOPT1(curl_easy_setopt(curl_, CURLOPT_NOSIGNAL, 1L));
   CHECK_SETOPT1(curl_easy_setopt(curl_, CURLOPT_FOLLOWLOCATION, 1L));
   CHECK_SETOPT1(curl_easy_setopt(curl_, CURLOPT_SSL_VERIFYHOST, slice_manager_->options()->verify_peer_host ? 2L : 0L));

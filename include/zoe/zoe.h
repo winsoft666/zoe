@@ -281,6 +281,12 @@ class ZOE_API Zoe {
   ZoeResult setVerifyHostEnabled(bool enabled) noexcept;
   bool verifyHostEnabled() const noexcept;
 
+  // Pass a char pointer to a cookie string.
+  // See: https://curl.se/libcurl/c/CURLOPT_COOKIELIST.html
+  //
+  ZoeResult setCookieList(const utf8string& cookie_list) noexcept;
+  utf8string cookieList() const noexcept;
+
   // Set slice save policy when the download task not completed.
   //
   // Default is ALWAYS_DISCARD, because zoe doesn't know how to check slice(especially uncompleted) is valid or not.

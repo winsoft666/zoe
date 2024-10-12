@@ -15,126 +15,98 @@
 #    along with this program.  If not, see <http:#www.gnu.org/licenses/>.
 ############################################################################
 
-set (CMAKE_CXX_STANDARD 11)
-set (PACKAGE_VERSION 4.1)
-
-if(ZOE_BUILD_SHARED_LIBS)
-	set(ZOE_LIB_NAME zoe)
-	set(ZOE_STATIC NO)
-else()
-	set(ZOE_LIB_NAME zoe-static)
-	set(ZOE_STATIC YES)
-endif()
-
-if (MSVC)
-  add_definitions(
-    -D_WIN32
-  )
-endif()
-
-
-if (MSVC AND ZOE_USE_STATIC_CRT)
-    set(CompilerFlags
-        CMAKE_CXX_FLAGS
-        CMAKE_CXX_FLAGS_DEBUG
-        CMAKE_CXX_FLAGS_RELEASE
-        CMAKE_C_FLAGS
-        CMAKE_C_FLAGS_DEBUG
-        CMAKE_C_FLAGS_RELEASE
-        )
-    foreach(CompilerFlag ${CompilerFlags})
-        string(REPLACE "/MD" "/MT" ${CompilerFlag} "${${CompilerFlag}}")
-    endforeach()
-endif()
-
-
-
-file(GLOB HEADER_FILES 		../include/zoe/*.h ../include/zoe/*.hpp)
-file(GLOB SOURCE_FILES 		./*.cpp ./*.h ./*.hpp)
-
-group_sources(${HEADER_FILES} ${SOURCE_FILES})
+file(GLOB SOURCE_FILES 	./*.cpp ./*.h ./*.hpp)
 
 if(ZOE_BUILD_SHARED_LIBS AND MSVC)
   file(GLOB_RECURSE RES_FILES "*.rc") 
-  source_group("Resources" ${RES_FILES})
 endif()
 
-if(ZOE_BUILD_SHARED_LIBS)
-	add_definitions(-DZOE_EXPORTS)
-	
+if(ZOE_BUILD_SHARED_LIBS)	
 	add_library(
-		${ZOE_LIB_NAME}
+		zoe
 		SHARED
-		${HEADER_FILES}
+		../include/zoe/zoe.h
 		${SOURCE_FILES}
 		${RES_FILES}
 	)
-	
-	# set output name prefix/suffix
-	set_target_properties(${ZOE_LIB_NAME} PROPERTIES 
-		OUTPUT_NAME ${ZOE_LIB_NAME}
-		DEBUG_OUTPUT_NAME ${ZOE_LIB_NAME}${DEBUG_LIBNAME_SUFFIX})
+
+	target_compile_definitions(zoe
+		PRIVATE ZOE_EXPORTS
+	)
 else()
-	add_definitions(-DZOE_STATIC)
-	
 	add_library(
-		${ZOE_LIB_NAME}
+		zoe
 		STATIC
-		${HEADER_FILES}
+		../include/zoe/zoe.h
 		${SOURCE_FILES}
 	)
 	
-	# set output name prefix/suffix
-    set_target_properties(${ZOE_LIB_NAME} PROPERTIES 
-		OUTPUT_NAME ${ZOE_LIB_NAME}
-		DEBUG_OUTPUT_NAME ${ZOE_LIB_NAME}${DEBUG_LIBNAME_SUFFIX})
-		
-	set_target_properties(${ZOE_LIB_NAME} PROPERTIES 
-		INTERFACE_COMPILE_DEFINITIONS ZOE_STATIC)
+	target_compile_definitions(zoe
+		PUBLIC ZOE_STATIC 
+	)
 endif()
 
+target_compile_definitions(zoe
+	PRIVATE UNICODE _UNICODE NOMINMAX
+)
+
+# set output name
+set_target_properties(zoe PROPERTIES 
+	OUTPUT_NAME libZoe
+	DEBUG_OUTPUT_NAME libZoe-d)
+
+target_include_directories(zoe
+	PUBLIC $<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/include>
+	PUBLIC $<INSTALL_INTERFACE:../include>
+)
 
 # CURL
 find_package(CURL REQUIRED)
-target_link_libraries(${ZOE_LIB_NAME} PUBLIC 
-	${CURL_LIBRARIES})
-target_include_directories(${ZOE_LIB_NAME} PUBLIC 
-	${CURL_INCLUDE_DIRS})
+if(ZOE_BUILD_SHARED_LIBS)	
+	target_link_libraries(zoe PRIVATE ${CURL_LIBRARIES})
+else()
+	target_link_libraries(zoe PUBLIC ${CURL_LIBRARIES})
+endif()
+
+target_include_directories(zoe PRIVATE ${CURL_INCLUDE_DIRS})
 
 # OpenSSL
 find_package(OpenSSL)
 if(OpenSSL_FOUND)
-  add_definitions(-DWITH_OPENSSL)
-  target_link_libraries(${ZOE_LIB_NAME} PUBLIC OpenSSL::SSL OpenSSL::Crypto)
+	target_compile_definitions(zoe PRIVATE WITH_OPENSSL)
+
+	if(ZOE_BUILD_SHARED_LIBS)	
+		target_link_libraries(zoe PRIVATE OpenSSL::SSL OpenSSL::Crypto
+		)
+	else()
+		target_link_libraries(zoe PUBLIC OpenSSL::SSL OpenSSL::Crypto
+		)
+	endif()
 endif()
 
 
 if (WIN32 OR _WIN32)
-	target_link_libraries(${ZOE_LIB_NAME} PUBLIC 
-		Ws2_32.lib Crypt32.lib)
+	if(ZOE_BUILD_SHARED_LIBS)
+		target_link_libraries(zoe PRIVATE Ws2_32.lib Crypt32.lib)
+	else()
+		target_link_libraries(zoe PUBLIC Ws2_32.lib Crypt32.lib)
+	endif()
 endif()
 
-install(TARGETS ${ZOE_LIB_NAME}
-        EXPORT zoe-targets
+install(TARGETS zoe
+        EXPORT zoeConfig
         RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
         LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
         ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
         OBJECTS DESTINATION ${CMAKE_INSTALL_LIBDIR}
 )
 
-install(EXPORT zoe-targets
+install(DIRECTORY ../include/zoe DESTINATION include)
+
+install(EXPORT zoeConfig
     NAMESPACE zoe::
     DESTINATION share/zoe
 )
-
-file(WRITE "${CMAKE_CURRENT_BINARY_DIR}/zoe-config.cmake.in"
-[[include(CMakeFindDependencyMacro)
-find_dependency(CURL)
-find_dependency(OpenSSL)
-include("${CMAKE_CURRENT_LIST_DIR}/zoe-targets.cmake")
-]])
-configure_file("${CMAKE_CURRENT_BINARY_DIR}/zoe-config.cmake.in" "${CMAKE_CURRENT_BINARY_DIR}/zoe-config.cmake" @ONLY)
-install(FILES ${CMAKE_CURRENT_BINARY_DIR}/zoe-config.cmake DESTINATION share/zoe)
 
 include(CMakePackageConfigHelpers)
 write_basic_package_version_file(
@@ -142,7 +114,4 @@ write_basic_package_version_file(
     VERSION ${PACKAGE_VERSION}
     COMPATIBILITY AnyNewerVersion
 )
-install(FILES ${CMAKE_CURRENT_BINARY_DIR}/zoeConfigVersion.cmake
-        DESTINATION share/zoe)
-
-install(DIRECTORY ../include/zoe 	DESTINATION include)
+install(FILES ${CMAKE_CURRENT_BINARY_DIR}/zoeConfigVersion.cmake DESTINATION share/zoe)

@@ -15,62 +15,23 @@
 #    along with this program.  If not, see <http:#www.gnu.org/licenses/>.
 ############################################################################
 
-set (CMAKE_CXX_STANDARD 11)
-
-set(EXE_NAME zoe_tool)
-
-if (MSVC AND ZOE_USE_STATIC_CRT)
-    set(CompilerFlags
-        CMAKE_CXX_FLAGS
-        CMAKE_CXX_FLAGS_DEBUG
-        CMAKE_CXX_FLAGS_RELEASE
-        CMAKE_C_FLAGS
-        CMAKE_C_FLAGS_DEBUG
-        CMAKE_C_FLAGS_RELEASE
-        )
-    foreach(CompilerFlag ${CompilerFlags})
-        string(REPLACE "/MD" "/MT" ${CompilerFlag} "${${CompilerFlag}}")
-    endforeach()
-endif()
-
-if (NOT ZOE_BUILD_SHARED_LIBS)
-	add_definitions(-DZOE_STATIC)
-endif()
-
-file(GLOB SOURCE_FILES 			./*.cpp)
-
-add_executable(
-	${EXE_NAME}
-	${SOURCE_FILES}
-	)
-
-# CURL
-find_package(CURL REQUIRED)
-target_link_libraries(${EXE_NAME} ${CURL_LIBRARIES})
-
-# OpenSSL
-find_package(OpenSSL)
-if(OpenSSL_FOUND)
-  target_link_libraries(${EXE_NAME} OpenSSL::SSL OpenSSL::Crypto)
-endif()
+add_executable(zoe_tool
+	zoe_tool.cpp
+)
 
 # Win32 Console
 if (WIN32 OR _WIN32)
-	set_target_properties(${EXE_NAME} PROPERTIES LINK_FLAGS "/SUBSYSTEM:CONSOLE")
-	set_target_properties(${EXE_NAME} PROPERTIES COMPILE_DEFINITIONS "_CONSOLE")
+	set_target_properties(zoe_tool PROPERTIES LINK_FLAGS "/SUBSYSTEM:CONSOLE")
+	set_target_properties(zoe_tool PROPERTIES COMPILE_DEFINITIONS "_CONSOLE")
 endif()
 
+# set output name
+set_target_properties(zoe_tool PROPERTIES 
+	OUTPUT_NAME ZoeTool
+	DEBUG_OUTPUT_NAME ZoeTool-d)
 
-if(ZOE_BUILD_SHARED_LIBS)
-	add_dependencies(${EXE_NAME} zoe)
-	
-	target_link_libraries(${EXE_NAME} 
-		$<TARGET_LINKER_FILE:zoe> )
-else()
-	add_dependencies(${EXE_NAME} zoe-static)
-	
-	target_link_libraries(${EXE_NAME} 
-		$<TARGET_LINKER_FILE:zoe-static> )
+add_dependencies(zoe_tool zoe)
 
-endif()
+target_include_directories(zoe_tool PRIVATE "${CMAKE_SOURCE_DIR}/include")
 
+target_link_libraries(zoe_tool PRIVATE zoe)

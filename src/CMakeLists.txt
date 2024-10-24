@@ -52,8 +52,8 @@ target_compile_definitions(zoe
 
 # set output name
 set_target_properties(zoe PROPERTIES 
-	OUTPUT_NAME libZoe
-	DEBUG_OUTPUT_NAME libZoe-d)
+	OUTPUT_NAME $<IF:$<BOOL:${ZOE_BUILD_SHARED_LIBS}>,zoe,zoe-static>
+	DEBUG_OUTPUT_NAME $<IF:$<BOOL:${ZOE_BUILD_SHARED_LIBS}>,zoe-d,zoe-static-d>)
 
 target_include_directories(zoe
 	PUBLIC $<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/include>
@@ -76,11 +76,9 @@ if(OpenSSL_FOUND)
 	target_compile_definitions(zoe PRIVATE WITH_OPENSSL)
 
 	if(ZOE_BUILD_SHARED_LIBS)	
-		target_link_libraries(zoe PRIVATE OpenSSL::SSL OpenSSL::Crypto
-		)
+		target_link_libraries(zoe PRIVATE OpenSSL::SSL OpenSSL::Crypto)
 	else()
-		target_link_libraries(zoe PUBLIC OpenSSL::SSL OpenSSL::Crypto
-		)
+		target_link_libraries(zoe PUBLIC OpenSSL::SSL OpenSSL::Crypto)
 	endif()
 endif()
 
@@ -111,7 +109,7 @@ install(EXPORT zoeConfig
 include(CMakePackageConfigHelpers)
 write_basic_package_version_file(
     zoeConfigVersion.cmake
-    VERSION ${PACKAGE_VERSION}
+    VERSION ${PROJECT_VERSION}
     COMPATIBILITY AnyNewerVersion
 )
 install(FILES ${CMAKE_CURRENT_BINARY_DIR}/zoeConfigVersion.cmake DESTINATION share/zoe)

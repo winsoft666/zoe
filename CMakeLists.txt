@@ -19,7 +19,7 @@ cmake_minimum_required(VERSION 3.16 FATAL_ERROR)
 set(CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/CMake;${CMAKE_MODULE_PATH};")
 
 project(zoe
-  VERSION 3.3
+  VERSION 3.4
   LANGUAGES CXX
 )
 

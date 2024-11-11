@@ -41,12 +41,12 @@ TEST_CASE("ConcurrentTest") {
       t->start(
           http_test_datas[i].url, http_test_datas[i].target_file_path,
           [i](ZoeResult result) {
-            printf("\n[%d] ZoeResult: %s\n", i, Zoe::GetResultString(result));
+            printf("\n[%zu] ZoeResult: %s\n", i, Zoe::GetResultString(result));
             REQUIRE(result == ZoeResult::SUCCESSED);
           },
           [i](int64_t total, int64_t downloaded) {
             if (total > 0)
-              printf("[%d] %3d%%\b\b\b\b\b\b\b\b", i,
+              printf("[%zu] %3d%%\b\b\b\b\b\b\b\b", i,
                      (int)((double)downloaded * 100.f / (double)total));
           },
           nullptr);

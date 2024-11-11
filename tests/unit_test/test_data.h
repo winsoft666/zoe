@@ -9,17 +9,8 @@ typedef struct _TestData {
 } TestData;
 
 static std::vector<TestData> http_test_datas = {
-#if defined(WIN32) || defined(_WIN32) || defined(__WIN32__) || defined(__NT__)
-    {u8"https://dlie.sogoucdn.com/se/sogou_explorer_8.6_1120.exe",
-     u8"C:/TeemoTest/搜狗浏览器_8.6_1120.exe", u8"8e78e77400cdc268032a5491d2fe18d8"},
-    {u8"http://download.ydstatic.cn/cidian/static/8.9/20201217/YoudaoDictSetup.exe",
-     u8"C:\\TeemoTest\\YoudaoDictSetup.exe", u8"e3323c940f0bc62fae3b0f32d7f2453b"},
-#else
-    {u8"https://dlie.sogoucdn.com/se/sogou_explorer_8.6_1120.exe",
-     u8"~/TeemoTest/搜狗浏览器_8.6_1120.exe", u8"8e78e77400cdc268032a5491d2fe18d8"},
-    {u8"http://download.ydstatic.cn/cidian/static/8.9/20201217/YoudaoDictSetup.exe",
-     u8"~/TeemoTest/YoudaoDictSetup.exe", u8"e3323c940f0bc62fae3b0f32d7f2453b"},
-#endif
+    {u8"https://d1.music.126.net/dmusic/NeteaseCloudMusic_Music_official_3.0.5.203184_64.exe", u8"./TeemoTest/NeteaseCloudMusic_Music_official_3.0.5.203184_64.exe", u8"2392d3bdc0726879da24b9b30d1b3faa"},
+    {u8"https://dldir1.qq.com/qqfile/qq/QQNT/Mac/QQ_6.9.59_241104_01.dmg", u8"./TeemoTest/QQ_6.9.59_241104_01.dmg", u8"bc809f476bf822dac35ea5009475b9eb"},
 };
 
 static std::vector<TestData> ftp_test_datas = {

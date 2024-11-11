@@ -15,66 +15,20 @@ A C++ file download library.
   
 - Limit download speed.
 
-- Configure disk cache.
+- Disk cache.
 
-- Support downloading large files (TB level).
+- Support large file (PB level).
 
 - Compatible with server leeching detection(or limit).
 
 ## Compile and Install
 
-### Method 1: Using with vcpkg
+Zoe only depends on [curl](https://github.com/curl/curl). After installing curl, use CMake to compile and install Zoe.
 
-The `zoe` library has been included in Microsoft's [vcpkg](https://github.com/microsoft/vcpkg/tree/master/ports/zoe), you can use the following command to install `zoe`:
-
-1. Clone and setup vcpkg (See more detail on [https://github.com/microsoft/vcpkg](https://github.com/microsoft/vcpkg))
-
-    ```bash
-    git clone https://github.com/Microsoft/vcpkg.git
-    cd vcpkg
-    PS> bootstrap-vcpkg.bootstrap
-    Linux:~/$ ./bootstrap-vcpkg.sh
-    ```
-
-2. Install zoe
-    ```bash
-    PS> .\vcpkg install zoe [--triplet x64-windows-static/x64-windows/x64-windows-static-md and etc...]
-    Linux:~/$ ./vcpkg install zoe
-    ```
-
-
-### Method 2: Compile from source code
-
-**Step 1: Install dependencies**
-
-I prefer to use `vcpkg` to install dependencies. Of course, this is not the only way, you can install dependencies through any ways.
-
-Recommend: add the directory where vcpkg.exe resides to the PATH environment variable.
+In addition, the `Zoe` library has been included in Microsoft's [vcpkg](https://github.com/microsoft/vcpkg/tree/master/ports/zoe), which can be quickly installed directly using the following command:
 
 ```bash
-# if you want support non-http protocol, such as ftp, the [non-http] option must be specified.
-vcpkg install curl[non-http]:x86-windows
-```
-
-**Step 2: Compile**
-
-Firstly using CMake to generate project or makefile, then comiple it:
-
-Windows Sample:
-
-```bash
-cmake.exe -G "Visual Studio 15 2017" -DBUILD_SHARED_LIBS=ON -DBUILD_TESTS=ON -S %~dp0 -B %~dp0build
-```
-
-Linux Sample:
-
-```bash
-cmake -DBUILD_SHARED_LIBS=ON -DBUILD_TESTS=ON
-
-# If using vcpkg to install dependencies, you have to special CMAKE_TOOLCHAIN_FILE
-cmake -DCMAKE_TOOLCHAIN_FILE=/xxx/vcpkg/scripts/buildsystems/vcpkg.cmake -DVCPKG_TARGET_TRIPLET=x64-linux -DBUILD_SHARED_LIBS=ON -DBUILD_TESTS=ON
-
-make
+vcpkg install zoe
 ```
 
 ## Getting Started

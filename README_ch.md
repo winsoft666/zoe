@@ -13,67 +13,20 @@
   
 - 下载限速
 
-- 配置磁盘缓存
+- 磁盘缓存
 
-- 支持大文件下载（TB级别）
+- 支持 PB 级别大文件下载
 
-- 兼容服务器对客户端加速下载的限制
+- 兼容服务器对加速下载行为的限制
 
 ## 编译与安装
 
-### 方式一、使用vcpkg
+Zoe 仅依赖 [curl](https://github.com/curl/curl)，在安装 curl 之后，使用 CMake 编译安装 Zoe。
 
-`zoe` 库已经收录到微软的 [vcpkg](https://github.com/microsoft/vcpkg/tree/master/ports/zoe) 之中，可以使用如下命令快速安装:
-
-1. 下载安装vcpkg（详见[https://github.com/microsoft/vcpkg](https://github.com/microsoft/vcpkg)
+另外，`Zoe` 库已经收录到微软的 [vcpkg](https://github.com/microsoft/vcpkg/tree/master/ports/zoe)，可以直接使用下面命令快速安装：
 
 ```bash
-git clone https://github.com/Microsoft/vcpkg.git
-cd vcpkg
-PS> bootstrap-vcpkg.bootstrap
-Linux:~/$ ./bootstrap-vcpkg.sh
-```
-
-2. 安装zoe
-
-```bash
-PS> .\vcpkg install zoe [--triplet x64-windows-static/x64-windows/x64-windows-static-md and etc...]
-Linux:~/$ ./vcpkg install zoe
-```
-
-### 方式二、使用源码编译
-
-**1. 安装依赖项**
-
-我倾向于使用 [vcpkg](https://github.com/microsoft/vcpkg) 来安装依赖项，当然，这不是安装依赖项的唯一方式，你可以使用任何方式来安装依赖项。
-
-建议将 vcpkg.exe 所在目录添加到 PATH 环境变量。
-
-```bash
-# 如果需要支持非http协议，如ftp等，需要指定[non-http]选项
-vcpkg install curl[non-http]:x86-windows
-```
-
-
-**2. 编译**
-
-使用CMake生成相应的工程，然后编译即可。
-
-Windows示例：
-
-```bash
-cmake.exe -G "Visual Studio 15 2017" -DBUILD_SHARED_LIBS=ON -DBUILD_TESTS=ON -S %~dp0 -B %~dp0build
-```
-
-Linux示例：
-
-```bash
-cmake -DBUILD_SHARED_LIBS=ON -DBUILD_TESTS=ON
-
-# 如果使用vcpkg安装依赖库，需要指定CMAKE_TOOLCHAIN_FILE
-cmake -DCMAKE_TOOLCHAIN_FILE=/xxx/vcpkg/scripts/buildsystems/vcpkg.cmake -DVCPKG_TARGET_TRIPLET=x64-linux -DBUILD_SHARED_LIBS=ON -DBUILD_TESTS=ON
-
-make
+vcpkg install zoe
 ```
 
 ## 快速开始
@@ -124,7 +77,7 @@ int main(int argc, char** argv) {
 ```
 
 ## 命令行工具
-`zoe_tool`是一个基于`zoe`库开发的命令行下载工具，用法如下：
+`zoe_tool`是一个基于 `zoe` 库开发的命令行下载工具，用法如下：
 
 ```bash
 zoe_tool URL TargetFilePath [ThreadNum] [DiskCacheMb] [MD5] [TmpExpiredSeconds] [MaxSpeed]

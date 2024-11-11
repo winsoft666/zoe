@@ -1,5 +1,5 @@
 ###############################################################################
-# Copyright (C) 2018 - 2020, winsoft666, <winsoft666@outlook.com>.
+# Copyright (C) 2018 - 2024, winsoft666, <winsoft666@outlook.com>.
 #
 # THIS CODE AND INFORMATION IS PROVIDED "AS IS" WITHOUT WARRANTY OF ANY KIND,
 # EITHER EXPRESSED OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE IMPLIED
@@ -36,8 +36,5 @@ endif()
 set_target_properties(unit_test PROPERTIES 
 	OUTPUT_NAME UnitTest
 	DEBUG_OUTPUT_NAME UnitTest-d)
-
-find_package(GTest MODULE REQUIRED)
-target_link_libraries(unit_test PRIVATE GTest::GTest GTest::Main)
 
 target_link_libraries(unit_test PRIVATE zoe)

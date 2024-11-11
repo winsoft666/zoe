@@ -15,7 +15,7 @@
 *    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 ******************************************************************************/
 
-#include "gtest/gtest.h"
+#include "catch.hpp"
 #include "zoe/zoe.h"
 #include "test_data.h"
 #include <future>
@@ -34,7 +34,7 @@ void DoBreakpointTest(const std::vector<TestData>& test_datas, int thread_num) {
           test_data.url, test_data.target_file_path,
           [test_data](ZoeResult result) {
             printf("\nResult: %s\n", Zoe::GetResultString(result));
-            EXPECT_TRUE(result == ZoeResult::SUCCESSED || result == ZoeResult::CANCELED);
+            REQUIRE((result == ZoeResult::SUCCESSED || result == ZoeResult::CANCELED));
           },
           [](int64_t total, int64_t downloaded) {
             if (total > 0)
@@ -55,7 +55,7 @@ void DoBreakpointTest(const std::vector<TestData>& test_datas, int thread_num) {
                  test_data.url, test_data.target_file_path,
                  [test_data](ZoeResult result) {
                    printf("\nResult: %s\n", Zoe::GetResultString(result));
-                   EXPECT_TRUE(result == ZoeResult::SUCCESSED);
+                   REQUIRE(result == ZoeResult::SUCCESSED);
                  },
                  [](int64_t total, int64_t downloaded) {
                    if (total > 0)
@@ -68,21 +68,21 @@ void DoBreakpointTest(const std::vector<TestData>& test_datas, int thread_num) {
   }
 }
 
-TEST(BreakPointHttpTest, Http_ThreadNum_1_Breakpoint) {
+TEST_CASE("BreakPointHttpTest-ThreadNum1") {
   DoBreakpointTest(http_test_datas, 1);
 
   // set test case interval
   std::this_thread::sleep_for(std::chrono::milliseconds(5000));
 }
 
-TEST(BreakPointHttpTest, Http_ThreadNum_3_Breakpoint) {
+TEST_CASE("BreakPointHttpTest-ThreadNum3") {
   DoBreakpointTest(http_test_datas, 3);
 
   // set test case interval
   std::this_thread::sleep_for(std::chrono::milliseconds(5000));
 }
 
-TEST(BreakPointHttpTest, Http_ThreadNum_10_Breakpoint) {
+TEST_CASE("BreakPointHttpTest-ThreadNum10") {
   DoBreakpointTest(http_test_datas, 10);
 
   // set test case interval

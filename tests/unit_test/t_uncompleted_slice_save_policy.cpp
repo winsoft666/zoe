@@ -15,7 +15,7 @@
 *    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 ******************************************************************************/
 
-#include "gtest/gtest.h"
+#include "catch.hpp"
 #include "zoe/zoe.h"
 #include "test_data.h"
 #include <future>
@@ -38,7 +38,7 @@ void DoTest(const std::vector<TestData>& test_datas,
         test_data.url, test_data.target_file_path,
         [test_data](ZoeResult result) {
           printf("\nResult: %s\n", Zoe::GetResultString(result));
-          EXPECT_TRUE(result == ZoeResult::SUCCESSED || result == ZoeResult::CANCELED);
+          REQUIRE((result == ZoeResult::SUCCESSED || result == ZoeResult::CANCELED));
         },
         [](int64_t total, int64_t downloaded) {
           if (total > 0)
@@ -56,7 +56,7 @@ void DoTest(const std::vector<TestData>& test_datas,
            test_data.url, test_data.target_file_path,
            [test_data](ZoeResult result) {
              printf("\nResult: %s\n", Zoe::GetResultString(result));
-             EXPECT_TRUE(result == ZoeResult::SUCCESSED);
+             REQUIRE(result == ZoeResult::SUCCESSED);
            },
            [](int64_t total, int64_t downloaded) {
              if (total > 0)
@@ -69,56 +69,56 @@ void DoTest(const std::vector<TestData>& test_datas,
   Zoe::GlobalUnInit();
 }
 
-TEST(UncompletedSliceSavePolicyHttpTest, Http_DefaultThreadNum_ALWAYS_DISCARD) {
+TEST_CASE("UncompletedSliceSavePolicyHttpTest_DefaultThreadNum_ALWAYS_DISCARD") {
   DoTest(http_test_datas, -1, UncompletedSliceSavePolicy::AlwaysDiscard);
 
   // set test case interval
   std::this_thread::sleep_for(std::chrono::milliseconds(5000));
 }
 
-TEST(UncompletedSliceSavePolicyHttpTest, Http_DefaultThreadNum_SAVE_EXCEPT_FAILED) {
+TEST_CASE("UncompletedSliceSavePolicyHttpTest_DefaultThreadNum_SAVE_EXCEPT_FAILED") {
   DoTest(http_test_datas, -1, UncompletedSliceSavePolicy::SaveExceptFailed);
 
   // set test case interval
   std::this_thread::sleep_for(std::chrono::milliseconds(5000));
 }
 
-TEST(UncompletedSliceSavePolicyHttpTest, Http_ThreadNum_2_ALWAYS_DISCARD) {
+TEST_CASE("UncompletedSliceSavePolicyHttpTest_ThreadNum_2_ALWAYS_DISCARD") {
   DoTest(http_test_datas, 2, UncompletedSliceSavePolicy::AlwaysDiscard);
 
   // set test case interval
   std::this_thread::sleep_for(std::chrono::milliseconds(5000));
 }
 
-TEST(UncompletedSliceSavePolicyHttpTest, Http_ThreadNum_2_SAVE_EXCEPT_FAILED) {
+TEST_CASE("UncompletedSliceSavePolicyHttpTest_ThreadNum_2_SAVE_EXCEPT_FAILED") {
   DoTest(http_test_datas, 2, UncompletedSliceSavePolicy::SaveExceptFailed);
 
   // set test case interval
   std::this_thread::sleep_for(std::chrono::milliseconds(5000));
 }
 
-TEST(UncompletedSliceSavePolicyHttpTest, Http_ThreadNum_3_ALWAYS_DISCARD) {
+TEST_CASE("UncompletedSliceSavePolicyHttpTest_ThreadNum_3_ALWAYS_DISCARD") {
   DoTest(http_test_datas, 3, UncompletedSliceSavePolicy::AlwaysDiscard);
 
   // set test case interval
   std::this_thread::sleep_for(std::chrono::milliseconds(5000));
 }
 
-TEST(UncompletedSliceSavePolicyHttpTest, Http_ThreadNum_3_SAVE_EXCEPT_FAILED) {
+TEST_CASE("UncompletedSliceSavePolicyHttpTest_ThreadNum_3_SAVE_EXCEPT_FAILED") {
   DoTest(http_test_datas, 3, UncompletedSliceSavePolicy::SaveExceptFailed);
 
   // set test case interval
   std::this_thread::sleep_for(std::chrono::milliseconds(5000));
 }
 
-TEST(UncompletedSliceSavePolicyHttpTest, Http_ThreadNum_20_SAVE_EXCEPT_FAILED) {
+TEST_CASE("UncompletedSliceSavePolicyHttpTest_ThreadNum_20_SAVE_EXCEPT_FAILED") {
   DoTest(http_test_datas, 20, UncompletedSliceSavePolicy::SaveExceptFailed);
 
   // set test case interval
   std::this_thread::sleep_for(std::chrono::milliseconds(5000));
 }
 
-TEST(UncompletedSliceSavePolicyHttpTest, Http_ThreadNum_20_ALWAYS_DISCARD) {
+TEST_CASE("UncompletedSliceSavePolicyHttpTest_ThreadNum_20_ALWAYS_DISCARD") {
   DoTest(http_test_datas, 20, UncompletedSliceSavePolicy::AlwaysDiscard);
 
   // set test case interval

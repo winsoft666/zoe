@@ -15,34 +15,28 @@
 *    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 ******************************************************************************/
 
-#include "gtest/gtest.h"
-#include "test_data.h"
+#include "catch.hpp"
 #include "zoe/zoe.h"
 #include "test_data.h"
 #include <future>
 using namespace zoe;
 
-void DoCancelTest(const std::vector<TestData>& test_datas, int thread_num) {
-  for (const auto& test_data : test_datas) {
-    ZoeEvent cancel_event;
+void DoTest(const std::vector<TestData>& test_datas, int thread_num) {
+  Zoe::GlobalInit();
 
+  for (const auto& test_data : test_datas) {
     Zoe efd;
+
     efd.setThreadNum(thread_num);
-    efd.setStopEvent(&cancel_event);
     if (test_data.md5.length() > 0)
       efd.setHashVerifyPolicy(HashVerifyPolicy::AlwaysVerify, HashType::MD5, test_data.md5);
-
-    std::thread t = std::thread([&cancel_event]() {
-      std::this_thread::sleep_for(std::chrono::milliseconds(500));
-      cancel_event.set();
-    });
 
     ZoeResult ret =
         efd.start(
                test_data.url, test_data.target_file_path,
                [test_data](ZoeResult result) {
                  printf("\nResult: %s\n", Zoe::GetResultString(result));
-                 EXPECT_TRUE(result == ZoeResult::SUCCESSED || result == ZoeResult::CANCELED);
+                 REQUIRE(result == ZoeResult::SUCCESSED);
                },
                [](int64_t total, int64_t downloaded) {
                  if (total > 0)
@@ -50,13 +44,34 @@ void DoCancelTest(const std::vector<TestData>& test_datas, int thread_num) {
                },
                nullptr)
             .get();
-
-    t.join();
   }
+
+  Zoe::GlobalUnInit();
 }
 
-TEST(CancelTest, Http_ThreadNum3) {
-  DoCancelTest(http_test_datas, 3);
+TEST_CASE("MultiThreadHttpTest_DefaultThreadNum") {
+  DoTest(http_test_datas, -1);
+
+  // set test case interval
+  std::this_thread::sleep_for(std::chrono::milliseconds(5000));
+}
+
+TEST_CASE("MultiThreadHttpTest_ThreadNum_2") {
+  DoTest(http_test_datas, 2);
+
+  // set test case interval
+  std::this_thread::sleep_for(std::chrono::milliseconds(5000));
+}
+
+TEST_CASE("MultiThreadHttpTest_ThreadNum_3") {
+  DoTest(http_test_datas, 3);
+
+  // set test case interval
+  std::this_thread::sleep_for(std::chrono::milliseconds(5000));
+}
+
+TEST_CASE("MultiThreadHttpTest_ThreadNum_20") {
+  DoTest(http_test_datas, 20);
 
   // set test case interval
   std::this_thread::sleep_for(std::chrono::milliseconds(5000));

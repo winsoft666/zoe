@@ -15,14 +15,14 @@
 *    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 ******************************************************************************/
 
-#include "gtest/gtest.h"
+#include "catch.hpp"
 #include "zoe/zoe.h"
 #include "test_data.h"
 #include <future>
 #include <vector>
 using namespace zoe;
 
-TEST(ConcurrentTest, test1) {
+TEST_CASE("ConcurrentTest") {
   if (http_test_datas.size() < 2)
     return;
 
@@ -42,7 +42,7 @@ TEST(ConcurrentTest, test1) {
           http_test_datas[i].url, http_test_datas[i].target_file_path,
           [i](ZoeResult result) {
             printf("\n[%d] ZoeResult: %s\n", i, Zoe::GetResultString(result));
-            EXPECT_TRUE(result == ZoeResult::SUCCESSED);
+            REQUIRE(result == ZoeResult::SUCCESSED);
           },
           [i](int64_t total, int64_t downloaded) {
             if (total > 0)

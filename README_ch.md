@@ -49,17 +49,10 @@ Linux:~/$ ./vcpkg install zoe
 
 建议将 vcpkg.exe 所在目录添加到 PATH 环境变量。
 
-- libcurl
-    ```bash
-    # 如果需要支持非http协议，如ftp等，需要指定[non-http]选项
-    vcpkg install curl[non-http]:x86-windows
-    ```
-
-- gtest
-  
-    ```bash
-    vcpkg install gtest:x86-windows
-    ```
+```bash
+# 如果需要支持非http协议，如ftp等，需要指定[non-http]选项
+vcpkg install curl[non-http]:x86-windows
+```
 
 
 **2. 编译**

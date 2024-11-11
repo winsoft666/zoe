@@ -15,31 +15,34 @@
 *    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 ******************************************************************************/
 
-#include <future>
-#include "gtest/gtest.h"
+#include "catch.hpp"
+#include "test_data.h"
 #include "zoe/zoe.h"
 #include "test_data.h"
+#include <future>
 using namespace zoe;
 
-void DoTest(const std::vector<TestData>& test_datas, int thread_num, int32_t disk_cache) {
-  Zoe::GlobalInit();
-
+void DoCancelTest(const std::vector<TestData>& test_datas, int thread_num) {
   for (const auto& test_data : test_datas) {
+    ZoeEvent cancel_event;
+
     Zoe efd;
-
-    if (thread_num != -1)
-      efd.setThreadNum(thread_num);
-
-    efd.setDiskCacheSize(disk_cache);
+    efd.setThreadNum(thread_num);
+    efd.setStopEvent(&cancel_event);
     if (test_data.md5.length() > 0)
       efd.setHashVerifyPolicy(HashVerifyPolicy::AlwaysVerify, HashType::MD5, test_data.md5);
+
+    std::thread t = std::thread([&cancel_event]() {
+      std::this_thread::sleep_for(std::chrono::milliseconds(500));
+      cancel_event.set();
+    });
 
     ZoeResult ret =
         efd.start(
                test_data.url, test_data.target_file_path,
                [test_data](ZoeResult result) {
                  printf("\nResult: %s\n", Zoe::GetResultString(result));
-                 EXPECT_TRUE(result == ZoeResult::SUCCESSED || result == ZoeResult::CANCELED);
+                 REQUIRE((result == ZoeResult::SUCCESSED || result == ZoeResult::CANCELED));
                },
                [](int64_t total, int64_t downloaded) {
                  if (total > 0)
@@ -47,27 +50,13 @@ void DoTest(const std::vector<TestData>& test_datas, int thread_num, int32_t dis
                },
                nullptr)
             .get();
+
+    t.join();
   }
-
-  Zoe::GlobalUnInit();
 }
 
-TEST(DiskCacheHttpTest, Http_ThreadNum_2) {
-  DoTest(http_test_datas, 10, 10 * 1024 * 1024);
-
-  // set test case interval
-  std::this_thread::sleep_for(std::chrono::milliseconds(5000));
-}
-
-TEST(DiskCacheHttpTest, Http_ThreadNum_3) {
-  DoTest(http_test_datas, 3, 0);
-
-  // set test case interval
-  std::this_thread::sleep_for(std::chrono::milliseconds(5000));
-}
-
-TEST(DiskCacheHttpTest, Http_ThreadNum_20) {
-  DoTest(http_test_datas, 20, 1);
+TEST_CASE("CancelTest") {
+  DoCancelTest(http_test_datas, 3);
 
   // set test case interval
   std::this_thread::sleep_for(std::chrono::milliseconds(5000));

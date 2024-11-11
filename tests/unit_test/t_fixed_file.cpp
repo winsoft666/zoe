@@ -15,36 +15,36 @@
 *    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 ******************************************************************************/
 
-#include "gtest/gtest.h"
+#include "catch.hpp"
 #include "file_util.h"
 using namespace zoe;
 
-TEST(FixedFileTest, 100mb) {
+TEST_CASE("FixedFileTest-100MB") {
   const int file_size = 100 * 1024 * 1024;
-  EXPECT_TRUE(FileUtil::CreateFixedSizeFile("fixed_test0.dat", file_size));
-  EXPECT_EQ(FileUtil::GetFileSize("fixed_test0.dat"), file_size);
+  REQUIRE(FileUtil::CreateFixedSizeFile("fixed_test0.dat", file_size));
+  REQUIRE(FileUtil::GetFileSize("fixed_test0.dat") == file_size);
 }
 
-TEST(FixedFileTest, 2000mb) {
+TEST_CASE("FixedFileTest-2000MB") {
   const int file_size = 2000 * 1024 * 1024;
-  EXPECT_TRUE(FileUtil::CreateFixedSizeFile("fixed_test1.dat", file_size));
-  EXPECT_EQ(FileUtil::GetFileSize("fixed_test1.dat"), file_size);
+  REQUIRE(FileUtil::CreateFixedSizeFile("fixed_test1.dat", file_size));
+  REQUIRE(FileUtil::GetFileSize("fixed_test1.dat") == file_size);
 }
 
-TEST(FixedFileTest, 1mb) {
+TEST_CASE("FixedFileTest-1MB") {
   const int file_size = 1 * 1024 * 1024;
-  EXPECT_TRUE(FileUtil::CreateFixedSizeFile("fixed_test2.dat", file_size));
-  EXPECT_EQ(FileUtil::GetFileSize("fixed_test2.dat"), file_size);
+  REQUIRE(FileUtil::CreateFixedSizeFile("fixed_test2.dat", file_size));
+  REQUIRE(FileUtil::GetFileSize("fixed_test2.dat") == file_size);
 }
 
-TEST(FixedFileTest, 10byte) {
+TEST_CASE("FixedFileTest-10byte") {
   const int file_size = 10;
-  EXPECT_TRUE(FileUtil::CreateFixedSizeFile("fixed_test3.dat", file_size));
-  EXPECT_EQ(FileUtil::GetFileSize("fixed_test3.dat"), file_size);
+  REQUIRE(FileUtil::CreateFixedSizeFile("fixed_test3.dat", file_size));
+  REQUIRE(FileUtil::GetFileSize("fixed_test3.dat") == file_size);
 }
 
-TEST(FixedFileTest, 0byte) {
+TEST_CASE("FixedFileTest-0byte") {
   const int file_size = 0;
-  EXPECT_TRUE(FileUtil::CreateFixedSizeFile("fixed_test4.dat", file_size));
-  EXPECT_EQ(FileUtil::GetFileSize("fixed_test4.dat"), file_size);
+  REQUIRE(FileUtil::CreateFixedSizeFile("fixed_test4.dat", file_size));
+  REQUIRE(FileUtil::GetFileSize("fixed_test4.dat") == file_size);
 }

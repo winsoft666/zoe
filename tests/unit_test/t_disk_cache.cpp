@@ -15,19 +15,22 @@
 *    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 ******************************************************************************/
 
-#include "gtest/gtest.h"
+#include <future>
+#include "catch.hpp"
 #include "zoe/zoe.h"
 #include "test_data.h"
-#include <future>
 using namespace zoe;
 
-void DoTest(const std::vector<TestData>& test_datas, int thread_num) {
+void DoTest(const std::vector<TestData>& test_datas, int thread_num, int32_t disk_cache) {
   Zoe::GlobalInit();
 
   for (const auto& test_data : test_datas) {
     Zoe efd;
 
-    efd.setThreadNum(thread_num);
+    if (thread_num != -1)
+      efd.setThreadNum(thread_num);
+
+    efd.setDiskCacheSize(disk_cache);
     if (test_data.md5.length() > 0)
       efd.setHashVerifyPolicy(HashVerifyPolicy::AlwaysVerify, HashType::MD5, test_data.md5);
 
@@ -36,7 +39,7 @@ void DoTest(const std::vector<TestData>& test_datas, int thread_num) {
                test_data.url, test_data.target_file_path,
                [test_data](ZoeResult result) {
                  printf("\nResult: %s\n", Zoe::GetResultString(result));
-                 EXPECT_TRUE(result == ZoeResult::SUCCESSED);
+                 REQUIRE((result == ZoeResult::SUCCESSED || result == ZoeResult::CANCELED));
                },
                [](int64_t total, int64_t downloaded) {
                  if (total > 0)
@@ -49,29 +52,22 @@ void DoTest(const std::vector<TestData>& test_datas, int thread_num) {
   Zoe::GlobalUnInit();
 }
 
-TEST(MultiThreadHttpTest, Http_DefaultThreadNum) {
-  DoTest(http_test_datas, -1);
+TEST_CASE("DiskCacheHttpTest-ThreadNum10") {
+  DoTest(http_test_datas, 10, 10 * 1024 * 1024);
 
   // set test case interval
   std::this_thread::sleep_for(std::chrono::milliseconds(5000));
 }
 
-TEST(MultiThreadHttpTest, Http_ThreadNum_2) {
-  DoTest(http_test_datas, 2);
+TEST_CASE("DiskCacheHttpTest-ThreadNum3") {
+  DoTest(http_test_datas, 3, 0);
 
   // set test case interval
   std::this_thread::sleep_for(std::chrono::milliseconds(5000));
 }
 
-TEST(MultiThreadHttpTest, Http_ThreadNum_3) {
-  DoTest(http_test_datas, 3);
-
-  // set test case interval
-  std::this_thread::sleep_for(std::chrono::milliseconds(5000));
-}
-
-TEST(MultiThreadHttpTest, Http_ThreadNum_20) {
-  DoTest(http_test_datas, 20);
+TEST_CASE("DiskCacheHttpTest-ThreadNum20") {
+  DoTest(http_test_datas, 20, 1);
 
   // set test case interval
   std::this_thread::sleep_for(std::chrono::milliseconds(5000));

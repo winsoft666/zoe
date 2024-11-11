@@ -15,15 +15,13 @@
 *    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 ******************************************************************************/
 
-#include "gtest/gtest.h"
+#include "catch.hpp"
 #include "zoe/zoe.h"
 #include "test_data.h"
 #include <future>
 using namespace zoe;
 
-TEST(StopTest, NoWait) {
-  EXPECT_NO_THROW({
-    Zoe t;
-    t.stop();
-  });
+TEST_CASE("StopTest") {
+  Zoe t;
+  t.stop();
 }

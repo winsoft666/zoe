@@ -15,42 +15,36 @@
 *    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 ******************************************************************************/
 
-#include "gtest/gtest.h"
+#include "catch.hpp"
 #include "zoe/zoe.h"
 #include "test_data.h"
 #include <future>
 using namespace zoe;
 
-TEST(SingleTest, test1) {
-  if (http_test_datas.size() == 0)
+TEST_CASE("SpeedLimitTest") {
+  if (http_test_datas.empty())
     return;
-  TestData test_data = http_test_datas[0];
 
   Zoe::GlobalInit();
   {
-    Zoe z;
-    z.setVerifyCAEnabled(false, "");
-    z.setThreadNum(6);
-    z.setSlicePolicy(SlicePolicy::FixedNum, 10);
-    if (test_data.md5.length() > 0)
-      z.setHashVerifyPolicy(HashVerifyPolicy::AlwaysVerify, HashType::MD5, test_data.md5);
-    z.setFetchFileInfoHeadMethodEnabled(true);
-    z.setHttpHeaders({ {"User-Agent", "Zoe"}});
+    Zoe efd1;
 
-    std::shared_future<ZoeResult> future_result = z.start(
-        test_data.url, test_data.target_file_path,
+    efd1.setThreadNum(3);
+    efd1.setHashVerifyPolicy(HashVerifyPolicy::AlwaysVerify, HashType::MD5, http_test_datas[0].md5);
+    efd1.setMaxDownloadSpeed(1024 * 100);
+
+    std::shared_future<ZoeResult> future_result1 = efd1.start(
+        http_test_datas[0].url, http_test_datas[0].target_file_path,
         [](ZoeResult result) {
           printf("\nResult: %s\n", Zoe::GetResultString(result));
-          EXPECT_TRUE(result == ZoeResult::SUCCESSED);
+          REQUIRE(result == ZoeResult::SUCCESSED);
         },
-        [](int64_t total, int64_t downloaded) {
-          if (total > 0)
-            printf("%3d%%\b\b\b\b", (int)((double)downloaded * 100.f / (double)total));
-        },
-        nullptr);
+        nullptr, [](int64_t byte_per_sec) { printf("%.3f kb/s\n", (float)byte_per_sec / 1024.f); });
 
-    EXPECT_TRUE(future_result.get() == ZoeResult::SUCCESSED);
-    DownloadState s = z.state();
+    future_result1.wait();
   }
   Zoe::GlobalUnInit();
+
+  // set test case interval
+  std::this_thread::sleep_for(std::chrono::milliseconds(5000));
 }

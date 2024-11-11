@@ -51,18 +51,10 @@ I prefer to use `vcpkg` to install dependencies. Of course, this is not the only
 
 Recommend: add the directory where vcpkg.exe resides to the PATH environment variable.
 
-- libcurl
-
-  ```bash
-  # if you want support non-http protocol, such as ftp, the [non-http] option must be specified.
-  vcpkg install curl[non-http]:x86-windows
-  ```
-
-- gtest
-
-  ```bash
-  vcpkg install gtest:x86-windows
-  ```
+```bash
+# if you want support non-http protocol, such as ftp, the [non-http] option must be specified.
+vcpkg install curl[non-http]:x86-windows
+```
 
 **Step 2: Compile**
 

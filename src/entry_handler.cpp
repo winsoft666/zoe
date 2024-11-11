@@ -513,7 +513,7 @@ bool EntryHandler::doFetchFileInfo(const utf8string& url, FileInfo& fileInfo) {
     CHECK_SETOPT2(curl_easy_setopt(curl, CURLOPT_HTTPHEADER, headerChunk));
   }
 
-  if (curl_multi_add_handle(multi, curl) != CURLE_OK) {
+  if (curl_multi_add_handle(multi, curl) != CURLM_OK) {
     curl_easy_cleanup(curl);
     curl_multi_cleanup(multi);
     return false;

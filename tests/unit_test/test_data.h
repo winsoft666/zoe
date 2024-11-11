@@ -9,7 +9,10 @@ typedef struct _TestData {
 } TestData;
 
 static std::vector<TestData> http_test_datas = {
-    {u8"https://www.douyin.com/download/pc/obj/douyin-pc-web/douyin-pc-client/7044145585217083655/releases/12209044/4.9.0/win32-ia32/douyin-downloader-v4.9.0-win32-ia32-douyincold.exe", u8"./TeemoTest/douyin-downloader-v4.9.0-win32-ia32-douyincold.exe", u8"d8789a51021169be81b4a382f066796c"},
+    {u8"https://mksoftcdnhp.mydown.com/6731d49b/f44008af4a4ef1a5f387811565b337e8/uploadsoft/douyin-downloader-v4.9.0-win32-ia32-tjjh.exe", u8"./TeemoTest/douyin-downloader-v4.9.0-win32-ia32-tjjh.exe", u8"4deb7ed6ba1f3cb82000779db85d016f"},
+    {u8"https://mksoftcdnhp.mydown.com/6731d4fb/d6639ac1aad76ea3fbc208c1331699c3/uploadsoft/newsoft/QQWubi_Setup_2.4.629.400.exe", u8"./TeemoTest/QQWubi_Setup_2.4.629.400.exe", u8"7cf1310e14a479c7c184fb3dc28d1585"},
+    {u8"https://mksoftcdnhp.mydown.com/6731d535/d1492daadc289e1fec084b97fbf3ac24/uploadsoft/XunLeiWebSetup12.0.14.2602xl11.exe", u8"./TeemoTest/XunLeiWebSetup12.0.14.2602xl11.exe", u8"2d6a21ca175afa7f356440efeedc97e8"},
+    {u8"https://mksoftcdnhp.mydown.com/6731d55d/5303f8aa64f33952a0c2040e4244285f/uploadsoft/bmsetup-30.0.31.9.exe", u8"./TeemoTest/bmsetup-30.0.31.9.exe", u8"2d0e4afe072b86ca0ac4528127b05f15"},
     {u8"http://cosbrowser-1253960454.cos.ap-shanghai.myqcloud.com/releases/cosbrowser-setup-2.11.23.exe", u8"./TeemoTest/cosbrowser-setup-2.11.23.exe", u8"c176bd79f4b464cf5562ae0b34fe9b10"},
     {u8"http://dl.todesk.com/xp/ToDesk_4.7.5.3_xp.exe", u8"./TeemoTest/ToDesk_4.7.5.3_xp.exe", u8"cdb4222cea387e249ba189b9a7b25b50"},
     {u8"http://download.2345.com/union7139_2345/2345explorer_50139539532.exe", u8"./TeemoTest/2345explorer_50139539532.exe", u8"79dd5d277259975e0211c52a554f4f19"},

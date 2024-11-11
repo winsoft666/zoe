@@ -22,20 +22,19 @@
 using namespace zoe;
 
 TEST_CASE("SingleTest") {
-  if (http_test_datas.size() == 0)
-    return;
-  TestData test_data = http_test_datas[0];
+  TestData test_data = GetHttpTestData();
+  printf("\nUrl: %s\n", test_data.url.c_str());
 
   Zoe::GlobalInit();
   {
     Zoe z;
     z.setVerifyCAEnabled(false, "");
-    z.setThreadNum(6);
+    z.setThreadNum(3);
     z.setSlicePolicy(SlicePolicy::FixedNum, 10);
     if (test_data.md5.length() > 0)
       z.setHashVerifyPolicy(HashVerifyPolicy::AlwaysVerify, HashType::MD5, test_data.md5);
     z.setFetchFileInfoHeadMethodEnabled(true);
-    z.setHttpHeaders({ {"User-Agent", "Zoe"}});
+    z.setHttpHeaders({{"User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0.0.0 Safari/537.36"}});
 
     std::shared_future<ZoeResult> future_result = z.start(
         test_data.url, test_data.target_file_path,

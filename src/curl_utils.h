@@ -15,8 +15,8 @@
 *    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 ******************************************************************************/
 
-#ifndef ZOE_GLOBAL_ENV_H_
-#define ZOE_GLOBAL_ENV_H_
+#ifndef ZOE_CURL_UTILS_H_
+#define ZOE_CURL_UTILS_H_
 #pragma once
 
 #include "curl/curl.h"
@@ -27,9 +27,16 @@ void GlobalCurlUnInit();
 
 class ScopedCurl {
  public:
-  ScopedCurl() { curl_ = curl_easy_init(); }
+  ScopedCurl() {
+    curl_ = curl_easy_init();
+  }
 
-  ~ScopedCurl() { curl_easy_cleanup(curl_); }
+  ~ScopedCurl() {
+    if (curl_) {
+      curl_easy_cleanup(curl_);
+      curl_ = nullptr;
+    }
+  }
 
   CURL* GetCurl() { return curl_; }
 
@@ -38,4 +45,4 @@ class ScopedCurl {
 };
 }  // namespace zoe
 
-#endif  // !ZOE_GLOBAL_ENV_H_
+#endif  // !ZOE_CURL_UTILS_H_

@@ -108,7 +108,7 @@ typedef struct _Options {
     speed_functor = nullptr;
     verbose_functor = nullptr;
 
-    user_stop_event = nullptr;
+    user_stop_event = nullptr; // User-defined stop event
 
     uncompleted_slice_save_policy = UncompletedSliceSavePolicy::AlwaysDiscard;
   }

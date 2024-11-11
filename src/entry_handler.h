@@ -67,8 +67,7 @@ class EntryHandler {
   ZoeResult _asyncTaskProcess();
 
   bool fetchFileInfo(FileInfo& fileInfo);
-  bool requestFileInfo(const utf8string& url, FileInfo& fileInfo);
-  void cancelFetchFileInfo();
+  bool doFetchFileInfo(const utf8string& url, FileInfo& fileInfo);
   void calculateSliceInfo(int32_t concurrency_num,
                           int64_t* disk_cache_per_slice,
                           int64_t* max_speed_per_slice) const;
@@ -83,9 +82,6 @@ class EntryHandler {
 
   void* multi_;
 
-  std::shared_ptr<ScopedCurl> fetch_file_info_curl_;
-
-  std::atomic_bool user_stopped_;
   std::atomic_bool user_paused_;
 
   std::atomic<DownloadState> state_;

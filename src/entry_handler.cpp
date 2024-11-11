@@ -45,10 +45,8 @@ EntryHandler::EntryHandler()
     , slice_manager_(nullptr)
     , progress_handler_(nullptr)
     , multi_(nullptr)
-    , fetch_file_info_curl_(nullptr)
     , speed_handler_(nullptr) {
   user_paused_.store(false);
-  user_stopped_.store(false);
   state_.store(DownloadState::Stopped);
 }
 
@@ -126,9 +124,7 @@ void EntryHandler::resume() {
 }
 
 void EntryHandler::stop() {
-  user_stopped_.store(true);
   options_->internal_stop_event.set();
-  cancelFetchFileInfo();
   state_.store(DownloadState::Stopped);
 }
 
@@ -153,7 +149,6 @@ std::shared_future<ZoeResult> EntryHandler::futureResult() {
 ZoeResult EntryHandler::asyncTaskProcess() {
   options_->internal_stop_event.unset();
   user_paused_.store(false);
-  user_stopped_.store(false);
   state_.store(DownloadState::Downloading);
 
   const ZoeResult ret = _asyncTaskProcess();
@@ -193,8 +188,14 @@ ZoeResult EntryHandler::_asyncTaskProcess() {
     fetch_size_ret = fetchFileInfo(file_info);
     if (fetch_size_ret)
       break;
+    if (options_->internal_stop_event.isSetted() || (options_->user_stop_event && options_->user_stop_event->isSetted()))
+      break;
     OutputVerbose(options_->verbose_functor, "Fetching file size failed, retry...\n");
   } while (++try_times <= options_->fetch_file_info_retry);
+
+  if (options_->internal_stop_event.isSetted() || (options_->user_stop_event && options_->user_stop_event->isSetted())) {
+    return ZoeResult::CANCELED;
+  }
 
   if (!fetch_size_ret) {
     OutputVerbose(options_->verbose_functor, "Fetch file size failed.\n");
@@ -447,7 +448,7 @@ ZoeResult EntryHandler::_asyncTaskProcess() {
     return ret;
   }
 
-  if (user_stopped_.load() ||
+  if (options_->internal_stop_event.isSetted() ||
       (options_->user_stop_event && options_->user_stop_event->isSetted()))
     ret = ZoeResult::CANCELED;  // user cancel, ignore other failed reason
 
@@ -455,19 +456,23 @@ ZoeResult EntryHandler::_asyncTaskProcess() {
 }
 
 bool EntryHandler::fetchFileInfo(FileInfo& fileInfo) {
-  return requestFileInfo(options_->url, fileInfo);
+  return doFetchFileInfo(options_->url, fileInfo);
 }
 
-bool EntryHandler::requestFileInfo(const utf8string& url, FileInfo& fileInfo) {
+bool EntryHandler::doFetchFileInfo(const utf8string& url, FileInfo& fileInfo) {
   if (!options_)
     return false;
 
-  if (!fetch_file_info_curl_)
-    fetch_file_info_curl_ = std::make_shared<ScopedCurl>();
+  CURLM* multi = curl_multi_init();
+  if (!multi)
+    return false;
 
-  CURL* curl = fetch_file_info_curl_->GetCurl();
+  CURL* curl = curl_easy_init();
+  if (!curl) {
+    curl_multi_cleanup(multi);
+    return false;
+  }
 
-  curl_easy_reset(curl);
   CHECK_SETOPT2(curl_easy_setopt(curl, CURLOPT_VERBOSE, 0L));
   CHECK_SETOPT2(curl_easy_setopt(curl, CURLOPT_NOSIGNAL, 1L));
   CHECK_SETOPT2(curl_easy_setopt(curl, CURLOPT_URL, url.c_str()));
@@ -495,7 +500,7 @@ bool EntryHandler::requestFileInfo(const utf8string& url, FileInfo& fileInfo) {
   }
 
   if (options_->cookie_list.length() > 0) {
-      CHECK_SETOPT2(curl_easy_setopt(curl, CURLOPT_COOKIELIST, options_->cookie_list.c_str()));
+    CHECK_SETOPT2(curl_easy_setopt(curl, CURLOPT_COOKIELIST, options_->cookie_list.c_str()));
   }
 
   struct curl_slist* headerChunk = nullptr;
@@ -508,17 +513,55 @@ bool EntryHandler::requestFileInfo(const utf8string& url, FileInfo& fileInfo) {
     CHECK_SETOPT2(curl_easy_setopt(curl, CURLOPT_HTTPHEADER, headerChunk));
   }
 
-  CURLcode ret_code = curl_easy_perform(curl);
+  if (curl_multi_add_handle(multi, curl) != CURLE_OK) {
+    curl_easy_cleanup(curl);
+    curl_multi_cleanup(multi);
+    return false;
+  }
 
-  if (headerChunk) {
-    curl_slist_free_all(headerChunk);
-    headerChunk = nullptr;
+  int still_running = 0;
+  do {
+    if (options_->internal_stop_event.isSetted() || (options_->user_stop_event && options_->user_stop_event->isSetted()))
+      break;
+
+    CURLMcode mc = curl_multi_perform(multi, &still_running);
+    if (!mc && still_running) {
+      /* wait for activity, timeout or "nothing" */
+      mc = curl_multi_poll(multi, NULL, 0, 30, NULL);
+    }
+
+    if (mc)
+      break;
+  } while (still_running);
+
+  auto cleanupFn = [multi, curl, headerChunk]() {
+    curl_multi_remove_handle(multi, curl);
+
+    if (headerChunk) {
+      curl_slist_free_all(headerChunk);
+    }
+
+    curl_easy_cleanup(curl);
+    curl_multi_cleanup(multi);
+  };
+
+  if (options_->internal_stop_event.isSetted() || (options_->user_stop_event && options_->user_stop_event->isSetted())) {
+    cleanupFn();
+    return false;
+  }
+
+  CURLcode ret_code = CURLE_FAILED_INIT;
+  int msg_in_queue = 0;
+  CURLMsg* m = curl_multi_info_read(multi, &msg_in_queue);
+  if (m && m->msg == CURLMSG_DONE) {
+    ret_code = m->data.result;
   }
 
   if (ret_code != CURLE_OK) {
     OutputVerbose(options_->verbose_functor,
-                  "curl_easy_perform failed, CURLcode: %ld(%s).\n",
+                  "curl_multi_perform failed, CURLcode: %ld(%s).\n",
                   (long)ret_code, curl_easy_strerror(ret_code));
+    cleanupFn();
     return false;
   }
 
@@ -533,6 +576,8 @@ bool EntryHandler::requestFileInfo(const utf8string& url, FileInfo& fileInfo) {
         options_->verbose_functor,
         "Get CURLINFO_RESPONSE_CODE failed, CURLcode: %ld(%s).\n",
         (long)ret_code, curl_easy_strerror(ret_code));
+
+    cleanupFn();
     return false;
   }
 
@@ -542,17 +587,14 @@ bool EntryHandler::requestFileInfo(const utf8string& url, FileInfo& fileInfo) {
     OutputVerbose(options_->verbose_functor,
                   "HTTP response code error, code: %ld.\n",
                   (long)http_code);
+
+    cleanupFn();
     return false;
   }
 
-  return true;
-}
+  cleanupFn();
 
-void EntryHandler::cancelFetchFileInfo() {
-  CURL* curl = fetch_file_info_curl_->GetCurl();
-  if (curl) {
-    curl_easy_setopt(curl, CURLOPT_TIMEOUT_MS, 1L);
-  }
+  return true;
 }
 
 void EntryHandler::calculateSliceInfo(int32_t concurrency_num,

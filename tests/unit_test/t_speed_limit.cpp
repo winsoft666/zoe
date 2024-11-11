@@ -25,16 +25,21 @@ TEST_CASE("SpeedLimitTest") {
   if (http_test_datas.empty())
     return;
 
+  TestData test_data = GetHttpTestData();
+  printf("\nUrl: %s\n", test_data.url.c_str());
+
   Zoe::GlobalInit();
   {
     Zoe efd1;
 
     efd1.setThreadNum(3);
-    efd1.setHashVerifyPolicy(HashVerifyPolicy::AlwaysVerify, HashType::MD5, http_test_datas[0].md5);
+    efd1.setHashVerifyPolicy(HashVerifyPolicy::AlwaysVerify, HashType::MD5, test_data.md5);
     efd1.setMaxDownloadSpeed(1024 * 100);
+    efd1.setHttpHeaders({{"User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0.0.0 Safari/537.36"}});
 
     std::shared_future<ZoeResult> future_result1 = efd1.start(
-        http_test_datas[0].url, http_test_datas[0].target_file_path,
+        test_data.url,
+        test_data.target_file_path,
         [](ZoeResult result) {
           printf("\nResult: %s\n", Zoe::GetResultString(result));
           REQUIRE(result == ZoeResult::SUCCESSED);
@@ -44,7 +49,4 @@ TEST_CASE("SpeedLimitTest") {
     future_result1.wait();
   }
   Zoe::GlobalUnInit();
-
-  // set test case interval
-  std::this_thread::sleep_for(std::chrono::milliseconds(5000));
 }

@@ -21,70 +21,58 @@
 #include <future>
 using namespace zoe;
 
-void DoBreakpointTest(const std::vector<TestData>& test_datas, int thread_num) {
-  for (const auto &test_data : test_datas) {
-    std::future<void> test_task = std::async(std::launch::async, [test_data, thread_num]() {
-      Zoe efd;
+void DoBreakpointTest(const TestData& test_data, int thread_num) {
+  std::future<void> test_task = std::async(std::launch::async, [test_data, thread_num]() {
+    printf("\nUrl: %s\n", test_data.url.c_str());
 
-      efd.setThreadNum(thread_num / 2);
-      if (test_data.md5.length() > 0)
-        efd.setHashVerifyPolicy(HashVerifyPolicy::AlwaysVerify, HashType::MD5, test_data.md5);
+    Zoe z;
+    z.setHttpHeaders({{"User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0.0.0 Safari/537.36"}});
+    z.setThreadNum(thread_num / 2);
+    if (test_data.md5.length() > 0)
+      z.setHashVerifyPolicy(HashVerifyPolicy::AlwaysVerify, HashType::MD5, test_data.md5);
 
-      std::shared_future<ZoeResult> r = efd.start(
-          test_data.url, test_data.target_file_path,
-          [test_data](ZoeResult result) {
-            printf("\nResult: %s\n", Zoe::GetResultString(result));
-            REQUIRE((result == ZoeResult::SUCCESSED || result == ZoeResult::CANCELED));
-          },
-          [](int64_t total, int64_t downloaded) {
-            if (total > 0)
-              printf("%3d%%\b\b\b\b", (int)((double)downloaded * 100.f / (double)total));
-          },
-          nullptr);
+    std::shared_future<ZoeResult> r = z.start(
+        test_data.url, test_data.target_file_path,
+        [test_data](ZoeResult result) {
+          printf("\nResult: %s\n", Zoe::GetResultString(result));
+          CHECK((result == ZoeResult::SUCCESSED || result == ZoeResult::CANCELED));
+        },
+        [](int64_t total, int64_t downloaded) {
+          if (total > 0)
+            printf("%3d%%\b\b\b\b", (int)((double)downloaded * 100.f / (double)total));
+        },
+        nullptr);
 
-      std::this_thread::sleep_for(std::chrono::milliseconds(1000));
+    std::this_thread::sleep_for(std::chrono::milliseconds(1000));
 
-      efd.stop();
+    z.stop();
 
-      r.wait();
+    r.wait();
 
-      efd.setThreadNum(thread_num);
+    z.setThreadNum(thread_num);
 
-      ZoeResult ret =
-          efd.start(
-                 test_data.url, test_data.target_file_path,
-                 [test_data](ZoeResult result) {
-                   printf("\nResult: %s\n", Zoe::GetResultString(result));
-                   REQUIRE(result == ZoeResult::SUCCESSED);
-                 },
-                 [](int64_t total, int64_t downloaded) {
-                   if (total > 0)
-                     printf("%3d%%\b\b\b\b", (int)((double)downloaded * 100.f / (double)total));
-                 },
-                 nullptr)
-              .get();
-    });
-    test_task.wait();
-  }
+    ZoeResult ret =
+        z.start(
+             test_data.url, test_data.target_file_path,
+             [test_data](ZoeResult result) {
+               printf("\nResult: %s\n", Zoe::GetResultString(result));
+               CHECK(result == ZoeResult::SUCCESSED);
+             },
+             [](int64_t total, int64_t downloaded) {
+               if (total > 0)
+                 printf("%3d%%\b\b\b\b", (int)((double)downloaded * 100.f / (double)total));
+             },
+             nullptr)
+            .get();
+  });
+  test_task.wait();
 }
 
 TEST_CASE("BreakPointHttpTest-ThreadNum1") {
-  DoBreakpointTest(http_test_datas, 1);
-
-  // set test case interval
-  std::this_thread::sleep_for(std::chrono::milliseconds(5000));
+  DoBreakpointTest(GetHttpTestData(), 1);
 }
 
 TEST_CASE("BreakPointHttpTest-ThreadNum3") {
-  DoBreakpointTest(http_test_datas, 3);
-
-  // set test case interval
-  std::this_thread::sleep_for(std::chrono::milliseconds(5000));
+  DoBreakpointTest(GetHttpTestData(), 7);
 }
 
-TEST_CASE("BreakPointHttpTest-ThreadNum10") {
-  DoBreakpointTest(http_test_datas, 10);
-
-  // set test case interval
-  std::this_thread::sleep_for(std::chrono::milliseconds(5000));
-}

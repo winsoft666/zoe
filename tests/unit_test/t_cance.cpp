@@ -22,42 +22,81 @@
 #include <future>
 using namespace zoe;
 
-void DoCancelTest(const std::vector<TestData>& test_datas, int thread_num) {
-  for (const auto& test_data : test_datas) {
-    ZoeEvent cancel_event;
+void DoUserDefinedCancelTest(const TestData& test_data, int thread_num, int delay_ms) {
+  ZoeEvent cancel_event;
 
-    Zoe efd;
-    efd.setThreadNum(thread_num);
-    efd.setStopEvent(&cancel_event);
-    if (test_data.md5.length() > 0)
-      efd.setHashVerifyPolicy(HashVerifyPolicy::AlwaysVerify, HashType::MD5, test_data.md5);
+  Zoe z;
+  z.setHttpHeaders({{"User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0.0.0 Safari/537.36"}});
+  z.setThreadNum(thread_num);
+  z.setStopEvent(&cancel_event);
+  if (test_data.md5.length() > 0)
+    z.setHashVerifyPolicy(HashVerifyPolicy::AlwaysVerify, HashType::MD5, test_data.md5);
 
-    std::thread t = std::thread([&cancel_event]() {
-      std::this_thread::sleep_for(std::chrono::milliseconds(500));
-      cancel_event.set();
-    });
+  std::thread t = std::thread([&cancel_event, delay_ms]() {
+    std::this_thread::sleep_for(std::chrono::milliseconds(delay_ms));
+    cancel_event.set();
+  });
 
-    ZoeResult ret =
-        efd.start(
-               test_data.url, test_data.target_file_path,
-               [test_data](ZoeResult result) {
-                 printf("\nResult: %s\n", Zoe::GetResultString(result));
-                 REQUIRE((result == ZoeResult::SUCCESSED || result == ZoeResult::CANCELED));
-               },
-               [](int64_t total, int64_t downloaded) {
-                 if (total > 0)
-                   printf("%3d%%\b\b\b\b", (int)((double)downloaded * 100.f / (double)total));
-               },
-               nullptr)
-            .get();
+  ZoeResult ret =
+      z.start(
+           test_data.url, test_data.target_file_path,
+           [test_data](ZoeResult result) {
+             printf("\nResult: %s\n", Zoe::GetResultString(result));
+             REQUIRE((result == ZoeResult::SUCCESSED || result == ZoeResult::CANCELED));
+           },
+           [](int64_t total, int64_t downloaded) {
+             if (total > 0)
+               printf("%3d%%\b\b\b\b", (int)((double)downloaded * 100.f / (double)total));
+           },
+           nullptr)
+          .get();
 
-    t.join();
-  }
+  t.join();
 }
 
-TEST_CASE("CancelTest") {
-  DoCancelTest(http_test_datas, 3);
+void DoCancelTest(const TestData& test_data, int thread_num, int delay_ms) {
+  ZoeEvent cancel_event;
 
-  // set test case interval
-  std::this_thread::sleep_for(std::chrono::milliseconds(5000));
+  Zoe z;
+  z.setHttpHeaders({{"User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0.0.0 Safari/537.36"}});
+  z.setThreadNum(thread_num);
+  if (test_data.md5.length() > 0)
+    z.setHashVerifyPolicy(HashVerifyPolicy::AlwaysVerify, HashType::MD5, test_data.md5);
+
+  std::thread t = std::thread([&z, delay_ms]() {
+    std::this_thread::sleep_for(std::chrono::milliseconds(delay_ms));
+    z.stop();
+  });
+
+  ZoeResult ret =
+      z.start(
+           test_data.url, test_data.target_file_path,
+           [test_data](ZoeResult result) {
+             printf("\nResult: %s\n", Zoe::GetResultString(result));
+             REQUIRE((result == ZoeResult::SUCCESSED || result == ZoeResult::CANCELED));
+           },
+           [](int64_t total, int64_t downloaded) {
+             if (total > 0)
+               printf("%3d%%\b\b\b\b", (int)((double)downloaded * 100.f / (double)total));
+           },
+           nullptr)
+          .get();
+
+  t.join();
+}
+
+TEST_CASE("CancelTest-UserDefined-ThreadNum3-Delay0ms") {
+  DoUserDefinedCancelTest(GetHttpTestData(), 3, 0);
+}
+
+TEST_CASE("CancelTest-UserDefined-ThreadNum3-Delay500ms") {
+  DoUserDefinedCancelTest(GetHttpTestData(), 3, 500);
+}
+
+TEST_CASE("CancelTest-ThreadNum3-Delay0ms") {
+  DoUserDefinedCancelTest(GetHttpTestData(), 3, 0);
+}
+
+TEST_CASE("CancelTest-ThreadNum3-Delay500ms") {
+  DoUserDefinedCancelTest(GetHttpTestData(), 3, 500);
 }

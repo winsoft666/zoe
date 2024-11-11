@@ -215,7 +215,7 @@ class ZOE_API Zoe {
   int32_t diskCacheSize() const noexcept;                   // byte
 
   // Set an event, zoe will stop downloading when this event set.
-  // If download is stopped for stop_event set or call stop, zoe will return CANCELED.
+  // If download stopped by stop_event or calling stop, zoe will return CANCELED.
   //
   ZoeResult setStopEvent(ZoeEvent* stop_event) noexcept;
   ZoeEvent* stopEvent() noexcept;

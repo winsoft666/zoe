@@ -12,7 +12,7 @@
 # file.
 ###############################################################################
 
-file(GLOB SOURCE_FILES 			./*.cpp ../../src/file_util.cpp ../../src/string_encode.cpp)
+file(GLOB SOURCE_FILES 			./*.cpp ./*h ../../src/file_util.cpp ../../src/string_encode.cpp)
 
 add_executable(
 	unit_test

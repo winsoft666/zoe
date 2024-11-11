@@ -9,9 +9,28 @@ typedef struct _TestData {
 } TestData;
 
 static std::vector<TestData> http_test_datas = {
-    {u8"http://d1.music.126.net/dmusic/NeteaseCloudMusic_Music_official_3.0.5.203184_64.exe", u8"./TeemoTest/NeteaseCloudMusic_Music_official_3.0.5.203184_64.exe", u8"2392d3bdc0726879da24b9b30d1b3faa"},
-    {u8"http://dldir1.qq.com/qqfile/qq/QQNT/Mac/QQ_6.9.59_241104_01.dmg", u8"./TeemoTest/QQ_6.9.59_241104_01.dmg", u8"bc809f476bf822dac35ea5009475b9eb"},
+    {u8"https://www.douyin.com/download/pc/obj/douyin-pc-web/douyin-pc-client/7044145585217083655/releases/12209044/4.9.0/win32-ia32/douyin-downloader-v4.9.0-win32-ia32-douyincold.exe", u8"./TeemoTest/douyin-downloader-v4.9.0-win32-ia32-douyincold.exe", u8"d8789a51021169be81b4a382f066796c"},
+    {u8"http://cosbrowser-1253960454.cos.ap-shanghai.myqcloud.com/releases/cosbrowser-setup-2.11.23.exe", u8"./TeemoTest/cosbrowser-setup-2.11.23.exe", u8"c176bd79f4b464cf5562ae0b34fe9b10"},
+    {u8"http://dl.todesk.com/xp/ToDesk_4.7.5.3_xp.exe", u8"./TeemoTest/ToDesk_4.7.5.3_xp.exe", u8"cdb4222cea387e249ba189b9a7b25b50"},
+    {u8"http://download.2345.com/union7139_2345/2345explorer_50139539532.exe", u8"./TeemoTest/2345explorer_50139539532.exe", u8"79dd5d277259975e0211c52a554f4f19"},
+    {u8"http://mksoftcdnhp.mydown.com/67319728/a0d9a058627d7e1667c686120ad5b371/uploadsoft/QQGameMini_1080000167_cid0.exe", u8"./TeemoTest/QQGameMini_1080000167_cid0.exe", u8"175778ccbdeb35539472f7955632f9d5"},
+    {u8"http://mksoftcdnhp.mydown.com/67319772/5088465f7efba6688d62b1fc6833799e/uploadsoft/ChromeSetup130.0.6723.117.exe", u8"./TeemoTest/ChromeSetup130.0.6723.117.exe", u8"47399831a513265b24c04b44a5ab6661"},
+    {u8"http://mksoftcdnhp.mydown.com/673197a8/5825b63eb334069bee97e7a7cfd7a47d/uploadsoft/newsoft/QQPCDownload1122072708.exe", u8"./TeemoTest/QQPCDownload1122072708.exe", u8"0042b8d48604bb80dca2b30c363275a5"},
+    {u8"http://mksoftcdnhp.mydown.com/673197d5/819998b51eb0e3195ae1fe8ebf1a6c30/uploadsoft/JZRecordCovIns_014_410.exe", u8"./TeemoTest/JZRecordCovIns_014_410.exe", u8"b70b8baad30ebd32e97572c7e421ba6f"},
+
 };
+
+inline TestData GetHttpTestData() {
+    static size_t idx = 0;
+    assert(http_test_datas.size() > 0);
+    if (http_test_datas.size() == 0)
+        return TestData();
+
+    if (idx >= http_test_datas.size())
+        idx = 0;
+
+    return http_test_datas[idx++];
+}
 
 static std::vector<TestData> ftp_test_datas = {
 #if defined(WIN32) || defined(_WIN32) || defined(__WIN32__) || defined(__NT__)

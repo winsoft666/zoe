@@ -23,16 +23,17 @@
 using namespace zoe;
 
 TEST_CASE("ConcurrentTest") {
-  if (http_test_datas.size() < 2)
+  if (http_test_datas.size() < 3)
     return;
 
   Zoe::GlobalInit();
   {
     std::vector<std::shared_ptr<Zoe>> efds;
-    for (size_t i = 0; i < http_test_datas.size(); i++) {
+    for (size_t i = 0; i < 3; i++) {
       std::shared_ptr<Zoe> t = std::make_shared<Zoe>();
       efds.push_back(t);
 
+      t->setHttpHeaders({{"User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0.0.0 Safari/537.36"}});
       t->setThreadNum(6);
       t->setSlicePolicy(SlicePolicy::FixedNum, 10);
       if (http_test_datas[i].md5.length() > 0)

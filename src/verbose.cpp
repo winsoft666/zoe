@@ -63,9 +63,9 @@ void OutputVerbose(VerboseOuputFunctor functor, const char* fmt, ...) {
 
   if (hr == S_OK) {
     if (pMsgBuffer) {
-#if defined(DEBUG) || defined(_DEBUG)
-      OutputDebugStringW(Utf8ToUnicode(pMsgBuffer).c_str());
-#endif
+//#if defined(DEBUG) || defined(_DEBUG)
+//      OutputDebugStringW(Utf8ToUnicode(pMsgBuffer).c_str());
+//#endif
       if (functor) {
         functor(pMsgBuffer);
       }

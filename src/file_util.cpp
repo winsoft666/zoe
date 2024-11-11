@@ -47,6 +47,9 @@ int64_t FileUtil::GetFileSize(FILE* f) {
 #if defined(WIN32) || defined(_WIN32) || defined(__WIN32__) || defined(__NT__)
   _fseeki64(f, 0L, SEEK_END);
   int64_t fsize = _ftelli64(f);
+#elif defined(__APPLE__) && defined(__MACH__)
+  fseeko(f, 0L, SEEK_END);
+  int64_t fsize = ftello(f);
 #else
   fseeko64(f, 0L, SEEK_END);
   int64_t fsize = ftello64(f);
@@ -182,6 +185,8 @@ int FileUtil::Seek(FILE* f, int64_t offset, int origin) {
   if (f) {
 #if defined(WIN32) || defined(_WIN32) || defined(__WIN32__) || defined(__NT__)
     return _fseeki64(f, offset, origin);
+#elif defined(__APPLE__) && defined(__MACH__)
+    return fseeko(f, offset, origin);
 #else
     return fseeko64(f, offset, origin);
 #endif
@@ -266,6 +271,29 @@ bool FileUtil::CreateFixedSizeFile(const utf8string& path, int64_t fixed_size) {
   }
 
   return prealloc;
+#elif defined(__APPLE__) && defined(__MACH__)
+  int fd = open(path.c_str(), O_RDWR | O_CREAT,
+                S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH);
+  if (fd == -1) {
+    return false;
+  }
+  if (fixed_size > 0) {
+    fstore_t fstore = {F_ALLOCATECONTIG | F_ALLOCATEALL, F_PEOFPOSMODE, 0,
+                       fixed_size, 0};
+    if (fcntl(fd, F_PREALLOCATE, &fstore) == -1) {
+      // Retry non-contig.
+      fstore.fst_flags = F_ALLOCATEALL;
+      if (fcntl(fd, F_PREALLOCATE, &fstore) == -1) {
+        //int err = errno;
+        close(fd);
+        return false;
+      }
+    }
+    // This forces the allocation on disk.
+    ftruncate(fd, fixed_size);
+  }
+  close(fd);
+  return true;
 #else
   int fd = open(path.c_str(), O_RDWR | O_CREAT,
                 S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH);

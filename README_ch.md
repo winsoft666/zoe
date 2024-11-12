@@ -9,7 +9,7 @@
 
 - 多协议支持，如 HTTP(s), FTP(s)...
   
-- 分片下载和断点续传
+- 多线程分片下载和断点续传
   
 - 下载限速
 
@@ -30,6 +30,31 @@ vcpkg install zoe
 ```
 
 ## 快速开始
+
+下面示例使用 Zoe 的默认配置参数，演示了如何快速地使用 Zoe 进行文件下载：
+
+```cpp
+#include <iostream>
+#include "zoe.h"
+
+int main(int argc, char** argv) {
+  using namespace zoe;
+
+  Zoe::GlobalInit();
+
+  Zoe z;
+  
+  std::shared_future<Result> r = z.start(u8"http://xxx.xxx.com/test.exe", u8"D:\\test.exe");
+
+  Result result = r.get();
+
+  Zoe::GlobalUnInit();
+
+  return 0;
+}
+```
+
+下面示例稍显复杂，设置了一些配置参数和回调函数：
 
 ```cpp
 #include <iostream>
@@ -56,7 +81,7 @@ int main(int argc, char** argv) {
     {u8"User-Agent", u8"Mozilla/4.0 (compatible; MSIE 7.0; Windows NT 5.1)"}
    });
   
-  std::shared_future<Result> res = z.start(
+  std::shared_future<Result> r = z.start(
       u8"http://xxx.xxx.com/test.exe", u8"D:\\test.exe",
       [](Result result) {  // 可选的
         // 结果回调
@@ -68,7 +93,7 @@ int main(int argc, char** argv) {
         // 实时速率回调
       });
 
-  res.wait();
+  r.wait();
 
   Zoe::GlobalUnInit();
 

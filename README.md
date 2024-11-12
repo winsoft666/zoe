@@ -11,7 +11,7 @@ A C++ file download library.
 
 - Multi-protocol, such as HTTP(s), FTP(s)...
 
-- Segmented downloads and breakpoint transmission.
+- Multi-threaded Segmented downloads and breakpoint transmission.
   
 - Limit download speed.
 
@@ -32,6 +32,32 @@ vcpkg install zoe
 ```
 
 ## Getting Started
+
+The following example uses Zoe's default configuration parameters to demonstrate how to quickly use Zoe to download file:
+
+```cpp
+#include <iostream>
+#include "zoe.h"
+
+int main(int argc, char** argv) {
+  using namespace zoe;
+
+  Zoe::GlobalInit();
+
+  Zoe z;
+  
+  std::shared_future<Result> r = z.start(u8"http://xxx.xxx.com/test.exe", u8"D:\\test.exe");
+
+  Result result = r.get();
+
+  Zoe::GlobalUnInit();
+
+  return 0;
+}
+```
+
+The following example is a bit more complex and sets some configuration parameters and callback functions:
+
 ```cpp
 #include <iostream>
 #include "zoe.h"
@@ -57,7 +83,7 @@ int main(int argc, char** argv) {
     {u8"User-Agent", u8"Mozilla/4.0 (compatible; MSIE 7.0; Windows NT 5.1)"}
    });
   
-  std::shared_future<Result> res = z.start(
+  std::shared_future<Result> r = z.start(
       u8"http://xxx.xxx.com/test.exe", u8"D:\\test.exe",
       [](Result result) {  // Optional
         // result callback
@@ -69,7 +95,7 @@ int main(int argc, char** argv) {
         // real-time speed callback
       });
 
-  res.wait();
+  r.wait();
 
   Zoe::GlobalUnInit();
 

@@ -94,8 +94,7 @@ enum class SlicePolicy {
 enum class HashType {
   MD5 = 0,
   CRC32 = 1,
-  SHA1 = 2,
-  SHA256 = 3
+  SHA256 = 2
 };
 
 enum class HashVerifyPolicy {

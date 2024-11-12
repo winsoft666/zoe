@@ -21,7 +21,6 @@
 #include "options.h"
 #include "md5.h"
 #include "crc32.h"
-#include "sha1.h"
 #include "sha256.h"
 #include "filesystem.hpp"
 
@@ -110,10 +109,6 @@ ZoeResult TargetFile::calculateFileHash(Options* opt, utf8string& str_hash) {
   else if (opt->hash_type == HashType::CRC32) {
     ret = f_ ? CalculateFileCRC32(f_, opt, str_hash)
              : CalculateFileCRC32(file_path_, opt, str_hash);
-  }
-  else if (opt->hash_type == HashType::SHA1) {
-    ret = f_ ? CalculateFileSHA1(f_, opt, str_hash)
-             : CalculateFileSHA1(file_path_, opt, str_hash);
   }
   else if (opt->hash_type == HashType::SHA256) {
     ret = f_ ? CalculateFileSHA256(f_, opt, str_hash)

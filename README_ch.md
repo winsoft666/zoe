@@ -29,6 +29,8 @@ Zoe 仅依赖 [curl](https://github.com/curl/curl)，在安装 curl 之后，使
 vcpkg install zoe
 ```
 
+> 如果运行测试用例失败，请检查 http_test_datas 变量 (test_data.h) 中的下载链接是否有效。
+
 ## 快速开始
 
 下面示例使用 Zoe 的默认配置参数，演示了如何快速地使用 Zoe 进行文件下载：

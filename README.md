@@ -31,6 +31,8 @@ In addition, the `Zoe` library has been included in Microsoft's [vcpkg](https://
 vcpkg install zoe
 ```
 
+> If running the test case fails, check if the download link in the http_test_datas variable (test_data.h) is valid.
+
 ## Getting Started
 
 The following example uses Zoe's default configuration parameters to demonstrate how to quickly use Zoe to download file:

@@ -1,7 +1,7 @@
 <h1 align="center">Zoe</h1>
 
 [![Vcpkg package](https://img.shields.io/badge/Vcpkg-package-blueviolet)](https://github.com/microsoft/vcpkg/tree/master/ports/zoe)
-[![badge](https://img.shields.io/badge/license-GUN-blue)](https://github.com/winsoft666/zoe/blob/master/LICENSE)
+[![badge](https://img.shields.io/badge/license-MIT-blue)](https://github.com/winsoft666/zoe/blob/master/LICENSE)
 
 简体中文 | [ English](README.md)
 

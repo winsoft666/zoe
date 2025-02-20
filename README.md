@@ -122,3 +122,8 @@ zoe_tool URL TargetFilePath [ThreadNum] [DiskCacheMb] [MD5] [TmpExpiredSeconds] 
 - MD5: target file md5, optional, if this value isn't empty, tools will check file md5 after download finished.
 - TmpExpiredSeconds: seconds, optional, the temporary file will expired after these senconds.
 - MaxSpeed: max download speed(byte/s).
+
+# Sponsor
+Thank you for using this project. It would be a great pleasure for me if this project can be of help to you.
+
+**You can go to my Github [homepage](https://github.com/winsoft666) to make a donation.**

@@ -118,3 +118,9 @@ zoe_tool URL TargetFilePath [ThreadNum] [DiskCacheMb] [MD5] [TmpExpiredSeconds] 
 - MD5: 下载文件的MD5，可选，若不为空，则在下载完成之后会进行文件MD5校验
 - TmpExpiredSeconds: 秒数，可选，临时文件经过多少秒之后过期
 - MaxSpeed: 最高下载速度(byte/s)
+
+## 赞助
+
+感谢您能使用本项目，如果这个项目能对您产生帮助，对我而言也是一件非常开心的事情。
+
+**可以前往我的 Github [主页](https://github.com/winsoft666) 进行打赏。**

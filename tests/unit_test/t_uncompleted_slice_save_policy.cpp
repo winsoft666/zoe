@@ -15,6 +15,8 @@
 *    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 ******************************************************************************/
 
+#include <thread>
+#include <chrono>
 #include "catch.hpp"
 #include "zoe/zoe.h"
 #include "test_data.h"

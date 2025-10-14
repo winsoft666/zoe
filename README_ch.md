@@ -20,6 +20,11 @@
 
 Zoe 的唯一依赖是 [curl](https://github.com/curl/curl)。
 
+### vcpkg
+```bash
+vcpkg install zoe
+```
+
 ### Windows
 
 ```bash

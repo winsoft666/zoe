@@ -20,6 +20,11 @@ A high-performance C++ file download library.
 
 Zoe's only dependency is [curl](https://github.com/curl/curl).
 
+### vcpkg
+```bash
+vcpkg install zoe
+```
+
 ### Windows
 
 ```bash

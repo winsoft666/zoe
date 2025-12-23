@@ -61,21 +61,46 @@ target_include_directories(zoe
 )
 
 # CURL
-find_package(CURL CONFIG REQUIRED)
-target_link_libraries(zoe PRIVATE CURL::libcurl)
+find_package(CURL CONFIG)
 
-target_include_directories(zoe PRIVATE ${CURL_INCLUDE_DIRS})
+if (TARGET CURL::libcurl)
+	target_link_libraries(zoe PRIVATE CURL::libcurl)
+	target_compile_definitions(zoe PRIVATE WITH_LIBCURL)
+else()
+	include(FindPkgConfig)
+	pkg_check_modules(CURL REQUIRED libcurl)
+	target_include_directories(zoe PRIVATE ${CURL_INCLUDE_DIRS})
+	target_link_libraries(zoe PRIVATE ${CURL_LIBRARIES})
+	target_compile_definitions(zoe PRIVATE WITH_LIBCURL)
+endif()
 
 # OpenSSL
 find_package(OpenSSL)
+
 if(OpenSSL_FOUND)
 	target_compile_definitions(zoe PRIVATE WITH_OPENSSL)
 	target_link_libraries(zoe PRIVATE OpenSSL::SSL)
 endif()
 
+if(ZOE_BUILD_SHARED_LIBS)
+    set(ZOE_TARGET_NAME "zoe")
+    set(ZOE_CONFLICTS "zoe-static")
+else()
+    set(ZOE_TARGET_NAME "zoe-static")
+    set(ZOE_CONFLICTS "zoe")
+endif()
+
+if(OpenSSL_FOUND)
+    set(ZOE_REQUIRES "libssl libcurl")
+else()
+    set(ZOE_REQUIRES "libcurl")
+endif()
+
+set(ZOE_LIBS "")
 
 if (WIN32)
 	target_link_libraries(zoe PRIVATE ws2_32 crypt32)
+	set(ZOE_LIBS "-lws2_32 -lcrypt32")
 endif()
 
 install(TARGETS zoe
@@ -91,6 +116,17 @@ install(DIRECTORY ../include/zoe DESTINATION include)
 install(EXPORT zoeTargets
     NAMESPACE zoe::
     DESTINATION share/zoe
+)
+
+configure_file(
+  "${PROJECT_SOURCE_DIR}/zoe.pc.in"
+  "${CMAKE_CURRENT_BINARY_DIR}/${ZOE_TARGET_NAME}.pc"
+  @ONLY
+)
+
+install(FILES
+	"${CMAKE_CURRENT_BINARY_DIR}/${ZOE_TARGET_NAME}.pc"
+	DESTINATION "${CMAKE_INSTALL_LIBDIR}/pkgconfig"
 )
 
 include(CMakePackageConfigHelpers)

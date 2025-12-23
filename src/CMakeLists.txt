@@ -83,39 +83,54 @@ if(OpenSSL_FOUND)
 endif()
 
 if(ZOE_BUILD_SHARED_LIBS)
-    set(ZOE_TARGET_NAME "zoe")
-    set(ZOE_CONFLICTS "zoe-static")
+	set(ZOE_TARGET_NAME "zoe")
+	set(ZOE_CONFLICTS "zoe-static")
 else()
-    set(ZOE_TARGET_NAME "zoe-static")
-    set(ZOE_CONFLICTS "zoe")
+	set(ZOE_TARGET_NAME "zoe-static")
+	set(ZOE_CONFLICTS "zoe")
 endif()
 
 if(OpenSSL_FOUND)
-    set(ZOE_REQUIRES "libssl libcurl")
+	set(ZOE_REQUIRES "libssl libcurl")
 else()
-    set(ZOE_REQUIRES "libcurl")
+	set(ZOE_REQUIRES "libcurl")
 endif()
 
 set(ZOE_LIBS "")
+set(ZOE_PRIVATE_LIBS "")
 
 if (WIN32)
-	target_link_libraries(zoe PRIVATE ws2_32 crypt32)
-	set(ZOE_LIBS "-lws2_32 -lcrypt32")
+    target_link_libraries(zoe PRIVATE ws2_32 crypt32)
+    if(ZOE_BUILD_SHARED_LIBS)
+        set(ZOE_PRIVATE_LIBS "${ZOE_PRIVATE_LIBS} -lws2_32 -lcrypt32")
+	else()
+		set(ZOE_LIBS "${ZOE_LIBS} -lws2_32 -lcrypt32")
+    endif()
+endif()
+
+find_package(Threads)
+target_link_libraries(zoe PRIVATE Threads::Threads)
+if(CMAKE_USE_PTHREADS_INIT)
+    if(ZOE_BUILD_SHARED_LIBS)
+        set(ZOE_PRIVATE_LIBS "${ZOE_PRIVATE_LIBS} -lpthread")
+	else()
+		set(ZOE_LIBS "${ZOE_LIBS} -lpthread")
+    endif()
 endif()
 
 install(TARGETS zoe
-        EXPORT zoeTargets
-        RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
-        LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
-        ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
-        OBJECTS DESTINATION ${CMAKE_INSTALL_LIBDIR}
+		EXPORT zoeTargets
+		RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
+		LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
+		ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
+		OBJECTS DESTINATION ${CMAKE_INSTALL_LIBDIR}
 )
 
 install(DIRECTORY ../include/zoe DESTINATION include)
 
 install(EXPORT zoeTargets
-    NAMESPACE zoe::
-    DESTINATION share/zoe
+	NAMESPACE zoe::
+	DESTINATION share/zoe
 )
 
 configure_file(
@@ -139,9 +154,9 @@ configure_package_config_file(zoeConfig.cmake.in
 )
 
 write_basic_package_version_file(
-    zoeConfigVersion.cmake
-    VERSION ${PROJECT_VERSION}
-    COMPATIBILITY AnyNewerVersion
+	zoeConfigVersion.cmake
+	VERSION ${PROJECT_VERSION}
+	COMPATIBILITY AnyNewerVersion
 )
 
 install(FILES

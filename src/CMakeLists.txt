@@ -100,14 +100,15 @@ if (WIN32)
     endif()
 endif()
 
+set(THREADS_PREFER_PTHREAD_FLAG TRUE)
 find_package(Threads)
 target_link_libraries(zoe PRIVATE Threads::Threads)
 
 if(CMAKE_USE_PTHREADS_INIT)
     if(ZOE_BUILD_SHARED_LIBS)
-        set(ZOE_PRIVATE_LIBS "${ZOE_PRIVATE_LIBS} -lpthread")
+        set(ZOE_PRIVATE_LIBS "${ZOE_PRIVATE_LIBS} -pthread")
 	else()
-		set(ZOE_LIBS "${ZOE_LIBS} -lpthread")
+		set(ZOE_LIBS "${ZOE_LIBS} -pthread")
     endif()
 endif()
 

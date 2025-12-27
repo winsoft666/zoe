@@ -80,10 +80,9 @@ else()
 	set(ZOE_CONFLICTS "zoe")
 endif()
 
+set(ZOE_REQUIRES "libcurl")
 if(OpenSSL_FOUND)
-	set(ZOE_REQUIRES "libssl libcurl")
-else()
-	set(ZOE_REQUIRES "libcurl")
+	string(APPEND ZOE_REQUIRES " libssl")
 endif()
 
 set(ZOE_LIBS "")

@@ -61,25 +61,16 @@ target_include_directories(zoe
 )
 
 # CURL
-find_package(CURL CONFIG)
-
-if (TARGET CURL::libcurl)
-	target_link_libraries(zoe PRIVATE CURL::libcurl)
-	target_compile_definitions(zoe PRIVATE WITH_LIBCURL)
-else()
-	include(FindPkgConfig)
-	pkg_check_modules(CURL REQUIRED libcurl)
-	target_include_directories(zoe PRIVATE ${CURL_INCLUDE_DIRS})
-	target_link_libraries(zoe PRIVATE ${CURL_LIBRARIES})
-	target_compile_definitions(zoe PRIVATE WITH_LIBCURL)
-endif()
+find_package(CURL REQUIRED)
+target_link_libraries(zoe PRIVATE CURL::libcurl)
+target_compile_definitions(zoe PRIVATE WITH_LIBCURL)
 
 # OpenSSL
 find_package(OpenSSL)
 
 if(OpenSSL_FOUND)
-	target_compile_definitions(zoe PRIVATE WITH_OPENSSL)
 	target_link_libraries(zoe PRIVATE OpenSSL::SSL)
+	target_compile_definitions(zoe PRIVATE WITH_OPENSSL)
 endif()
 
 if(ZOE_BUILD_SHARED_LIBS)
@@ -110,6 +101,7 @@ endif()
 
 find_package(Threads)
 target_link_libraries(zoe PRIVATE Threads::Threads)
+
 if(CMAKE_USE_PTHREADS_INIT)
     if(ZOE_BUILD_SHARED_LIBS)
         set(ZOE_PRIVATE_LIBS "${ZOE_PRIVATE_LIBS} -lpthread")

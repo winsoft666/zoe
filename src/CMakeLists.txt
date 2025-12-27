@@ -74,10 +74,10 @@ if(OpenSSL_FOUND)
 endif()
 
 if(ZOE_BUILD_SHARED_LIBS)
-	set(ZOE_TARGET_NAME "zoe")
+	set(ZOE_PC_NAME "zoe")
 	set(ZOE_CONFLICTS "zoe-static")
 else()
-	set(ZOE_TARGET_NAME "zoe-static")
+	set(ZOE_PC_NAME "zoe-static")
 	set(ZOE_CONFLICTS "zoe")
 endif()
 
@@ -89,6 +89,7 @@ endif()
 
 set(ZOE_LIBS "")
 set(ZOE_PRIVATE_LIBS "")
+set(ZOE_LIB_NAME "$<TARGET_FILE_BASE_NAME:zoe>")
 
 if (WIN32)
     target_link_libraries(zoe PRIVATE ws2_32 crypt32)
@@ -126,13 +127,18 @@ install(EXPORT zoeTargets
 )
 
 configure_file(
-  "${PROJECT_SOURCE_DIR}/zoe.pc.in"
-  "${CMAKE_CURRENT_BINARY_DIR}/${ZOE_TARGET_NAME}.pc"
+	"${PROJECT_SOURCE_DIR}/zoe.pc.in"
+	"${CMAKE_CURRENT_BINARY_DIR}/zoe.pc.in.configured"
   @ONLY
 )
 
+file(GENERATE
+	OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/${ZOE_PC_NAME}.pc"
+    INPUT "${CMAKE_CURRENT_BINARY_DIR}/zoe.pc.in.configured"
+)
+
 install(FILES
-	"${CMAKE_CURRENT_BINARY_DIR}/${ZOE_TARGET_NAME}.pc"
+	"${CMAKE_CURRENT_BINARY_DIR}/${ZOE_PC_NAME}.pc"
 	DESTINATION "${CMAKE_INSTALL_LIBDIR}/pkgconfig"
 )
 

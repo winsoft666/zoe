@@ -63,7 +63,6 @@ target_include_directories(zoe
 # CURL
 find_package(CURL REQUIRED)
 target_link_libraries(zoe PRIVATE CURL::libcurl)
-target_compile_definitions(zoe PRIVATE WITH_LIBCURL)
 
 # OpenSSL
 find_package(OpenSSL)

@@ -72,14 +72,6 @@ if(OpenSSL_FOUND)
 	target_compile_definitions(zoe PRIVATE WITH_OPENSSL)
 endif()
 
-if(ZOE_BUILD_SHARED_LIBS)
-	set(ZOE_PC_NAME "zoe")
-	set(ZOE_CONFLICTS "zoe-static")
-else()
-	set(ZOE_PC_NAME "zoe-static")
-	set(ZOE_CONFLICTS "zoe")
-endif()
-
 set(ZOE_REQUIRES "libcurl")
 if(OpenSSL_FOUND)
 	string(APPEND ZOE_REQUIRES " libssl")
@@ -132,12 +124,12 @@ configure_file(
 )
 
 file(GENERATE
-	OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/${ZOE_PC_NAME}.pc"
+	OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/zoe.pc"
     INPUT "${CMAKE_CURRENT_BINARY_DIR}/zoe.pc.in.configured"
 )
 
 install(FILES
-	"${CMAKE_CURRENT_BINARY_DIR}/${ZOE_PC_NAME}.pc"
+	"${CMAKE_CURRENT_BINARY_DIR}/zoe.pc"
 	DESTINATION "${CMAKE_INSTALL_LIBDIR}/pkgconfig"
 )
 

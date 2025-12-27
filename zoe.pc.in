@@ -4,10 +4,10 @@ libdir=${exec_prefix}/@CMAKE_INSTALL_LIBDIR@
 includedir=${prefix}/include
 
 Name: @PROJECT_NAME@
-Description: Zoe - A concurrent file downloader library based on libcurl.
+Description: A high-performance C++ file download library.
 URL: https://github.com/winsoft666/zoe
 Version: @PROJECT_VERSION@
-Conflicts: @ZOE_CONFLICTS@
+Conflicts:
 Libs: -L${libdir} -l@ZOE_LIB_NAME@ @ZOE_LIBS@
 Libs.private: @ZOE_PRIVATE_LIBS@
 Cflags: -I${includedir}

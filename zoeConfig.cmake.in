@@ -2,10 +2,7 @@
 
 if(NOT "@ZOE_BUILD_SHARED_LIBS@")
     include(CMakeFindDependencyMacro)
-    find_dependency(CURL CONFIG)
-    if(NOT TARGET CURL::libcurl)
-        find_dependency(CURL)
-    endif()
+    find_dependency(CURL)
     if("@OpenSSL_FOUND@")
         find_dependency(OpenSSL)
     endif()

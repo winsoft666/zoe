@@ -11,6 +11,7 @@ A high-performance C++ file download library.
 - Support for large files (up to PB level)
 - Configurable download speed limits
 - Progress monitoring and real-time speed tracking
+- Considered the slow read and write speeds of HDD and the limited write lifespan of SSD.
 - Hash verification (MD5, SHA1, SHA256)
 - SSL/TLS certificate verification
 - Proxy support
